@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 0.4
-NEXT_TASK       = 0.5
+LAST_COMPLETED  = 0.6
+NEXT_TASK       = 0.7
 GATES_PASSED    = []
-TASKS_DONE      = 4
+TASKS_DONE      = 6
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -283,7 +283,7 @@ Goal: app launches, opens one EPUB, renders it, turns pages, shows progress.
   TARGET   Resources/reader.css
   IMPL     Base CSS injected into epub.js iframe content via rendition.themes. Defines: body{margin:0;padding:20px 24px;box-sizing:border-box} p{margin:0 0 1em 0;} img{max-width:100%;} a{color:inherit;} ::selection{background:#FEF08A;} Classes: .tts-highlight{background:rgba(254,240,138,0.6);border-radius:2px;} .hl-yellow{background:rgba(254,240,138,0.45);} .hl-green{background:rgba(187,247,208,0.45);} .hl-blue{background:rgba(191,219,254,0.45);} .hl-pink{background:rgba(251,207,232,0.45);} .hl-orange{background:rgba(253,215,170,0.45);}
   VERIFY   Valid CSS. All five highlight color classes present.
-- [ ] 0.6  Implement EPUBExtractor
+- [x] 0.6  Implement EPUBExtractor
   TARGET   Core/EPUB/EPUBExtractor.swift
   IMPL     Actor EPUBExtractor. Single method: func extract(_ url: URL) async throws -> URL. Unzips .epub using ZIPFoundation Archive into FileManager.default.temporaryDirectory / UUID().uuidString. Returns the extracted root directory URL. On failure throws EPUBError.extractionFailed. Cleans up temp dir if extraction fails midway.
   VERIFY   Unit test: extract a real .epub → returned URL exists on disk, contains META-INF/container.xml.
