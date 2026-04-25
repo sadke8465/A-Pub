@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = none
-NEXT_TASK       = 0.1
+LAST_COMPLETED  = 0.1
+NEXT_TASK       = 0.2
 GATES_PASSED    = []
-TASKS_DONE      = 0
+TASKS_DONE      = 1
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -263,7 +263,7 @@ On next open, call book.locations.load(cached) before display. Skip generate() i
 
 Goal: app launches, opens one EPUB, renders it, turns pages, shows progress.
 
-- [ ] 0.1  Create Xcode project
+- [x] 0.1  Create Xcode project
   TARGET   EpubReader.xcodeproj
   IMPL     New iOS App, SwiftUI lifecycle, Swift, bundle ID com.yourname.epubreader, iOS 17 deployment target, no CoreData checkbox (add manually), no tests checkbox (add manually). Add SPM packages: ZIPFoundation (weichsel/ZIPFoundation ≥0.9.0), GRDB.swift (groue/GRDB.swift ≥7.0.0).
   VERIFY   Project builds for simulator with zero errors.
