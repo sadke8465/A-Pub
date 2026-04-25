@@ -22,9 +22,16 @@ public struct FileImporter {
         let parser = EPUBParser()
         let extractedRoot = try await extractor.extract(pickedURL)
         let book = try await parser.parse(extractedRoot: extractedRoot)
-        let data = try Data(contentsOf: pickedURL)
-        let base64String = data.base64EncodedString()
+        let base64String = try await Self.encodeBase64(from: pickedURL)
         return (book, base64String)
+    }
+
+
+    nonisolated private static func encodeBase64(from url: URL) async throws -> String {
+        try await Task.detached(priority: .userInitiated) {
+            let data = try Data(contentsOf: url)
+            return data.base64EncodedString()
+        }.value
     }
 
     private func pickEPUBURL() async throws -> URL {
