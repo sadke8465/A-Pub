@@ -197,7 +197,6 @@ public struct FileImporter {
                     book.setValue(metadata.sha256, forKey: "sha256")
                     book.setValue(Date(), forKey: "importedAt")
                     book.setValue(false, forKey: "isDeleted")
-                    book.setValue(false, forKey: "softDeleted")
 
                     if context.hasChanges {
                         try context.save()

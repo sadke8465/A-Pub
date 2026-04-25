@@ -240,7 +240,6 @@ public final class LibraryViewModel: NSObject, ObservableObject {
             }
 
             persistedBook.setValue(true, forKey: "isDeleted")
-            persistedBook.softDeleted = true
             persistedBook.deletedAt = Date()
         }
     }
