@@ -30,6 +30,13 @@
 		0A0000000000000000000C15 /* EpubReader.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B14 /* EpubReader.xcdatamodeld */; };
 		0A0000000000000000000C16 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B15 /* PersistenceController.swift */; };
 		0A0000000000000000000C17 /* MetadataExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B16 /* MetadataExtractor.swift */; };
+		0A0000000000000000000C18 /* CoverImageExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B17 /* CoverImageExtractor.swift */; };
+		0A0000000000000000000C19 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B18 /* LibraryView.swift */; };
+		0A0000000000000000000C1A /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B19 /* LibraryViewModel.swift */; };
+		0A0000000000000000000C1B /* BookGridCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B1A /* BookGridCell.swift */; };
+		0A0000000000000000000C1C /* BookListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B1B /* BookListCell.swift */; };
+		0A0000000000000000000C1D /* BookDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B1C /* BookDetailView.swift */; };
+		0A0000000000000000000C1E /* ShelfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B1D /* ShelfView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -55,6 +62,13 @@
 		0A0000000000000000000B14 /* EpubReader.xcdatamodeld */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodeld; path = EpubReader.xcdatamodeld; sourceTree = "<group>"; };
 		0A0000000000000000000B15 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		0A0000000000000000000B16 /* MetadataExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataExtractor.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B17 /* CoverImageExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoverImageExtractor.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B18 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B19 /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B1A /* BookGridCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookGridCell.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B1B /* BookListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookListCell.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B1C /* BookDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookDetailView.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B1D /* ShelfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShelfView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,9 +118,23 @@
 		0A00000000000000000000AB /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				0A00000000000000000000AE /* Library */,
 				0A00000000000000000000AC /* Reader */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000AE /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B18 /* LibraryView.swift */,
+				0A0000000000000000000B19 /* LibraryViewModel.swift */,
+				0A0000000000000000000B1A /* BookGridCell.swift */,
+				0A0000000000000000000B1B /* BookListCell.swift */,
+				0A0000000000000000000B1C /* BookDetailView.swift */,
+				0A0000000000000000000B1D /* ShelfView.swift */,
+			);
+			path = Library;
 			sourceTree = "<group>";
 		};
 		0A00000000000000000000AC /* Reader */ = {
@@ -167,6 +195,7 @@
 				0A0000000000000000000B0E /* LeakAvoider.swift */,
 				0A0000000000000000000B11 /* FileImporter.swift */,
 				0A0000000000000000000B16 /* MetadataExtractor.swift */,
+				0A0000000000000000000B17 /* CoverImageExtractor.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -290,6 +319,13 @@
 				0A0000000000000000000C14 /* ReaderViewModel.swift in Sources */,
 				0A0000000000000000000C16 /* PersistenceController.swift in Sources */,
 				0A0000000000000000000C17 /* MetadataExtractor.swift in Sources */,
+				0A0000000000000000000C18 /* CoverImageExtractor.swift in Sources */,
+				0A0000000000000000000C19 /* LibraryView.swift in Sources */,
+				0A0000000000000000000C1A /* LibraryViewModel.swift in Sources */,
+				0A0000000000000000000C1B /* BookGridCell.swift in Sources */,
+				0A0000000000000000000C1C /* BookListCell.swift in Sources */,
+				0A0000000000000000000C1D /* BookDetailView.swift in Sources */,
+				0A0000000000000000000C1E /* ShelfView.swift in Sources */,
 				0A0000000000000000000C15 /* EpubReader.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

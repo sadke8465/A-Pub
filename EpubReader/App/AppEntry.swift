@@ -6,10 +6,8 @@ struct EpubReaderApp: App {
 
     var body: some Scene {
         WindowGroup {
-            NavigationStack {
-                ReaderView()
-            }
-            .environment(\.managedObjectContext, persistenceController.viewContext)
+            LibraryView()
+                .environment(\.managedObjectContext, persistenceController.viewContext)
         }
     }
 }

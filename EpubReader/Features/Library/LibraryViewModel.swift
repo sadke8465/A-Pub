@@ -49,7 +49,7 @@ public final class LibraryViewModel: NSObject, ObservableObject {
 
         let request = Book.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(key: "importedAt", ascending: false)]
-        request.predicate = NSPredicate(format: "isDeleted == NO")
+        request.predicate = NSPredicate(format: "softDeleted == NO")
 
         fetchedResultsController = NSFetchedResultsController(
             fetchRequest: request,
@@ -205,7 +205,7 @@ public final class LibraryViewModel: NSObject, ObservableObject {
     }
 
     public func softDelete(_ book: Book) {
-        book.isDeleted = true
+        book.softDeleted = true
         book.deletedAt = Date()
         saveContext(logMessage: "Unable to delete book")
     }
