@@ -200,7 +200,14 @@ public struct BookDetailView: View {
     }
 
     private var progressPercentage: Double {
-        let rawProgress = book.readingProgress?.percentage ?? 0
+        let rawProgress: Double
+        if let progress = book.value(forKey: "readingProgress") as? NSManagedObject,
+           let percentage = progress.value(forKey: "percentage") as? Double {
+            rawProgress = percentage
+        } else {
+            rawProgress = 0
+        }
+
         return max(0, min(rawProgress, 1))
     }
 
