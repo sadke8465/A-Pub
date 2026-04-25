@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 1.7
-NEXT_TASK       = 1.8
+LAST_COMPLETED  = 1.8
+NEXT_TASK       = 1.9
 GATES_PASSED    = []
-TASKS_DONE      = 17
+TASKS_DONE      = 18
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -338,7 +338,7 @@ Goal: real library screen, cover extraction, shelves, Core Data schema.
   TARGET   Features/Library/BookGridCell.swift, Features/Library/BookListCell.swift
   IMPL     BookGridCell: VStack. Cover image: AsyncImage loading from book.coverImagePath (local file URL), placeholder is a colored rectangle derived from title hash. Corner radius 6pt. Shadow per DESIGN_TOKENS. Progress ring (ZStack overlay bottom-right): Circle stroke 2pt, progress = book.readingProgress?.percentage ?? 0, color=accent if in-progress, green if 100%. Title (font .caption weight .medium, lineLimit 2). Author (font .caption2, foregroundStyle .secondary). BookListCell: HStack. Small cover thumbnail 50×70pt. VStack with title+author+progress percentage text. Chevron trailing.
   VERIFY   GridCell renders with cover image, progress ring at 23%, title/author visible.
-- [ ] 1.8  Build ShelfView and context menus
+- [x] 1.8  Build ShelfView and context menus
   TARGET   Features/Library/ShelfView.swift (update LibraryView.swift)
   IMPL     ShelfView: horizontal ScrollView of shelf tabs. Tapping a shelf filters LibraryView to that shelf’s books. “All Books” always first. Add shelf button opens an alert for shelf name entry → creates Shelf entity. Long-press a book cell anywhere in LibraryView → contextMenu with: “Add to Shelf” (submenu of shelf names), “Mark as Finished”, “Delete from Library” (destructive, with confirmation), “Edit Metadata” (opens BookDetailView in edit mode).
   VERIFY   Create shelf “Favorites”. Long-press book → Add to Shelf → Favorites. Filter by Favorites → only that book shows.
