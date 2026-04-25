@@ -19,9 +19,14 @@ public struct EPUBWebView: UIViewRepresentable {
         self.bridge = bridge
     }
 
+    public func makeCoordinator() -> Coordinator {
+        Coordinator(bridge: bridge)
+    }
+
     public func makeUIView(context: Context) -> WKWebView {
         let configuration = bridge.setup()
         let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = context.coordinator
 
         webView.scrollView.isScrollEnabled = false
         webView.scrollView.bounces = false
@@ -43,6 +48,18 @@ public struct EPUBWebView: UIViewRepresentable {
     }
 
     public func updateUIView(_ uiView: WKWebView, context: Context) {
+    }
+
+    public final class Coordinator: NSObject, WKNavigationDelegate {
+        private let bridge: EPUBBridge
+
+        init(bridge: EPUBBridge) {
+            self.bridge = bridge
+        }
+
+        public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            bridge.handleWebContentProcessTermination(webView)
+        }
     }
 }
 
