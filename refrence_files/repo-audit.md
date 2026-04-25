@@ -15,9 +15,9 @@
   @Published public var currentSpineIndex = 0
 
 ```
- * [ ] **File:** EpubReader/Core/Utilities/FileImporter.swift (Line 26) | **Priority: [HIGH]**
+ * [x] **File:** EpubReader/Core/Utilities/FileImporter.swift (Line 26) | **Priority: [HIGH]**
    Loading the entire EPUB file into a Data object and then encoding it to a base64 string are heavy operations. Since FileImporter is bound to the @MainActor, these synchronous calls will block the main thread and freeze the UI, especially for larger books. Consider moving these operations to a background thread or using a non-isolated context.
- * [ ] **File:** EpubReader/Features/Reader/ReaderView.swift (Line 21) | **Priority: [HIGH]**
+ * [x] **File:** EpubReader/Features/Reader/ReaderView.swift (Line 21) | **Priority: [HIGH]**
    There are two issues in this block:
    1. The JS call loadBook('\\(escaped)') contains a typo: the double backslash will result in a literal backslash being prepended to the base64 string in the JavaScript call (e.g., loadBook('\base64...')), which will cause the book to fail to load.
    2. Performing replacingOccurrences on a potentially massive base64 string on the main thread can lead to significant UI performance degradation. This should ideally be handled before the data reaches the view layer.
@@ -40,13 +40,13 @@ View PR on GitHub
    Using string interpolation to construct JavaScript calls is fragile and potentially slow for large payloads. If the base64 string contains characters that break the JS string literal (like single quotes), the call will fail. For passing data to WKWebView, it is safer and more performant to use webView.callAsyncJavaScript(_:arguments:in:in:) (available in iOS 14+) which handles argument serialization safely via a dictionary.
 ## Pull Request #8
 View PR on GitHub
- * [ ] **File:** EpubReader/Features/Reader/EPUBBridge.swift (Line 96) | **Priority: [HIGH]**
+ * [x] **File:** EpubReader/Features/Reader/EPUBBridge.swift (Line 96) | **Priority: [HIGH]**
    The deinit cleanup logic introduces a concurrency violation in Swift 6. WKUserContentController is not Sendable, so capturing it in a @MainActor task from a non-isolated deinit is unsafe. Additionally, nonisolated(unsafe) on line 30 is used to bypass actor isolation checks, which contradicts the project's goal of strict concurrency. It is recommended to move the script message handler removal to an explicit invalidation method called by the bridge's owner (e.g., when the reader view disappears) to ensure cleanup happens safely on the main actor.
  * [ ] **File:** EpubReader/Features/Reader/EPUBBridge.swift (Line 45) | **Priority: [MEDIUM]**
    The use of setValue(true, forKey: "allowFileAccessFromFileURLs") relies on a private WebKit preference. This is fragile and can lead to App Store rejection or unexpected behavior in future iOS updates. Since the project uses loadFileURL(_:allowingReadAccessTo:) (as per the master plan), it is better to ensure that all necessary assets are within the provided readAccessURL or use a custom WKURLSchemeHandler to serve content securely without resorting to private KVC hacks.
 ## Pull Request #7
 View PR on GitHub
- * [ ] **File:** EpubReader/Core/EPUB/EPUBParser.swift (Line 339) | **Priority: [HIGH]**
+ * [x] **File:** EpubReader/Core/EPUB/EPUBParser.swift (Line 339) | **Priority: [HIGH]**
    The resolveRelativePath function strips fragments (e.g., #section1) from URLs. In EPUB files, the Table of Contents (TOC) frequently points to specific anchors within a document. By stripping the fragment, navigation from the TOC will always land at the top of the file, breaking deep linking functionality. You should preserve the fragment during resolution.
    ```swift
    private func resolveRelativePath(_ path: String, from base: URL) -> URL {
@@ -65,7 +65,7 @@ View PR on GitHub
    }
    
    ```
- * [ ] **File:** EpubReader/Core/EPUB/EPUBParser.swift (Line 370) | **Priority: [HIGH]**
+ * [x] **File:** EpubReader/Core/EPUB/EPUBParser.swift (Line 370) | **Priority: [HIGH]**
    The collectedText implementation incorrectly assumes that all text in a node comes before its children. In XML with mixed content (e.g., <a>Part 1: <span>The Beginning</span></a> or <a><span>Part 1:</span> The Beginning</a>), the current logic will produce incorrect strings like " The BeginningPart 1:" because it concatenates the node's own text (which accumulates all characters found while it was the current node) with its children's text. To fix this, XMLNode should store text segments and child nodes in a single ordered collection.
  * [ ] **File:** EpubReader/Core/EPUB/EPUBParser.swift (Line 333) | **Priority: [MEDIUM]**
    The logic for stripping namespace prefixes is duplicated between EPUBParser.stripPrefix and XMLNode.stripped (line 384). Additionally, you can avoid manual prefix stripping by setting parser.shouldProcessNamespaces = true in parseXMLTree, which allows the XMLParserDelegate to receive the localName directly.
