@@ -44,6 +44,32 @@
             window.book = null;
             window.rendition = null;
 
+            function extractCharacterOffset(cfi) {
+                if (!cfi || typeof cfi !== 'string') {
+                    return 0;
+                }
+
+                var match = cfi.match(/:(\d+)(?:[,\)])?/);
+                if (!match || match.length < 2) {
+                    return 0;
+                }
+
+                var parsed = parseInt(match[1], 10);
+                return Number.isFinite(parsed) ? parsed : 0;
+            }
+
+            function extractContextSnippet(location) {
+                try {
+                    var displayed = location && location.start && location.start.displayed;
+                    if (displayed && typeof displayed.page === 'string' && displayed.page.trim().length > 0) {
+                        return displayed.page.trim().slice(0, 20);
+                    }
+                } catch (_) {
+                    return '';
+                }
+                return '';
+            }
+
             window.loadBook = async function (base64) {
                 try {
                     window.book = ePub(base64, { encoding: 'base64' });
@@ -57,10 +83,20 @@
                     });
 
                     window.rendition.on('relocated', function (location) {
+                        var cfi = (location && location.start && location.start.cfi) ? location.start.cfi : '';
+                        var pct = (location && location.start && typeof location.start.percentage === 'number')
+                            ? location.start.percentage
+                            : 0;
+                        var spineHref = (location && location.start && location.start.href) ? location.start.href : '';
+                        var characterOffset = extractCharacterOffset(cfi);
+                        var contextSnippet = extractContextSnippet(location);
+
                         window.bridge.send('relocated', {
-                            cfi: location.start.cfi,
-                            percentage: location.start.percentage,
-                            spineHref: location.start.href || '',
+                            cfi: cfi,
+                            percentage: pct,
+                            spineHref: spineHref,
+                            characterOffset: characterOffset,
+                            contextSnippet: contextSnippet,
                             atEnd: location.atEnd === true
                         });
                         if (location.atEnd === true) {
