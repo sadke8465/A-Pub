@@ -17,6 +17,7 @@ import WebKit
 public final class EPUBBridge: NSObject, WKScriptMessageHandler {
 
     public static let messageName = "bridge"
+    private static let sharedProcessPool = WKProcessPool()
 
     public weak var webView: WKWebView?
 
@@ -38,6 +39,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     /// resource access enabled for the bundled reader assets.
     public func setup() -> WKWebViewConfiguration {
         let configuration = WKWebViewConfiguration()
+        configuration.processPool = Self.sharedProcessPool
         let contentController = WKUserContentController()
         let proxy = LeakAvoider(delegate: self)
         contentController.add(proxy, name: Self.messageName)
@@ -94,6 +96,11 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     public func invalidate() {
         webView?.configuration.userContentController.removeScriptMessageHandler(forName: Self.messageName)
         webView = nil
+    }
+
+    public func handleWebContentProcessTermination(_ terminatedWebView: WKWebView) {
+        Log.shared.error("WKWebView content process terminated; reloading reader host page")
+        terminatedWebView.reload()
     }
 
     deinit {
