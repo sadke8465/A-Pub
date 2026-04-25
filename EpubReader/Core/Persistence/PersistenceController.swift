@@ -5,8 +5,8 @@ import Foundation
 final class PersistenceController {
     static let shared = PersistenceController()
 
-    lazy var container: NSPersistentContainer = {
-        let container = NSPersistentContainer(name: "EpubReader")
+    lazy var container: NSPersistentCloudKitContainer = {
+        let container = NSPersistentCloudKitContainer(name: "EpubReader")
 
         container.loadPersistentStores { _, error in
             if let error {
@@ -38,7 +38,7 @@ final class PersistenceController {
     private init() {}
 
 #if DEBUG
-    private func seedDebugBookIfNeeded(using container: NSPersistentContainer) {
+    private func seedDebugBookIfNeeded(using container: NSPersistentCloudKitContainer) {
         let context = container.viewContext
         let request = NSFetchRequest<NSFetchRequestResult>(entityName: "Book")
         request.fetchLimit = 1
