@@ -20,7 +20,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
 
     public weak var webView: WKWebView?
 
-    public var onRelocated: ((String, Double) -> Void)?
+    public var onRelocated: ((String, Double, String) -> Void)?
     public var onBookReady: (() -> Void)?
     public var onSelected: ((String, String) -> Void)?
     public var onMarkClicked: ((String) -> Void)?
@@ -67,7 +67,8 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         case "relocated":
             let cfi = body["cfi"] as? String ?? ""
             let pct = (body["pct"] as? Double) ?? (body["percentage"] as? Double) ?? 0
-            onRelocated?(cfi, pct)
+            let spineHref = body["spineHref"] as? String ?? ""
+            onRelocated?(cfi, pct, spineHref)
         case "bookReady":
             onBookReady?()
         case "selected":

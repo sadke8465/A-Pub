@@ -9,9 +9,10 @@ public final class ReaderViewModel: ObservableObject {
     @Published public var percentage: Double = 0
     @Published public var isOverlayVisible = true
 
-    public var base64Book: String = ""
-    public var bridge = EPUBBridge()
-    public var currentSpineIndex = 0
+    @Published public var base64Book: String = ""
+    @Published public var escapedBase64Book: String = ""
+    @Published public var bridge = EPUBBridge()
+    @Published public var currentSpineIndex = 0
 
     private let importer: FileImporter
 
@@ -29,6 +30,7 @@ public final class ReaderViewModel: ObservableObject {
                 let result = try await importer.importEPUB()
                 book = result.0
                 base64Book = result.1
+                escapedBase64Book = result.2
             } catch is CancellationError {
                 Log.shared.info("User cancelled EPUB import")
             } catch {
@@ -42,14 +44,42 @@ public final class ReaderViewModel: ObservableObject {
     }
 
     private func configureBridgeCallbacks() {
-        bridge.onRelocated = { [weak self] cfi, pct in
+        bridge.onRelocated = { [weak self] cfi, pct, spineHref in
             guard let self else { return }
             self.currentCFI = cfi
             self.percentage = pct
+            self.updateCurrentSpineIndex(using: spineHref)
         }
 
         bridge.onBookReady = {
             Log.shared.info("EPUB book ready")
         }
+    }
+
+    private func updateCurrentSpineIndex(using spineHref: String) {
+        guard !spineHref.isEmpty,
+              let book,
+              let relocatedURL = URL(string: spineHref)?
+                .deletingFragment()
+                .standardizedFileURL
+        else {
+            return
+        }
+
+        if let matchedIndex = book.spineItems.firstIndex(where: { chapter in
+            chapter.href.deletingFragment().standardizedFileURL == relocatedURL
+        }) {
+            currentSpineIndex = matchedIndex
+        }
+    }
+}
+
+private extension URL {
+    func deletingFragment() -> URL {
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: true) else {
+            return self
+        }
+        components.fragment = nil
+        return components.url ?? self
     }
 }

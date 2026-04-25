@@ -9,7 +9,7 @@ public struct FileImporter {
 
     public init() {}
 
-    public func importEPUB() async throws -> (EPUBBook, String) {
+    public func importEPUB() async throws -> (EPUBBook, String, String) {
         let pickedURL = try await pickEPUBURL()
         let gotSecurityScope = pickedURL.startAccessingSecurityScopedResource()
         defer {
@@ -23,7 +23,8 @@ public struct FileImporter {
         let extractedRoot = try await extractor.extract(pickedURL)
         let book = try await parser.parse(extractedRoot: extractedRoot)
         let base64String = try await Self.encodeBase64(from: pickedURL)
-        return (book, base64String)
+        let escapedBase64String = try await Self.escapeForSingleQuotedJavaScript(base64String)
+        return (book, base64String, escapedBase64String)
     }
 
 
@@ -31,6 +32,12 @@ public struct FileImporter {
         try await Task.detached(priority: .userInitiated) {
             let data = try Data(contentsOf: url)
             return data.base64EncodedString()
+        }.value
+    }
+
+    nonisolated private static func escapeForSingleQuotedJavaScript(_ value: String) async throws -> String {
+        try await Task.detached(priority: .userInitiated) {
+            value.replacingOccurrences(of: "'", with: "\\'")
         }.value
     }
 

@@ -10,14 +10,14 @@ public struct ReaderView: View {
 
     public var body: some View {
         ZStack {
-            EPUBWebView(bridge: $viewModel.bridge)
+            EPUBWebView(bridge: viewModel.bridge)
                 .contentShape(Rectangle())
                 .onTapGesture {
                     viewModel.toggleOverlay()
                 }
                 .onChange(of: viewModel.book?.identifier) { _, _ in
-                    if !viewModel.base64Book.isEmpty {
-                        viewModel.bridge.callJS("loadBook('\(viewModel.base64Book)')")
+                    if !viewModel.escapedBase64Book.isEmpty {
+                        viewModel.bridge.callJS("loadBook('\(viewModel.escapedBase64Book)')")
                     }
                 }
 

@@ -10,6 +10,7 @@ p {
 
 img {
     max-width: 100%;
+    height: auto;
 }
 
 a {
@@ -23,6 +24,8 @@ a {
 .tts-highlight {
     background: rgba(254, 240, 138, 0.6);
     border-radius: 2px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
 }
 
 .hl-yellow {
