@@ -204,8 +204,9 @@ public struct LibraryView: View {
         Button {
             viewModel.importBooks()
         } label: {
-            Label("Import", systemImage: "plus")
+            Image(systemName: "plus")
         }
+        .accessibilityLabel("Import EPUB")
         .disabled(viewModel.isImporting)
     }
 

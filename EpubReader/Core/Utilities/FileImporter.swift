@@ -49,7 +49,13 @@ public struct FileImporter {
                             continue
                         }
 
-                        let extractedRoot = try await extractor.extract(pickedURL)
+                        let persistedURL = try await Self.persistEPUB(
+                            data: epubData,
+                            suggestedFilename: filename,
+                            sha256: sha256
+                        )
+
+                        let extractedRoot = try await extractor.extract(persistedURL)
                         let parsedBook = try await parser.parse(extractedRoot: extractedRoot)
                         let metadata = await metadataExtractor.extract(from: parsedBook, epubData: epubData)
                         let coverURL = try await coverExtractor.extract(from: parsedBook, extractedRoot: extractedRoot)
@@ -57,7 +63,7 @@ public struct FileImporter {
                         let importedBook = try await Self.insertBook(
                             in: backgroundContext,
                             metadata: metadata,
-                            sourceURL: pickedURL,
+                            sourceURL: persistedURL,
                             coverURL: coverURL
                         )
                         continuation.yield(.done(importedBook))
@@ -106,6 +112,49 @@ public struct FileImporter {
 
     nonisolated private static func sha256Hex(for data: Data) -> String {
         SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    nonisolated private static func persistEPUB(data: Data, suggestedFilename: String, sha256: String) async throws -> URL {
+        try await Task.detached(priority: .userInitiated) {
+            let fileManager = FileManager.default
+            let baseDirectory = try libraryEPUBDirectory(using: fileManager)
+            let safeFilename = sanitizedFilename(suggestedFilename)
+            let destinationURL = baseDirectory.appendingPathComponent("\(sha256)-\(safeFilename)")
+
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                return destinationURL
+            }
+
+            try data.write(to: destinationURL, options: .atomic)
+            return destinationURL
+        }.value
+    }
+
+    nonisolated private static func libraryEPUBDirectory(using fileManager: FileManager) throws -> URL {
+        let appSupport = try fileManager.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+
+        let epubDirectory = appSupport
+            .appendingPathComponent("LibraryEPUBs", isDirectory: true)
+
+        if !fileManager.fileExists(atPath: epubDirectory.path) {
+            try fileManager.createDirectory(at: epubDirectory, withIntermediateDirectories: true)
+        }
+
+        return epubDirectory
+    }
+
+    nonisolated private static func sanitizedFilename(_ filename: String) -> String {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_."))
+        let transformedScalars = filename.unicodeScalars.map { scalar in
+            allowed.contains(scalar) ? Character(scalar) : "_"
+        }
+        let sanitized = String(transformedScalars)
+        return sanitized.isEmpty ? "book.epub" : sanitized
     }
 
     nonisolated private static func bookExists(with sha256: String, in context: NSManagedObjectContext) async throws -> Bool {
