@@ -17,8 +17,7 @@ public struct ReaderView: View {
                 }
                 .onChange(of: viewModel.book?.identifier) { _, _ in
                     if !viewModel.base64Book.isEmpty {
-                        let escaped = viewModel.base64Book.replacingOccurrences(of: "'", with: "\\'")
-                        viewModel.bridge.callJS("loadBook('\\(escaped)')")
+                        viewModel.bridge.callJS("loadBook('\(viewModel.base64Book)')")
                     }
                 }
 
