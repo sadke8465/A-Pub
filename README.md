@@ -100,6 +100,35 @@ After launching the app:
 3. Select a book to start reading
 4. Use in-reader controls for navigation and reading progress
 
+
+## Development Roadmap Status
+
+The project follows a staged execution plan tracked in `refrence_files/master-plan.md`.
+
+### Current Stage (as of April 25, 2026)
+
+- **Last completed task:** `1.9`
+- **Next task:** `2a.1`
+- **Completed tasks:** `19 / 93` (**~20.4% complete**)
+- **Current phase:** Transition from foundational Phase 1 work into the `2a.*` implementation track.
+- **Gate progress:** No release gates passed yet (`GATES_PASSED = []`).
+
+### Planned Release Gates
+
+- **Gate 1 — TestFlight Alpha:** requires `3b.6`
+- **Gate 2 — TestFlight Beta:** requires `6c.5`
+- **Gate 3 — App Store v1:** requires `7b.6`
+- **Gate 4 — v1.1:** requires `8.8`
+
+### How to Update This Status
+
+When plan progress changes, update this section to mirror the latest values in `refrence_files/master-plan.md`:
+
+- `LAST_COMPLETED`
+- `NEXT_TASK`
+- `TASKS_DONE` / `TASKS_TOTAL`
+- `GATES_PASSED`
+
 ## Project Structure
 
 ```text
