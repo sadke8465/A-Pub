@@ -27,6 +27,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     public var onMarkClicked: ((String) -> Void)?
     public var onRequestHighlights: ((String) -> Void)?
     public var onChapterLoaded: (() -> Void)?
+    public var onAtChapterEnd: (() -> Void)?
 
     public override init() {
         super.init()
@@ -63,7 +64,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         switch type {
         case "relocated":
             let cfi = body["cfi"] as? String ?? ""
-            let pct = (body["pct"] as? Double) ?? (body["percentage"] as? Double) ?? 0
+            let pct = (body["percentage"] as? Double) ?? (body["pct"] as? Double) ?? 0
             let spineHref = body["spineHref"] as? String ?? ""
             onRelocated?(cfi, pct, spineHref)
         case "bookReady":
@@ -83,6 +84,8 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
             onRequestHighlights?(spineHref)
         case "chapterLoaded":
             onChapterLoaded?()
+        case "atChapterEnd":
+            onAtChapterEnd?()
         default:
             Log.shared.debug("EPUBBridge received unknown message type: \(type)")
         }
