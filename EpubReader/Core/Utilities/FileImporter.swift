@@ -1,7 +1,16 @@
+import CoreData
+import CryptoKit
 import Foundation
+import ObjectiveC
 import UIKit
 import UniformTypeIdentifiers
-import ObjectiveC
+
+public enum ImportProgress {
+    case processing(filename: String)
+    case done(Book)
+    case skipped(filename: String)
+    case failed(filename: String, Error)
+}
 
 /// Presents the iOS Files picker for `.epub` documents and returns parsed book data.
 @MainActor
@@ -9,8 +18,59 @@ public struct FileImporter {
 
     public init() {}
 
-    public func importEPUB() async throws -> (EPUBBook, String, String) {
-        let pickedURL = try await pickEPUBURL()
+    public func importEPUB() async throws -> AsyncStream<ImportProgress> {
+        let pickedURLs = try await pickEPUBURLs(allowsMultipleSelection: true)
+        let securityScopedURLs = pickedURLs.filter { $0.startAccessingSecurityScopedResource() }
+
+        return AsyncStream { continuation in
+            Task {
+                defer {
+                    securityScopedURLs.forEach { $0.stopAccessingSecurityScopedResource() }
+                    continuation.finish()
+                }
+
+                let extractor = EPUBExtractor()
+                let parser = EPUBParser()
+                let metadataExtractor = MetadataExtractor()
+                let coverExtractor = CoverImageExtractor()
+                let persistenceController = PersistenceController.shared
+                let backgroundContext = persistenceController.backgroundContext()
+
+                for pickedURL in pickedURLs {
+                    let filename = pickedURL.lastPathComponent
+                    continuation.yield(.processing(filename: filename))
+
+                    do {
+                        let epubData = try await Self.readData(from: pickedURL)
+                        let sha256 = Self.sha256Hex(for: epubData)
+
+                        if try await Self.bookExists(with: sha256, in: backgroundContext) {
+                            continuation.yield(.skipped(filename: filename))
+                            continue
+                        }
+
+                        let extractedRoot = try await extractor.extract(pickedURL)
+                        let parsedBook = try await parser.parse(extractedRoot: extractedRoot)
+                        let metadata = await metadataExtractor.extract(from: parsedBook, epubData: epubData)
+                        let coverURL = try await coverExtractor.extract(from: parsedBook, extractedRoot: extractedRoot)
+
+                        let importedBook = try await Self.insertBook(
+                            in: backgroundContext,
+                            metadata: metadata,
+                            sourceURL: pickedURL,
+                            coverURL: coverURL
+                        )
+                        continuation.yield(.done(importedBook))
+                    } catch {
+                        continuation.yield(.failed(filename: filename, error))
+                    }
+                }
+            }
+        }
+    }
+
+    public func importSingleEPUBForReader() async throws -> (EPUBBook, String, String) {
+        let pickedURL = try await pickEPUBURLs(allowsMultipleSelection: false).firstUnwrapped()
         let gotSecurityScope = pickedURL.startAccessingSecurityScopedResource()
         defer {
             if gotSecurityScope {
@@ -27,12 +87,15 @@ public struct FileImporter {
         return (book, base64String, escapedBase64String)
     }
 
+    nonisolated private static func readData(from url: URL) async throws -> Data {
+        try await Task.detached(priority: .userInitiated) {
+            try Data(contentsOf: url)
+        }.value
+    }
 
     nonisolated private static func encodeBase64(from url: URL) async throws -> String {
-        try await Task.detached(priority: .userInitiated) {
-            let data = try Data(contentsOf: url)
-            return data.base64EncodedString()
-        }.value
+        let data = try await readData(from: url)
+        return data.base64EncodedString()
     }
 
     nonisolated private static func escapeForSingleQuotedJavaScript(_ value: String) async throws -> String {
@@ -41,10 +104,68 @@ public struct FileImporter {
         }.value
     }
 
-    private func pickEPUBURL() async throws -> URL {
+    nonisolated private static func sha256Hex(for data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    nonisolated private static func bookExists(with sha256: String, in context: NSManagedObjectContext) async throws -> Bool {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
+                do {
+                    let request = NSFetchRequest<NSFetchRequestResult>(entityName: "Book")
+                    request.fetchLimit = 1
+                    request.predicate = NSPredicate(format: "sha256 == %@", sha256)
+                    let count = try context.count(for: request)
+                    continuation.resume(returning: count > 0)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    nonisolated private static func insertBook(
+        in context: NSManagedObjectContext,
+        metadata: BookMetadata,
+        sourceURL: URL,
+        coverURL: URL?
+    ) async throws -> Book {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
+                do {
+                    guard let entity = NSEntityDescription.entity(forEntityName: "Book", in: context) else {
+                        throw FileImporterError.bookEntityUnavailable
+                    }
+
+                    let book = Book(entity: entity, insertInto: context)
+                    book.setValue(UUID(), forKey: "id")
+                    book.setValue(metadata.title, forKey: "title")
+                    book.setValue(metadata.author, forKey: "author")
+                    book.setValue(sourceURL.path, forKey: "filePath")
+                    book.setValue(coverURL?.path, forKey: "coverImagePath")
+                    book.setValue(metadata.language, forKey: "language")
+                    book.setValue(metadata.bookDescription, forKey: "bookDescription")
+                    book.setValue(metadata.sha256, forKey: "sha256")
+                    book.setValue(Date(), forKey: "importedAt")
+                    book.setValue(false, forKey: "isDeleted")
+
+                    if context.hasChanges {
+                        try context.save()
+                    }
+
+                    continuation.resume(returning: book)
+                } catch {
+                    context.rollback()
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    private func pickEPUBURLs(allowsMultipleSelection: Bool) async throws -> [URL] {
         try await withCheckedThrowingContinuation { continuation in
             let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.epub], asCopy: true)
-            picker.allowsMultipleSelection = false
+            picker.allowsMultipleSelection = allowsMultipleSelection
 
             let coordinator = DocumentPickerCoordinator { result in
                 continuation.resume(with: result)
@@ -101,6 +222,7 @@ private extension UIViewController {
 private enum FileImporterError: Error {
     case presentationUnavailable
     case noSelection
+    case bookEntityUnavailable
 }
 
 private enum AssociatedKeys {
@@ -108,21 +230,30 @@ private enum AssociatedKeys {
 }
 
 private final class DocumentPickerCoordinator: NSObject, UIDocumentPickerDelegate {
-    private let completion: (Result<URL, Error>) -> Void
+    private let completion: (Result<[URL], Error>) -> Void
 
-    init(completion: @escaping (Result<URL, Error>) -> Void) {
+    init(completion: @escaping (Result<[URL], Error>) -> Void) {
         self.completion = completion
     }
 
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-        guard let firstURL = urls.first else {
+        guard !urls.isEmpty else {
             completion(.failure(FileImporterError.noSelection))
             return
         }
-        completion(.success(firstURL))
+        completion(.success(urls))
     }
 
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         completion(.failure(CancellationError()))
+    }
+}
+
+private extension Array where Element == URL {
+    func firstUnwrapped() throws -> URL {
+        guard let first else {
+            throw FileImporterError.noSelection
+        }
+        return first
     }
 }
