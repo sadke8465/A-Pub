@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 0.8
-NEXT_TASK       = 0.9
+LAST_COMPLETED  = 0.9
+NEXT_TASK       = 0.10
 GATES_PASSED    = []
-TASKS_DONE      = 8
+TASKS_DONE      = 9
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -295,7 +295,7 @@ Goal: app launches, opens one EPUB, renders it, turns pages, shows progress.
   TARGET   Core/Utilities/LeakAvoider.swift, Features/Reader/EPUBBridge.swift
   IMPL     LeakAvoider: final class, weak var delegate: WKScriptMessageHandler?, conforms to WKScriptMessageHandler, forwards didReceive to delegate. EPUBBridge: @MainActor final class, holds weak var webView: WKWebView?. func setup() -> WKWebViewConfiguration: creates WKWebViewConfiguration, creates WKUserContentController, adds LeakAvoider(delegate:self) for name “bridge”, sets allowFileAccessFromFileURLs preference, returns config. Conforms to WKScriptMessageHandler. switch on message body[“type”]: “relocated”→onRelocated(cfi:String,pct:Double), “bookReady”→onBookReady(), “selected”→onSelected(cfiRange:String,text:String), “markClicked”→onMarkClicked(id:String), “requestHighlights”→onRequestHighlights(spineHref:String), “chapterLoaded”→onChapterLoaded(). func callJS(_ js: String): calls webView?.evaluateJavaScript(js). deinit: removes “bridge” handler. Callbacks as var closures.
   VERIFY   No retain cycle: EPUBBridge does not strongly hold WKWebView. LeakAvoider.delegate is weak.
-- [ ] 0.9  Implement EPUBWebView
+- [x] 0.9  Implement EPUBWebView
   TARGET   Features/Reader/EPUBWebView.swift
   IMPL     struct EPUBWebView: UIViewRepresentable. @Binding var bridge: EPUBBridge. makeUIView: create WKWebView with bridge.setup() config, disable scrollView.isScrollEnabled, bounces=false, min/maxZoomScale=1.0, load reader.html with loadFileURL allowingReadAccessTo Resources/ directory. updateUIView: no-op. makeCoordinator returns Coordinator which owns bridge callbacks forwarded to SwiftUI via bindings. Exposes: func loadBook(base64: String) { bridge.callJS(“loadBook(’(base64)’)”) }. func nextPage() { bridge.callJS(“nextPage()”) }. func prevPage() { bridge.callJS(“prevPage()”) }.
   VERIFY   Instantiated in a SwiftUI preview without crashing.
