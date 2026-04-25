@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 1.3
-NEXT_TASK       = 1.4
+LAST_COMPLETED  = 1.4
+NEXT_TASK       = 1.5
 GATES_PASSED    = []
-TASKS_DONE      = 13
+TASKS_DONE      = 14
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -322,7 +322,7 @@ Goal: real library screen, cover extraction, shelves, Core Data schema.
   TARGET   Core/Utilities/MetadataExtractor.swift
   IMPL     Actor MetadataExtractor. func extract(from book: EPUBBook) -> BookMetadata. BookMetadata: struct mirroring Book entity fields (title, author, language, description, identifier). Pulls from EPUBBook already parsed — this is a mapping layer, no additional file I/O. Also computes sha256: Data of epub file → SHA256Digest via CryptoKit.SHA256.hash() → hex string.
   VERIFY   Called on a parsed EPUBBook returns non-empty title and valid sha256 hex string (64 chars).
-- [ ] 1.4  Implement CoverImageExtractor
+- [x] 1.4  Implement CoverImageExtractor
   TARGET   Core/Utilities/CoverImageExtractor.swift
   IMPL     Actor CoverImageExtractor. func extract(from book: EPUBBook, extractedRoot: URL) async throws -> URL?. Priority: (1) manifest item with properties containing “cover-image” → load → return JPEG path. (2) OPF meta name=“cover” → resolve id → load. (3) First img src in first spine item HTML (parse with XMLParser or regex). On success: resize to max 400x600 using UIGraphicsImageRenderer, write JPEG quality 0.85 to Application Support/covers/{sha256}.jpg. Return URL of written file.
   VERIFY   Running on a Standard Ebooks EPUB returns a non-nil URL pointing to a file that UIImage can load.
