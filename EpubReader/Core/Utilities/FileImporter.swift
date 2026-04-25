@@ -83,7 +83,7 @@ public struct FileImporter {
         let extractedRoot = try await extractor.extract(pickedURL)
         let book = try await parser.parse(extractedRoot: extractedRoot)
         let base64String = try await Self.encodeBase64(from: pickedURL)
-        let escapedBase64String = try await Self.escapeForSingleQuotedJavaScript(base64String)
+        let escapedBase64String = await Self.escapeForSingleQuotedJavaScript(base64String)
         return (book, base64String, escapedBase64String)
     }
 
@@ -98,8 +98,8 @@ public struct FileImporter {
         return data.base64EncodedString()
     }
 
-    nonisolated private static func escapeForSingleQuotedJavaScript(_ value: String) async throws -> String {
-        try await Task.detached(priority: .userInitiated) {
+    nonisolated private static func escapeForSingleQuotedJavaScript(_ value: String) async -> String {
+        await Task.detached(priority: .userInitiated) {
             value.replacingOccurrences(of: "'", with: "\\'")
         }.value
     }
@@ -226,7 +226,7 @@ private enum FileImporterError: Error {
 }
 
 private enum AssociatedKeys {
-    static let coordinator = "file_importer_document_picker_coordinator"
+    static var coordinator: UInt8 = 0
 }
 
 private final class DocumentPickerCoordinator: NSObject, UIDocumentPickerDelegate {
