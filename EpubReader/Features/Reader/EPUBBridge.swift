@@ -22,12 +22,11 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
 
     public var onRelocated: ((String, Double, String) -> Void)?
     public var onBookReady: (() -> Void)?
+    public var onBookError: ((String) -> Void)?
     public var onSelected: ((String, String) -> Void)?
     public var onMarkClicked: ((String) -> Void)?
     public var onRequestHighlights: ((String) -> Void)?
     public var onChapterLoaded: (() -> Void)?
-
-    private nonisolated(unsafe) weak var registeredContentController: WKUserContentController?
 
     public override init() {
         super.init()
@@ -42,8 +41,6 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         let proxy = LeakAvoider(delegate: self)
         contentController.add(proxy, name: Self.messageName)
         configuration.userContentController = contentController
-        configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-        registeredContentController = contentController
         return configuration
     }
 
@@ -71,6 +68,9 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
             onRelocated?(cfi, pct, spineHref)
         case "bookReady":
             onBookReady?()
+        case "bookError":
+            let message = body["message"] as? String ?? "Unknown book load error"
+            onBookError?(message)
         case "selected":
             let cfiRange = body["cfiRange"] as? String ?? ""
             let text = body["text"] as? String ?? ""
@@ -88,11 +88,12 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         }
     }
 
+    public func invalidate() {
+        webView?.configuration.userContentController.removeScriptMessageHandler(forName: Self.messageName)
+        webView = nil
+    }
+
     deinit {
-        let controller = registeredContentController
-        let name = EPUBBridge.messageName
-        Task { @MainActor in
-            controller?.removeScriptMessageHandler(forName: name)
-        }
+        // Cleanup is expected to be explicit via `invalidate()` by the owner.
     }
 }
