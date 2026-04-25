@@ -226,7 +226,7 @@ private enum FileImporterError: Error {
 }
 
 private enum AssociatedKeys {
-    static var coordinator = "file_importer_document_picker_coordinator"
+    static let coordinator = "file_importer_document_picker_coordinator"
 }
 
 private final class DocumentPickerCoordinator: NSObject, UIDocumentPickerDelegate {
