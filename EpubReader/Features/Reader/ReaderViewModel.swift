@@ -27,7 +27,7 @@ public final class ReaderViewModel: ObservableObject {
             defer { isLoading = false }
 
             do {
-                let result = try await importer.importEPUB()
+                let result = try await importer.importSingleEPUBForReader()
                 book = result.0
                 base64Book = result.1
                 escapedBase64Book = result.2

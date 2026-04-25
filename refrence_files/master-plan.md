@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 1.4
-NEXT_TASK       = 1.5
+LAST_COMPLETED  = 1.5
+NEXT_TASK       = 1.6
 GATES_PASSED    = []
-TASKS_DONE      = 14
+TASKS_DONE      = 15
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -326,7 +326,7 @@ Goal: real library screen, cover extraction, shelves, Core Data schema.
   TARGET   Core/Utilities/CoverImageExtractor.swift
   IMPL     Actor CoverImageExtractor. func extract(from book: EPUBBook, extractedRoot: URL) async throws -> URL?. Priority: (1) manifest item with properties containing “cover-image” → load → return JPEG path. (2) OPF meta name=“cover” → resolve id → load. (3) First img src in first spine item HTML (parse with XMLParser or regex). On success: resize to max 400x600 using UIGraphicsImageRenderer, write JPEG quality 0.85 to Application Support/covers/{sha256}.jpg. Return URL of written file.
   VERIFY   Running on a Standard Ebooks EPUB returns a non-nil URL pointing to a file that UIImage can load.
-- [ ] 1.5  Upgrade FileImporter with deduplication and progress
+- [x] 1.5  Upgrade FileImporter with deduplication and progress
   TARGET   Core/Utilities/FileImporter.swift (update)
   IMPL     Update importEPUB to support multi-file selection (UIDocumentPickerViewController allowsMultipleSelection=true). For each file: compute sha256 first, check Core Data for existing Book with same sha256, skip if exists. Run extract+parse+coverExtract+metadataExtract on backgroundContext. Create Book NSManagedObject, populate all fields, save backgroundContext. Report progress via AsyncStream<ImportProgress> where ImportProgress = enum processing(filename)/done(Book)/skipped(filename)/failed(filename,Error).
   VERIFY   Import same EPUB twice → only one Book in Core Data. Import 5 books → all 5 appear.
