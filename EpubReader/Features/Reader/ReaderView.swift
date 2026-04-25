@@ -41,9 +41,12 @@ public struct ReaderView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Open EPUB") {
+                Button {
                     viewModel.loadFromFile()
+                } label: {
+                    Image(systemName: "folder")
                 }
+                .accessibilityLabel("Open EPUB")
             }
         }
     }
