@@ -1,10 +1,10 @@
 ## Audit Date: 2026-04-25
 
 ### Fixed in this session
-* **Reader Web Rendering Infrastructure (EPUBBridge + EPUBWebView):** Reader web views were not sharing a single `WKProcessPool`, and web content process termination was not handled, which violated the master plan WKWebView lifecycle/memory invariants.
-  * **Fix applied:** Configured `EPUBBridge` to use a shared static `WKProcessPool` for all reader web views. Added process termination handling via `WKNavigationDelegate.webViewWebContentProcessDidTerminate` in `EPUBWebView.Coordinator`, routing to a bridge recovery method that logs the fault and reloads the reader host page.
+* **Library Persistence Write Path (LibraryViewModel):** Library mutating operations (`createShelf`, `addBook(_:to:)`, `markBookFinished(_:)`, `softDelete(_:)`) were writing directly on the main/view context, violating the master plan invariant that all Core Data writes run on background contexts.
+  * **Fix applied:** Refactored these mutations to run through a shared background-write pipeline using `PersistenceController.backgroundContext()`, persisted changes from background contexts, and refreshed shelf UI state on successful shelf creation.
 
 ### Pending / Unfixed Mismatches
 * **None identified at critical severity in current scope after this audit.**
   * **Why it wasn't fixed:** N/A.
-  * **Recommended Next Steps:** Continue tracking medium/low-priority items separately and re-run architecture audit after major feature additions.
+  * **Recommended Next Steps:** Re-run an architecture audit after implementing additional reader-state persistence and sync tasks.

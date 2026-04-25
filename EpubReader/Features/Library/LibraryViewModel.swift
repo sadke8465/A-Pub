@@ -35,6 +35,7 @@ public final class LibraryViewModel: NSObject, ObservableObject {
     @Published public var isImporting = false
 
     private let importer: FileImporter
+    private let persistenceController: PersistenceController
     private let fetchedResultsController: NSFetchedResultsController<Book>
 
     private var context: NSManagedObjectContext {
@@ -43,9 +44,11 @@ public final class LibraryViewModel: NSObject, ObservableObject {
 
     public init(
         context: NSManagedObjectContext,
-        importer: FileImporter = FileImporter()
+        importer: FileImporter = FileImporter(),
+        persistenceController: PersistenceController = .shared
     ) {
         self.importer = importer
+        self.persistenceController = persistenceController
 
         let request = Book.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(key: "importedAt", ascending: false)]
@@ -127,19 +130,24 @@ public final class LibraryViewModel: NSObject, ObservableObject {
     }
 
     public func createShelf(named name: String) {
-        guard let entity = NSEntityDescription.entity(forEntityName: "Shelf", in: context) else {
-            Log.shared.error("Unable to create shelf: Shelf entity missing")
-            return
+        let shelfID = UUID()
+        let nextOrder = Int64(shelves.count)
+
+        performBackgroundWrite(logMessage: "Unable to create shelf", completion: { [weak self] in
+            self?.refreshShelves()
+        }) { backgroundContext in
+            guard let entity = NSEntityDescription.entity(forEntityName: "Shelf", in: backgroundContext) else {
+                Log.shared.error("Unable to create shelf: Shelf entity missing")
+                return
+            }
+
+            let shelf = Shelf(entity: entity, insertInto: backgroundContext)
+            shelf.id = shelfID
+            shelf.name = name
+            shelf.order = nextOrder
         }
 
-        let shelf = Shelf(entity: entity, insertInto: context)
-        shelf.id = UUID()
-        shelf.name = name
-        shelf.order = Int64(shelves.count)
-
-        saveContext(logMessage: "Unable to create shelf")
-        refreshShelves()
-        selectedShelfID = shelf.id
+        selectedShelfID = shelfID
     }
 
     public func addBook(_ book: Book, to shelf: Shelf) {
@@ -153,35 +161,45 @@ public final class LibraryViewModel: NSObject, ObservableObject {
             return
         }
 
-        let existingRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "ShelfMembership")
-        existingRequest.fetchLimit = 1
-        existingRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-            NSPredicate(format: "bookID == %@", bookID as CVarArg),
-            NSPredicate(format: "shelfID == %@", shelfID as CVarArg)
-        ])
+        let bookObjectID = book.objectID
+        let shelfObjectID = shelf.objectID
 
-        do {
-            let exists = try context.count(for: existingRequest) > 0
-            guard !exists else {
+        performBackgroundWrite(logMessage: "Unable to add book to shelf") { backgroundContext in
+            let existingRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "ShelfMembership")
+            existingRequest.fetchLimit = 1
+            existingRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+                NSPredicate(format: "bookID == %@", bookID as CVarArg),
+                NSPredicate(format: "shelfID == %@", shelfID as CVarArg)
+            ])
+
+            do {
+                let exists = try backgroundContext.count(for: existingRequest) > 0
+                guard !exists else {
+                    return
+                }
+            } catch {
+                Log.shared.error("Unable to check existing membership: \(error.localizedDescription)")
                 return
             }
-        } catch {
-            Log.shared.error("Unable to check existing membership: \(error.localizedDescription)")
-            return
+
+            guard let entity = NSEntityDescription.entity(forEntityName: "ShelfMembership", in: backgroundContext) else {
+                Log.shared.error("Unable to create membership: ShelfMembership entity missing")
+                return
+            }
+
+            guard let backgroundBook = try? backgroundContext.existingObject(with: bookObjectID) as? Book,
+                  let backgroundShelf = try? backgroundContext.existingObject(with: shelfObjectID) as? Shelf
+            else {
+                Log.shared.error("Unable to add book to shelf: object lookup failed")
+                return
+            }
+
+            let membership = ShelfMembership(entity: entity, insertInto: backgroundContext)
+            membership.bookID = bookID
+            membership.shelfID = shelfID
+            membership.book = backgroundBook
+            membership.shelf = backgroundShelf
         }
-
-        guard let entity = NSEntityDescription.entity(forEntityName: "ShelfMembership", in: context) else {
-            Log.shared.error("Unable to create membership: ShelfMembership entity missing")
-            return
-        }
-
-        let membership = ShelfMembership(entity: entity, insertInto: context)
-        membership.bookID = bookID
-        membership.shelfID = shelfID
-        membership.book = book
-        membership.shelf = shelf
-
-        saveContext(logMessage: "Unable to add book to shelf")
     }
 
     public func markBookFinished(_ book: Book) {
@@ -190,24 +208,40 @@ public final class LibraryViewModel: NSObject, ObservableObject {
             return
         }
 
-        let request = NSFetchRequest<ReadingProgress>(entityName: "ReadingProgress")
-        request.fetchLimit = 1
-        request.predicate = NSPredicate(format: "bookID == %@", bookID as CVarArg)
+        performBackgroundWrite(logMessage: "Unable to mark book as finished") { backgroundContext in
+            let request = NSFetchRequest<ReadingProgress>(entityName: "ReadingProgress")
+            request.fetchLimit = 1
+            request.predicate = NSPredicate(format: "bookID == %@", bookID as CVarArg)
 
-        do {
-            let progress = try context.fetch(request).first ?? makeReadingProgress(bookID: bookID)
-            progress.percentage = 1
-            progress.updatedAt = Date()
-            saveContext(logMessage: "Unable to mark book as finished")
-        } catch {
-            Log.shared.error("Unable to mark book as finished: \(error.localizedDescription)")
+            do {
+                let progress = try backgroundContext.fetch(request).first ?? Self.makeReadingProgress(bookID: bookID, in: backgroundContext)
+                progress.percentage = 1
+                progress.updatedAt = Date()
+            } catch {
+                Log.shared.error("Unable to mark book as finished: \(error.localizedDescription)")
+            }
         }
     }
 
     public func softDelete(_ book: Book) {
-        book.softDeleted = true
-        book.deletedAt = Date()
-        saveContext(logMessage: "Unable to delete book")
+        guard let bookID = book.value(forKey: "id") as? UUID else {
+            Log.shared.error("Unable to delete book: missing book ID")
+            return
+        }
+
+        performBackgroundWrite(logMessage: "Unable to delete book") { backgroundContext in
+            let request = NSFetchRequest<Book>(entityName: "Book")
+            request.fetchLimit = 1
+            request.predicate = NSPredicate(format: "id == %@", bookID as CVarArg)
+
+            guard let persistedBook = try backgroundContext.fetch(request).first else {
+                Log.shared.error("Unable to delete book: failed to find persisted Book")
+                return
+            }
+
+            persistedBook.softDeleted = true
+            persistedBook.deletedAt = Date()
+        }
     }
 
     public func refreshShelves() {
@@ -256,7 +290,7 @@ public final class LibraryViewModel: NSObject, ObservableObject {
         }
     }
 
-    private func makeReadingProgress(bookID: UUID) -> ReadingProgress {
+    nonisolated private static func makeReadingProgress(bookID: UUID, in context: NSManagedObjectContext) -> ReadingProgress {
         guard let entity = NSEntityDescription.entity(forEntityName: "ReadingProgress", in: context) else {
             let fallback = ReadingProgress(context: context)
             fallback.id = UUID()
@@ -273,17 +307,27 @@ public final class LibraryViewModel: NSObject, ObservableObject {
         return progress
     }
 
-    private func saveContext(logMessage: String) {
-        guard context.hasChanges else {
-            return
-        }
-
-        do {
-            try context.save()
-            performFetch()
-        } catch {
-            Log.shared.error("\(logMessage): \(error.localizedDescription)")
-            context.rollback()
+    private func performBackgroundWrite(
+        logMessage: String,
+        completion: (@MainActor () -> Void)? = nil,
+        operation: @escaping (NSManagedObjectContext) throws -> Void
+    ) {
+        let backgroundContext = persistenceController.backgroundContext()
+        backgroundContext.perform {
+            do {
+                try operation(backgroundContext)
+                if backgroundContext.hasChanges {
+                    try backgroundContext.save()
+                }
+                if let completion {
+                    Task { @MainActor in
+                        completion()
+                    }
+                }
+            } catch {
+                backgroundContext.rollback()
+                Log.shared.error("\(logMessage): \(error.localizedDescription)")
+            }
         }
     }
 }
