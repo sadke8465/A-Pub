@@ -59,6 +59,7 @@
                     window.bridge.send('relocated', {
                         cfi: location.start.cfi,
                         pct: location.start.percentage,
+                        spineHref: location.start.href || '',
                         atEnd: location.atEnd === true
                     });
                 });
