@@ -13,6 +13,8 @@
 		0A0000000000000000000C04 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 0A00000000000000000010A2 /* ZIPFoundation */; };
 		0A0000000000000000000C05 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 0A00000000000000000010A3 /* GRDB */; };
 		0A0000000000000000000C06 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B05 /* Logger.swift */; };
+		0A0000000000000000000C07 /* jszip.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B06 /* jszip.min.js */; };
+		0A0000000000000000000C08 /* epub.js in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B07 /* epub.js */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +23,8 @@
 		0A0000000000000000000B03 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0A0000000000000000000B04 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		0A0000000000000000000B05 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B06 /* jszip.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = jszip.min.js; sourceTree = "<group>"; };
+		0A0000000000000000000B07 /* epub.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = epub.js; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,10 +62,20 @@
 			children = (
 				0A00000000000000000000A4 /* App */,
 				0A00000000000000000000A7 /* Core */,
+				0A00000000000000000000A9 /* Resources */,
 				0A0000000000000000000B03 /* Assets.xcassets */,
 				0A00000000000000000000A5 /* Preview Content */,
 			);
 			path = EpubReader;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000A9 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B06 /* jszip.min.js */,
+				0A0000000000000000000B07 /* epub.js */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		0A00000000000000000000A7 /* Core */ = {
@@ -171,6 +185,8 @@
 			files = (
 				0A0000000000000000000C03 /* Preview Assets.xcassets in Resources */,
 				0A0000000000000000000C02 /* Assets.xcassets in Resources */,
+				0A0000000000000000000C07 /* jszip.min.js in Resources */,
+				0A0000000000000000000C08 /* epub.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
