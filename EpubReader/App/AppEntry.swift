@@ -4,17 +4,9 @@ import SwiftUI
 struct EpubReaderApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            NavigationStack {
+                ReaderView()
+            }
         }
     }
-}
-
-struct ContentView: View {
-    var body: some View {
-        Text("EpubReader")
-    }
-}
-
-#Preview {
-    ContentView()
 }

@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 0.9
-NEXT_TASK       = 0.10
+LAST_COMPLETED  = 0.10
+NEXT_TASK       = 1.1
 GATES_PASSED    = []
-TASKS_DONE      = 9
+TASKS_DONE      = 10
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -299,7 +299,7 @@ Goal: app launches, opens one EPUB, renders it, turns pages, shows progress.
   TARGET   Features/Reader/EPUBWebView.swift
   IMPL     struct EPUBWebView: UIViewRepresentable. @Binding var bridge: EPUBBridge. makeUIView: create WKWebView with bridge.setup() config, disable scrollView.isScrollEnabled, bounces=false, min/maxZoomScale=1.0, load reader.html with loadFileURL allowingReadAccessTo Resources/ directory. updateUIView: no-op. makeCoordinator returns Coordinator which owns bridge callbacks forwarded to SwiftUI via bindings. Exposes: func loadBook(base64: String) { bridge.callJS(“loadBook(’(base64)’)”) }. func nextPage() { bridge.callJS(“nextPage()”) }. func prevPage() { bridge.callJS(“prevPage()”) }.
   VERIFY   Instantiated in a SwiftUI preview without crashing.
-- [ ] 0.10  Implement FileImporter and ReaderView
+- [x] 0.10  Implement FileImporter and ReaderView
   TARGET   Core/Utilities/FileImporter.swift, Features/Reader/ReaderView.swift, Features/Reader/ReaderViewModel.swift
   IMPL     FileImporter: struct with func importEPUB() presenting UIDocumentPickerViewController for UTType.epub. On pick: calls EPUBExtractor.extract() then EPUBParser.parse() then loads data(contentsOf:) and base64Encodes, returns (EPUBBook, base64String). ReaderViewModel: @MainActor ObservableObject. @Published var book: EPUBBook?, isLoading: Bool, currentCFI: String = “”, percentage: Double = 0. Exposes loadFromFile(). ReaderView: SwiftUI view containing EPUBWebView + minimal overlay (shown/hidden on tap): back chevron, chapter title (book.spineItems[currentSpineIndex].label), progress label “(Int(percentage*100))%”, prev/next buttons. On appear with a book: calls loadBook(base64). Wire bridge callbacks: onRelocated → update currentCFI and percentage.
   VERIFY   Manually open a .epub from Files app. Book text renders. Tap next/prev buttons → pages turn. Progress percentage updates.
