@@ -279,7 +279,7 @@ Goal: app launches, opens one EPUB, renders it, turns pages, shows progress.
   TARGET   Resources/reader.html
   IMPL     Minimal HTML page that: (1) loads jszip.min.js then epub.js in <head>, (2) has <div id="viewer"> filling full viewport with overflow hidden, (3) defines window.bridge = { send: (type, data) => window.webkit.messageHandlers.bridge.postMessage({type,…data}) }, (4) defines async loadBook(base64) which calls ePub(base64,{encoding:‘base64’}), then book.renderTo(‘viewer’,{flow:‘paginated’,spread:‘none’,minSpreadWidth:9999,width:window.innerWidth,height:window.innerHeight}), attaches relocated/selected/markClicked events that call bridge.send(), then calls rendition.display() and after ready calls bridge.send(‘bookReady’,{}), (5) defines nextPage(), prevPage(), displayCFI(cfi), resizeRendition(w,h) as globals callable from Swift.
   VERIFY   File is valid HTML. Script tags reference correct filenames. No inline event handlers.
-- [ ] 0.5  Create reader.css
+- [x] 0.5  Create reader.css
   TARGET   Resources/reader.css
   IMPL     Base CSS injected into epub.js iframe content via rendition.themes. Defines: body{margin:0;padding:20px 24px;box-sizing:border-box} p{margin:0 0 1em 0;} img{max-width:100%;} a{color:inherit;} ::selection{background:#FEF08A;} Classes: .tts-highlight{background:rgba(254,240,138,0.6);border-radius:2px;} .hl-yellow{background:rgba(254,240,138,0.45);} .hl-green{background:rgba(187,247,208,0.45);} .hl-blue{background:rgba(191,219,254,0.45);} .hl-pink{background:rgba(251,207,232,0.45);} .hl-orange{background:rgba(253,215,170,0.45);}
   VERIFY   Valid CSS. All five highlight color classes present.
