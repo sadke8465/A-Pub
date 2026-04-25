@@ -200,12 +200,21 @@ public struct BookDetailView: View {
     }
 
     private var progressPercentage: Double {
-        let rawProgress: Double
-        if let progress = book.value(forKey: "readingProgress") as? NSManagedObject,
-           let percentage = progress.value(forKey: "percentage") as? Double {
-            rawProgress = percentage
-        } else {
-            rawProgress = 0
+        guard let context = book.managedObjectContext, let bookID = book.id else {
+            return 0
+        }
+
+        var rawProgress: Double = 0
+        context.performAndWait {
+            let request = NSFetchRequest<NSManagedObject>(entityName: "ReadingProgress")
+            request.predicate = NSPredicate(format: "bookID == %@", bookID as CVarArg)
+            request.sortDescriptors = [NSSortDescriptor(key: "updatedAt", ascending: false)]
+            request.fetchLimit = 1
+
+            if let progress = try? context.fetch(request).first,
+               let percentage = progress.value(forKey: "percentage") as? Double {
+                rawProgress = percentage
+            }
         }
 
         return max(0, min(rawProgress, 1))
