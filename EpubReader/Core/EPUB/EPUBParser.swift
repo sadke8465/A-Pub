@@ -120,7 +120,7 @@ public actor EPUBParser {
         var identifiers: [String] = []
 
         for child in node.children {
-            let name = stripPrefix(child.name)
+            let name = child.name
             let text = child.collectedText.trimmedWhitespace
             switch name {
             case "title": if !text.isEmpty { titles.append(text) }
@@ -144,7 +144,7 @@ public actor EPUBParser {
     private func parseManifest(_ node: XMLNode, opfDir: URL) -> [EPUBManifestItem] {
         var items: [EPUBManifestItem] = []
         items.reserveCapacity(node.children.count)
-        for child in node.children where stripPrefix(child.name) == "item" {
+        for child in node.children where child.name == "item" {
             guard
                 let id = child.attributes["id"],
                 let href = child.attributes["href"]
@@ -170,7 +170,7 @@ public actor EPUBParser {
 
     private func parseSpine(_ node: XMLNode) -> [String] {
         node.children.compactMap { child in
-            guard stripPrefix(child.name) == "itemref" else { return nil }
+            guard child.name == "itemref" else { return nil }
             return child.attributes["idref"]
         }
     }
@@ -231,7 +231,7 @@ public actor EPUBParser {
     }
 
     private func findTOCNav(in node: XMLNode) -> XMLNode? {
-        if stripPrefix(node.name) == "nav",
+        if node.name == "nav",
            let type = node.attributes["epub:type"], type.contains("toc") {
             return node
         }
@@ -243,11 +243,11 @@ public actor EPUBParser {
 
     private func parseNavList(_ ol: XMLNode, baseDir: URL) -> [EPUBChapter] {
         var chapters: [EPUBChapter] = []
-        for li in ol.children where stripPrefix(li.name) == "li" {
+        for li in ol.children where li.name == "li" {
             guard let anchor = li.firstDescendant(named: "a") else { continue }
             guard let href = anchor.attributes["href"] else { continue }
             let label = anchor.collectedText.trimmedWhitespace
-            let nestedOL = li.children.first(where: { stripPrefix($0.name) == "ol" })
+            let nestedOL = li.children.first(where: { $0.name == "ol" })
             let subChapters = nestedOL.map { parseNavList($0, baseDir: baseDir) } ?? []
             chapters.append(
                 EPUBChapter(
@@ -267,7 +267,7 @@ public actor EPUBParser {
         guard let navMap = root.firstDescendant(named: "navMap") else { return nil }
         let baseDir = url.deletingLastPathComponent()
         return navMap.children
-            .filter { stripPrefix($0.name) == "navPoint" }
+            .filter { $0.name == "navPoint" }
             .map { parseNavPoint($0, baseDir: baseDir) }
     }
 
@@ -280,7 +280,7 @@ public actor EPUBParser {
         let src = node.firstChild(named: "content")?.attributes["src"] ?? ""
         let href = resolveRelativePath(src, from: baseDir)
         let subPoints = node.children
-            .filter { stripPrefix($0.name) == "navPoint" }
+            .filter { $0.name == "navPoint" }
             .map { parseNavPoint($0, baseDir: baseDir) }
         return EPUBChapter(
             id: node.attributes["id"] ?? UUID().uuidString,
@@ -302,7 +302,7 @@ public actor EPUBParser {
             return cover.href
         }
 
-        for child in metadata.children where stripPrefix(child.name) == "meta" {
+        for child in metadata.children where child.name == "meta" {
             if child.attributes["name"] == "cover",
                let id = child.attributes["content"],
                let item = manifestByID[id] {
@@ -320,22 +320,26 @@ public actor EPUBParser {
         let parser = XMLParser(data: data)
         let builder = XMLTreeBuilder()
         parser.delegate = builder
-        parser.shouldProcessNamespaces = false
+        parser.shouldProcessNamespaces = true
         guard parser.parse() else { return nil }
         return builder.root
     }
 
-    private func stripPrefix(_ name: String) -> String {
-        if let colon = name.firstIndex(of: ":") {
-            return String(name[name.index(after: colon)...])
-        }
-        return name
-    }
-
     private func resolveRelativePath(_ path: String, from base: URL) -> URL {
-        let withoutFragment = path.split(separator: "#", maxSplits: 1).first.map(String.init) ?? path
-        let decoded = withoutFragment.removingPercentEncoding ?? withoutFragment
-        return URL(fileURLWithPath: decoded, relativeTo: base).standardizedFileURL
+        let parts = path.split(separator: "#", maxSplits: 1)
+        let pathPart = parts.first.map(String.init) ?? path
+        let fragment = parts.count > 1 ? String(parts[1]) : nil
+
+        let decoded = pathPart.removingPercentEncoding ?? pathPart
+        let fileURL = URL(fileURLWithPath: decoded, relativeTo: base).standardizedFileURL
+
+        if let fragment,
+           var components = URLComponents(url: fileURL, resolvingAgainstBaseURL: true) {
+            components.fragment = fragment
+            return components.url ?? fileURL
+        }
+
+        return fileURL
     }
 
     private func canonicalKey(for url: URL) -> String {
@@ -348,11 +352,14 @@ public actor EPUBParser {
 /// Minimal in-memory tree built from `XMLParser` events. The parser keeps
 /// qualified names (e.g. `dc:title`) so namespace prefixes survive.
 private final class XMLNode {
+    enum Content {
+        case text(String)
+        case child(XMLNode)
+    }
 
     let name: String
     var attributes: [String: String]
-    var children: [XMLNode] = []
-    var text: String = ""
+    private var contents: [Content] = []
     weak var parent: XMLNode?
 
     init(name: String, attributes: [String: String] = [:]) {
@@ -360,32 +367,51 @@ private final class XMLNode {
         self.attributes = attributes
     }
 
+    var children: [XMLNode] {
+        contents.compactMap {
+            if case let .child(child) = $0 {
+                return child
+            }
+            return nil
+        }
+    }
+
     var collectedText: String {
-        if children.isEmpty { return text }
-        var collected = text
-        for child in children {
-            collected += child.collectedText
+        var collected = ""
+        for content in contents {
+            switch content {
+            case let .text(value):
+                collected += value
+            case let .child(child):
+                collected += child.collectedText
+            }
         }
         return collected
     }
 
+    func append(text: String) {
+        guard !text.isEmpty else { return }
+        if case let .text(existing)? = contents.last {
+            contents[contents.count - 1] = .text(existing + text)
+        } else {
+            contents.append(.text(text))
+        }
+    }
+
+    func append(child: XMLNode) {
+        contents.append(.child(child))
+    }
+
     func firstChild(named name: String) -> XMLNode? {
-        children.first { stripped($0.name) == name }
+        children.first { $0.name == name }
     }
 
     func firstDescendant(named name: String) -> XMLNode? {
         for child in children {
-            if stripped(child.name) == name { return child }
+            if child.name == name { return child }
             if let found = child.firstDescendant(named: name) { return found }
         }
         return nil
-    }
-
-    private func stripped(_ value: String) -> String {
-        if let colon = value.firstIndex(of: ":") {
-            return String(value[value.index(after: colon)...])
-        }
-        return value
     }
 }
 
@@ -404,7 +430,7 @@ private final class XMLTreeBuilder: NSObject, XMLParserDelegate {
         let node = XMLNode(name: elementName, attributes: attributeDict)
         node.parent = current
         if let current {
-            current.children.append(node)
+            current.append(child: node)
         } else {
             root = node
         }
@@ -412,12 +438,12 @@ private final class XMLTreeBuilder: NSObject, XMLParserDelegate {
     }
 
     func parser(_ parser: XMLParser, foundCharacters string: String) {
-        current?.text += string
+        current?.append(text: string)
     }
 
     func parser(_ parser: XMLParser, foundCDATA CDATABlock: Data) {
         if let s = String(data: CDATABlock, encoding: .utf8) {
-            current?.text += s
+            current?.append(text: s)
         }
     }
 

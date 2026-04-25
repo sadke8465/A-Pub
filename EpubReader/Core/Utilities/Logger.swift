@@ -7,38 +7,50 @@ import os
 /// derived from `Bundle.main.bundleIdentifier`; the `category` is provided
 /// per call site (defaults to the source file ID) so log output is grouped
 /// meaningfully in Console.app and Instruments.
-public struct Log: Sendable {
+public final class Log: @unchecked Sendable {
 
     public static let shared = Log()
 
     private let subsystem: String
+    private let lock = OSAllocatedUnfairLock<[String: os.Logger]>(initialState: [:])
 
     private init() {
-        self.subsystem = Bundle.main.bundleIdentifier ?? "com.yourname.epubreader"
+        guard let subsystem = Bundle.main.bundleIdentifier else {
+            preconditionFailure("Could not determine bundle identifier for logger subsystem.")
+        }
+        self.subsystem = subsystem
     }
 
     private func logger(for category: String) -> os.Logger {
-        os.Logger(subsystem: subsystem, category: category)
+        lock.withLock { cache in
+            if let existing = cache[category] {
+                return existing
+            }
+
+            let created = os.Logger(subsystem: subsystem, category: category)
+            cache[category] = created
+            return created
+        }
     }
 
     public func debug(
         _ message: @autoclosure () -> String,
         category: String = #fileID
     ) {
-        logger(for: category).debug("\(message(), privacy: .public)")
+        logger(for: category).debug("\(message())")
     }
 
     public func info(
         _ message: @autoclosure () -> String,
         category: String = #fileID
     ) {
-        logger(for: category).info("\(message(), privacy: .public)")
+        logger(for: category).info("\(message())")
     }
 
     public func error(
         _ message: @autoclosure () -> String,
         category: String = #fileID
     ) {
-        logger(for: category).error("\(message(), privacy: .public)")
+        logger(for: category).error("\(message())")
     }
 }
