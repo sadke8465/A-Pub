@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 1.5
-NEXT_TASK       = 1.6
+LAST_COMPLETED  = 1.6
+NEXT_TASK       = 1.7
 GATES_PASSED    = []
-TASKS_DONE      = 15
+TASKS_DONE      = 16
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -330,7 +330,7 @@ Goal: real library screen, cover extraction, shelves, Core Data schema.
   TARGET   Core/Utilities/FileImporter.swift (update)
   IMPL     Update importEPUB to support multi-file selection (UIDocumentPickerViewController allowsMultipleSelection=true). For each file: compute sha256 first, check Core Data for existing Book with same sha256, skip if exists. Run extract+parse+coverExtract+metadataExtract on backgroundContext. Create Book NSManagedObject, populate all fields, save backgroundContext. Report progress via AsyncStream<ImportProgress> where ImportProgress = enum processing(filename)/done(Book)/skipped(filename)/failed(filename,Error).
   VERIFY   Import same EPUB twice → only one Book in Core Data. Import 5 books → all 5 appear.
-- [ ] 1.6  Build LibraryView and LibraryViewModel
+- [x] 1.6  Build LibraryView and LibraryViewModel
   TARGET   Features/Library/LibraryView.swift, Features/Library/LibraryViewModel.swift
   IMPL     LibraryViewModel: @MainActor ObservableObject. @FetchRequest or NSFetchedResultsController on Book entity sorted by importedAt desc. @Published var displayMode: DisplayMode (grid/list), sortOrder: SortOrder (title/author/lastRead/dateAdded), searchQuery: String. LibraryView: NavigationStack root. Toolbar: sort menu, display mode toggle, import button. Body: if books.isEmpty show empty state illustration + “Import your first book” text + import button. Else: switch on displayMode → LazyVGrid (2 cols iPhone, 4 cols iPad) or List. Filter by searchQuery against title+author.
   VERIFY   Library with 10 books shows grid. Toggle to list → shows list. Sort by title → alphabetical order.
