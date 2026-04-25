@@ -33,6 +33,9 @@ public struct ReaderView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
+        .onDisappear {
+            viewModel.teardownReader()
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Open EPUB") {

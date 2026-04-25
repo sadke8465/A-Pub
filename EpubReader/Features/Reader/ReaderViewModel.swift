@@ -43,7 +43,7 @@ public final class ReaderViewModel: ObservableObject {
         isOverlayVisible.toggle()
     }
 
-    deinit {
+    public func teardownReader() {
         bridge.invalidate()
     }
 
