@@ -59,10 +59,13 @@
                     window.rendition.on('relocated', function (location) {
                         window.bridge.send('relocated', {
                             cfi: location.start.cfi,
-                            pct: location.start.percentage,
+                            percentage: location.start.percentage,
                             spineHref: location.start.href || '',
                             atEnd: location.atEnd === true
                         });
+                        if (location.atEnd === true) {
+                            window.bridge.send('atChapterEnd', {});
+                        }
                     });
 
                     window.rendition.on('selected', function (cfiRange, contents) {

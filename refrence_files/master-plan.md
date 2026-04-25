@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2a.1
-NEXT_TASK       = 2a.2
+LAST_COMPLETED  = 2a.2
+NEXT_TASK       = 2a.3
 GATES_PASSED    = []
-TASKS_DONE      = 20
+TASKS_DONE      = 21
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -357,7 +357,7 @@ Goal: page turns feel like Apple Books. CFI saves and restores correctly.
   TARGET   Features/Reader/PageController.swift
   IMPL     @MainActor final class PageController: ObservableObject. @Published currentCFI: String, percentageInBook: Double, currentSpineIndex: Int. func onRelocated(cfi: String, pct: Double, atEnd: Bool): update published props, trigger CFI save (debounced 500ms via Task.sleep). func saveCFI(for bookID: UUID) async: upsert ReadingProgress in Core Data backgroundContext. func restoreCFI(for bookID: UUID) async -> String?: fetch ReadingProgress, return cfi or nil.
   VERIFY   After simulating onRelocated, Core Data contains ReadingProgress with matching cfi.
-- [ ] 2a.2  Configure paginated rendition in reader.html
+- [x] 2a.2  Configure paginated rendition in reader.html
   TARGET   Resources/reader.html (update)
   IMPL     In loadBook(): set rendition options flow:‘paginated’, spread:‘none’, minSpreadWidth:9999. After rendition created: rendition.on(‘relocated’, loc => { bridge.send(‘relocated’,{cfi:loc.start.cfi, percentage:loc.start.percentage, atEnd:loc.atEnd}) }). Expose resizeRendition(w,h) = rendition.resize(w,h). Expose displayCFI(cfi) = rendition.display(cfi). On relocated, also call: if(loc.atEnd) bridge.send(‘atChapterEnd’,{}).
   VERIFY   After loadBook() call from Swift, relocated event fires and bridge receives it.
