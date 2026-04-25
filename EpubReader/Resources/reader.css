@@ -1,0 +1,46 @@
+body {
+    margin: 0;
+    padding: 20px 24px;
+    box-sizing: border-box;
+}
+
+p {
+    margin: 0 0 1em 0;
+}
+
+img {
+    max-width: 100%;
+}
+
+a {
+    color: inherit;
+}
+
+::selection {
+    background: #FEF08A;
+}
+
+.tts-highlight {
+    background: rgba(254, 240, 138, 0.6);
+    border-radius: 2px;
+}
+
+.hl-yellow {
+    background: rgba(254, 240, 138, 0.45);
+}
+
+.hl-green {
+    background: rgba(187, 247, 208, 0.45);
+}
+
+.hl-blue {
+    background: rgba(191, 219, 254, 0.45);
+}
+
+.hl-pink {
+    background: rgba(251, 207, 232, 0.45);
+}
+
+.hl-orange {
+    background: rgba(253, 215, 170, 0.45);
+}

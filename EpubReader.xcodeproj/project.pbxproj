@@ -16,6 +16,7 @@
 		0A0000000000000000000C07 /* jszip.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B06 /* jszip.min.js */; };
 		0A0000000000000000000C08 /* epub.js in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B07 /* epub.js */; };
 		0A0000000000000000000C09 /* reader.html in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B08 /* reader.html */; };
+		0A0000000000000000000C0A /* reader.css in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B09 /* reader.css */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +28,7 @@
 		0A0000000000000000000B06 /* jszip.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = jszip.min.js; sourceTree = "<group>"; };
 		0A0000000000000000000B07 /* epub.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = epub.js; sourceTree = "<group>"; };
 		0A0000000000000000000B08 /* reader.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = reader.html; sourceTree = "<group>"; };
+		0A0000000000000000000B09 /* reader.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = reader.css; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +79,7 @@
 				0A0000000000000000000B06 /* jszip.min.js */,
 				0A0000000000000000000B07 /* epub.js */,
 				0A0000000000000000000B08 /* reader.html */,
+				0A0000000000000000000B09 /* reader.css */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -191,6 +194,7 @@
 				0A0000000000000000000C07 /* jszip.min.js in Resources */,
 				0A0000000000000000000C08 /* epub.js in Resources */,
 				0A0000000000000000000C09 /* reader.html in Resources */,
+				0A0000000000000000000C0A /* reader.css in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
