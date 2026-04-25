@@ -43,6 +43,10 @@ public final class ReaderViewModel: ObservableObject {
         isOverlayVisible.toggle()
     }
 
+    deinit {
+        bridge.invalidate()
+    }
+
     private func configureBridgeCallbacks() {
         bridge.onRelocated = { [weak self] cfi, pct, spineHref in
             guard let self else { return }
@@ -53,6 +57,10 @@ public final class ReaderViewModel: ObservableObject {
 
         bridge.onBookReady = {
             Log.shared.info("EPUB book ready")
+        }
+
+        bridge.onBookError = { message in
+            Log.shared.error("EPUB book load failed: \(message)")
         }
     }
 

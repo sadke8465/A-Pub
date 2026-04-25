@@ -13,7 +13,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: #FFFFFF;
+            background: #FFFFF8;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
@@ -45,50 +45,51 @@
             window.rendition = null;
 
             window.loadBook = async function (base64) {
-                window.book = ePub(base64, { encoding: 'base64' });
+                try {
+                    window.book = ePub(base64, { encoding: 'base64' });
 
-                window.rendition = window.book.renderTo('viewer', {
-                    flow: 'paginated',
-                    spread: 'none',
-                    minSpreadWidth: 9999,
-                    width: window.innerWidth,
-                    height: window.innerHeight
-                });
-
-                window.rendition.on('relocated', function (location) {
-                    window.bridge.send('relocated', {
-                        cfi: location.start.cfi,
-                        pct: location.start.percentage,
-                        spineHref: location.start.href || '',
-                        atEnd: location.atEnd === true
+                    window.rendition = window.book.renderTo('viewer', {
+                        flow: 'paginated',
+                        spread: 'none',
+                        minSpreadWidth: 9999,
+                        width: window.innerWidth,
+                        height: window.innerHeight
                     });
-                });
 
-                window.rendition.on('selected', function (cfiRange, contents) {
-                    var text = '';
-                    try {
-                        text = contents.window.getSelection().toString();
-                    } catch (_) {
-                        text = '';
-                    }
-                    window.bridge.send('selected', {
-                        cfiRange: cfiRange,
-                        text: text
+                    window.rendition.on('relocated', function (location) {
+                        window.bridge.send('relocated', {
+                            cfi: location.start.cfi,
+                            pct: location.start.percentage,
+                            spineHref: location.start.href || '',
+                            atEnd: location.atEnd === true
+                        });
                     });
-                });
 
-                window.rendition.on('markClicked', function (cfiRange, data) {
-                    var id = (data && data.id) ? data.id : cfiRange;
-                    window.bridge.send('markClicked', { id: id });
-                });
+                    window.rendition.on('selected', function (cfiRange, contents) {
+                        var text = '';
+                        try {
+                            text = contents.window.getSelection().toString();
+                        } catch (_) {
+                            text = '';
+                        }
+                        window.bridge.send('selected', {
+                            cfiRange: cfiRange,
+                            text: text
+                        });
+                    });
 
-                await window.rendition.display();
+                    window.rendition.on('markClicked', function (cfiRange, data) {
+                        var id = (data && data.id) ? data.id : cfiRange;
+                        window.bridge.send('markClicked', { id: id });
+                    });
 
-                window.book.ready.then(function () {
-                    return window.book.locations.generate(1024);
-                }).then(function () {
+                    await window.rendition.display();
+                    await window.book.ready;
                     window.bridge.send('bookReady', {});
-                });
+                } catch (error) {
+                    var message = (error && error.message) ? error.message : String(error);
+                    window.bridge.send('bookError', { message: message });
+                }
             };
 
             window.nextPage = function () {
