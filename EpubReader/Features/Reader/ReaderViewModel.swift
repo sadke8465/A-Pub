@@ -90,7 +90,7 @@ public final class ReaderViewModel: ObservableObject {
     }
 
     private func configureBridgeCallbacks() {
-        bridge.onRelocated = { [weak self] cfi, pct, spineHref in
+        bridge.onRelocated = { [weak self] cfi, pct, spineHref, _, _ in
             guard let self else { return }
             self.currentCFI = cfi
             self.percentage = pct

@@ -21,7 +21,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
 
     public weak var webView: WKWebView?
 
-    public var onRelocated: ((String, Double, String) -> Void)?
+    public var onRelocated: ((String, Double, String, Int64, String) -> Void)?
     public var onBookReady: (() -> Void)?
     public var onBookError: ((String) -> Void)?
     public var onSelected: ((String, String) -> Void)?
@@ -68,7 +68,9 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
             let cfi = body["cfi"] as? String ?? ""
             let pct = (body["percentage"] as? Double) ?? (body["pct"] as? Double) ?? 0
             let spineHref = body["spineHref"] as? String ?? ""
-            onRelocated?(cfi, pct, spineHref)
+            let characterOffset = body["characterOffset"] as? Int64 ?? 0
+            let contextSnippet = body["contextSnippet"] as? String ?? ""
+            onRelocated?(cfi, pct, spineHref, characterOffset, contextSnippet)
         case "bookReady":
             onBookReady?()
         case "bookError":

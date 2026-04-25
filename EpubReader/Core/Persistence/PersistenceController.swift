@@ -66,6 +66,7 @@ final class PersistenceController {
             book.setValue(testEPUBURL.path, forKey: "filePath")
             book.setValue("en", forKey: "language")
             book.setValue(Date(), forKey: "importedAt")
+            book.setValue(false, forKey: "isDeleted")
             book.setValue(false, forKey: "softDeleted")
 
             try context.save()
