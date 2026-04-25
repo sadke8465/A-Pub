@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 1.1
-NEXT_TASK       = 1.2
+LAST_COMPLETED  = 1.2
+NEXT_TASK       = 1.3
 GATES_PASSED    = []
-TASKS_DONE      = 11
+TASKS_DONE      = 12
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -314,7 +314,7 @@ Goal: real library screen, cover extraction, shelves, Core Data schema.
   TARGET   EpubReader.xcdatamodeld
   IMPL     Create via File→New in Xcode. Entities and attributes as listed in ARCH CORE_DATA_ENTITIES. All UUID attributes: type UUID. All String attributes: type String, optional where noted. Relationships: Book↔Shelf via ShelfMembership (many-to-many). ReadingProgress→Book (one-to-one by bookID, not a CD relationship, store UUID manually for CloudKit compatibility). Generate NSManagedObject subclasses for all entities. Set Module to “Current Product Module”.
   VERIFY   Model compiles. NSManagedObject subclasses visible to Swift.
-- [ ] 1.2  Implement PersistenceController
+- [x] 1.2  Implement PersistenceController
   TARGET   Core/Persistence/PersistenceController.swift
   IMPL     @MainActor final class PersistenceController. static let shared. lazy var container: NSPersistentContainer (not CloudKit yet — added in 6a.1). var viewContext: NSManagedObjectContext { container.viewContext }. func backgroundContext() -> NSManagedObjectContext: newBackgroundContext with mergePolicy=NSMergeByPropertyObjectTrumpMergePolicy. viewContext.automaticallyMergesChangesFromParent = true. In DEBUG: seed with one test Book pointing to a bundled test.epub if library is empty.
   VERIFY   App launches, PersistenceController.shared does not crash, viewContext accessible.
