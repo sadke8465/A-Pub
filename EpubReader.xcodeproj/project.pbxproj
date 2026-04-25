@@ -18,6 +18,9 @@
 		0A0000000000000000000C09 /* reader.html in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B08 /* reader.html */; };
 		0A0000000000000000000C0A /* reader.css in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B09 /* reader.css */; };
 		0A0000000000000000000C0B /* EPUBExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B0A /* EPUBExtractor.swift */; };
+		0A0000000000000000000C0C /* EPUBChapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B0B /* EPUBChapter.swift */; };
+		0A0000000000000000000C0D /* EPUBBook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B0C /* EPUBBook.swift */; };
+		0A0000000000000000000C0E /* EPUBParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B0D /* EPUBParser.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +34,9 @@
 		0A0000000000000000000B08 /* reader.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = reader.html; sourceTree = "<group>"; };
 		0A0000000000000000000B09 /* reader.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = reader.css; sourceTree = "<group>"; };
 		0A0000000000000000000B0A /* EPUBExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBExtractor.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B0B /* EPUBChapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBChapter.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B0C /* EPUBBook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBBook.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B0D /* EPUBParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBParser.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +105,9 @@
 			isa = PBXGroup;
 			children = (
 				0A0000000000000000000B0A /* EPUBExtractor.swift */,
+				0A0000000000000000000B0B /* EPUBChapter.swift */,
+				0A0000000000000000000B0C /* EPUBBook.swift */,
+				0A0000000000000000000B0D /* EPUBParser.swift */,
 			);
 			path = EPUB;
 			sourceTree = "<group>";
@@ -219,6 +228,9 @@
 				0A0000000000000000000C01 /* AppEntry.swift in Sources */,
 				0A0000000000000000000C06 /* Logger.swift in Sources */,
 				0A0000000000000000000C0B /* EPUBExtractor.swift in Sources */,
+				0A0000000000000000000C0C /* EPUBChapter.swift in Sources */,
+				0A0000000000000000000C0D /* EPUBBook.swift in Sources */,
+				0A0000000000000000000C0E /* EPUBParser.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

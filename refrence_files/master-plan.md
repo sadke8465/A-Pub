@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 0.6
-NEXT_TASK       = 0.7
+LAST_COMPLETED  = 0.7
+NEXT_TASK       = 0.8
 GATES_PASSED    = []
-TASKS_DONE      = 6
+TASKS_DONE      = 7
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -287,7 +287,7 @@ Goal: app launches, opens one EPUB, renders it, turns pages, shows progress.
   TARGET   Core/EPUB/EPUBExtractor.swift
   IMPL     Actor EPUBExtractor. Single method: func extract(_ url: URL) async throws -> URL. Unzips .epub using ZIPFoundation Archive into FileManager.default.temporaryDirectory / UUID().uuidString. Returns the extracted root directory URL. On failure throws EPUBError.extractionFailed. Cleans up temp dir if extraction fails midway.
   VERIFY   Unit test: extract a real .epub → returned URL exists on disk, contains META-INF/container.xml.
-- [ ] 0.7  Implement EPUBParser
+- [x] 0.7  Implement EPUBParser
   TARGET   Core/EPUB/EPUBParser.swift, Core/EPUB/EPUBBook.swift, Core/EPUB/EPUBChapter.swift
   IMPL     EPUBBook: struct with title(String) author(String) language(String) identifier(String) spineItems([EPUBChapter]) manifestItems([EPUBManifestItem]) coverImagePath(URL?). EPUBChapter: struct id(String) href(URL) mediaType(String) label(String) subChapters([EPUBChapter]). EPUBParser: actor with func parse(extractedRoot: URL) async throws -> EPUBBook. Parse META-INF/container.xml with XMLParser → find OPF full-path. Parse OPF: extract <metadata> dc:title/dc:creator/dc:language/dc:identifier, build manifest dict keyed by id, build spine array of EPUBChapter in order. For TOC: prefer EPUB3 nav document (manifest item with properties=“nav”) parsed for <nav epub:type="toc"> hierarchy; fall back to NCX toc.ncx. Cover: check manifest for properties=“cover-image” → if not found check <meta name="cover" content="id"> → resolve to absolute URL from OPF directory.
   VERIFY   Unit test: parse Moby Dick from Standard Ebooks → title=“Moby Dick”, author contains “Melville”, spineItems.count > 100.
