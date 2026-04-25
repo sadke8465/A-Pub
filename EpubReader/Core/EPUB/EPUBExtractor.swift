@@ -6,6 +6,9 @@ public enum EPUBError: Error, Sendable {
     /// The archive could not be opened, was malformed, or the destination
     /// could not be written.
     case extractionFailed
+    /// The EPUB metadata could not be parsed: a required file is missing,
+    /// XML is malformed, or the OPF structure is invalid.
+    case parseFailed
 }
 
 /// Expands an `.epub` archive into a unique temporary directory.
