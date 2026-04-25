@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 0.10
-NEXT_TASK       = 1.1
+LAST_COMPLETED  = 1.1
+NEXT_TASK       = 1.2
 GATES_PASSED    = []
-TASKS_DONE      = 10
+TASKS_DONE      = 11
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -310,7 +310,7 @@ PHASE_0_MILESTONE: Open an EPUB from Files. Renders. Pages turn. Percentage show
 
 Goal: real library screen, cover extraction, shelves, Core Data schema.
 
-- [ ] 1.1  Define Core Data model
+- [x] 1.1  Define Core Data model
   TARGET   EpubReader.xcdatamodeld
   IMPL     Create via File→New in Xcode. Entities and attributes as listed in ARCH CORE_DATA_ENTITIES. All UUID attributes: type UUID. All String attributes: type String, optional where noted. Relationships: Book↔Shelf via ShelfMembership (many-to-many). ReadingProgress→Book (one-to-one by bookID, not a CD relationship, store UUID manually for CloudKit compatibility). Generate NSManagedObject subclasses for all entities. Set Module to “Current Product Module”.
   VERIFY   Model compiles. NSManagedObject subclasses visible to Swift.

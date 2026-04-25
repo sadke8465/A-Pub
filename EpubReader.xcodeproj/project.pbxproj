@@ -27,6 +27,7 @@
 		0A0000000000000000000C12 /* FileImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B11 /* FileImporter.swift */; };
 		0A0000000000000000000C13 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B12 /* ReaderView.swift */; };
 		0A0000000000000000000C14 /* ReaderViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B13 /* ReaderViewModel.swift */; };
+		0A0000000000000000000C15 /* EpubReader.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B14 /* EpubReader.xcdatamodeld */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,6 +50,7 @@
 		0A0000000000000000000B11 /* FileImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileImporter.swift; sourceTree = "<group>"; };
 		0A0000000000000000000B12 /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
 		0A0000000000000000000B13 /* ReaderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderViewModel.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B14 /* EpubReader.xcdatamodeld */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodeld; path = EpubReader.xcdatamodeld; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +90,7 @@
 				0A00000000000000000000AB /* Features */,
 				0A00000000000000000000A7 /* Core */,
 				0A00000000000000000000A9 /* Resources */,
+				0A0000000000000000000B14 /* EpubReader.xcdatamodeld */,
 				0A0000000000000000000B03 /* Assets.xcassets */,
 				0A00000000000000000000A5 /* Preview Content */,
 			);
@@ -271,6 +274,7 @@
 				0A0000000000000000000C12 /* FileImporter.swift in Sources */,
 				0A0000000000000000000C13 /* ReaderView.swift in Sources */,
 				0A0000000000000000000C14 /* ReaderViewModel.swift in Sources */,
+				0A0000000000000000000C15 /* EpubReader.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
