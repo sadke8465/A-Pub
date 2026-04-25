@@ -23,6 +23,7 @@
 		0A0000000000000000000C0E /* EPUBParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B0D /* EPUBParser.swift */; };
 		0A0000000000000000000C0F /* LeakAvoider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B0E /* LeakAvoider.swift */; };
 		0A0000000000000000000C10 /* EPUBBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B0F /* EPUBBridge.swift */; };
+		0A0000000000000000000C11 /* EPUBWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B10 /* EPUBWebView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 		0A0000000000000000000B0D /* EPUBParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBParser.swift; sourceTree = "<group>"; };
 		0A0000000000000000000B0E /* LeakAvoider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeakAvoider.swift; sourceTree = "<group>"; };
 		0A0000000000000000000B0F /* EPUBBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBBridge.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B10 /* EPUBWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBWebView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +100,7 @@
 			isa = PBXGroup;
 			children = (
 				0A0000000000000000000B0F /* EPUBBridge.swift */,
+				0A0000000000000000000B10 /* EPUBWebView.swift */,
 			);
 			path = Reader;
 			sourceTree = "<group>";
@@ -255,6 +258,7 @@
 				0A0000000000000000000C0E /* EPUBParser.swift in Sources */,
 				0A0000000000000000000C0F /* LeakAvoider.swift in Sources */,
 				0A0000000000000000000C10 /* EPUBBridge.swift in Sources */,
+				0A0000000000000000000C11 /* EPUBWebView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
