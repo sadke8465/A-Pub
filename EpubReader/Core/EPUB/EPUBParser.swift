@@ -74,6 +74,7 @@ public actor EPUBParser {
             author: metadata.author,
             language: metadata.language,
             identifier: metadata.identifier,
+            description: metadata.description,
             spineItems: spineItems,
             manifestItems: manifestItems,
             coverImagePath: coverImagePath
@@ -111,6 +112,7 @@ public actor EPUBParser {
         var author: String
         var language: String
         var identifier: String
+        var description: String
     }
 
     private func parseMetadata(_ node: XMLNode) -> ParsedMetadata {
@@ -118,6 +120,7 @@ public actor EPUBParser {
         var authors: [String] = []
         var languages: [String] = []
         var identifiers: [String] = []
+        var descriptions: [String] = []
 
         for child in node.children {
             let name = child.name
@@ -127,6 +130,7 @@ public actor EPUBParser {
             case "creator": if !text.isEmpty { authors.append(text) }
             case "language": if !text.isEmpty { languages.append(text) }
             case "identifier": if !text.isEmpty { identifiers.append(text) }
+            case "description": if !text.isEmpty { descriptions.append(text) }
             default: break
             }
         }
@@ -135,7 +139,8 @@ public actor EPUBParser {
             title: titles.first ?? "",
             author: authors.joined(separator: ", "),
             language: languages.first ?? "",
-            identifier: identifiers.first ?? ""
+            identifier: identifiers.first ?? "",
+            description: descriptions.first ?? ""
         )
     }
 

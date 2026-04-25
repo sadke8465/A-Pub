@@ -32,6 +32,7 @@ public struct EPUBBook: Sendable, Hashable {
     public let author: String
     public let language: String
     public let identifier: String
+    public let description: String
     public let spineItems: [EPUBChapter]
     public let manifestItems: [EPUBManifestItem]
     public let coverImagePath: URL?
@@ -41,6 +42,7 @@ public struct EPUBBook: Sendable, Hashable {
         author: String,
         language: String,
         identifier: String,
+        description: String = "",
         spineItems: [EPUBChapter],
         manifestItems: [EPUBManifestItem],
         coverImagePath: URL?
@@ -49,6 +51,7 @@ public struct EPUBBook: Sendable, Hashable {
         self.author = author
         self.language = language
         self.identifier = identifier
+        self.description = description
         self.spineItems = spineItems
         self.manifestItems = manifestItems
         self.coverImagePath = coverImagePath

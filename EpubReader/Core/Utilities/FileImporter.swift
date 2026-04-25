@@ -58,7 +58,11 @@ public struct FileImporter {
                         let extractedRoot = try await extractor.extract(persistedURL)
                         let parsedBook = try await parser.parse(extractedRoot: extractedRoot)
                         let metadata = await metadataExtractor.extract(from: parsedBook, epubData: epubData)
-                        let coverURL = try await coverExtractor.extract(from: parsedBook, extractedRoot: extractedRoot)
+                        let coverURL = try await coverExtractor.extract(
+                            from: parsedBook,
+                            extractedRoot: extractedRoot,
+                            sha256: sha256
+                        )
 
                         let importedBook = try await Self.insertBook(
                             in: backgroundContext,

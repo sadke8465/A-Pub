@@ -35,7 +35,7 @@ public actor MetadataExtractor {
             title: book.title,
             author: book.author,
             language: book.language,
-            bookDescription: "",
+            bookDescription: book.description,
             identifier: book.identifier,
             sha256: Self.sha256Hex(for: epubData)
         )
@@ -47,7 +47,7 @@ public actor MetadataExtractor {
             title: book.title,
             author: book.author,
             language: book.language,
-            bookDescription: "",
+            bookDescription: book.description,
             identifier: book.identifier,
             sha256: Self.sha256Hex(for: fallbackData)
         )

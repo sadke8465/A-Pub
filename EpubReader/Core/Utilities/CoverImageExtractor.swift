@@ -1,4 +1,3 @@
-import CryptoKit
 import Foundation
 import UIKit
 
@@ -12,7 +11,7 @@ public actor CoverImageExtractor {
 
     public init() {}
 
-    public func extract(from book: EPUBBook, extractedRoot: URL) async throws -> URL? {
+    public func extract(from book: EPUBBook, extractedRoot: URL, sha256: String) async throws -> URL? {
         guard let sourceURL = try await locateCoverURL(from: book, extractedRoot: extractedRoot) else {
             Log.shared.info("Cover extraction: no candidate found for \(book.title)")
             return nil
@@ -29,7 +28,7 @@ public actor CoverImageExtractor {
             throw CoverImageExtractorError.cannotEncodeJPEG
         }
 
-        let destinationURL = try destinationURL(for: book)
+        let destinationURL = try destinationURL(forSHA256: sha256)
         do {
             try jpegData.write(to: destinationURL, options: .atomic)
             return destinationURL
@@ -108,7 +107,7 @@ public actor CoverImageExtractor {
         }
     }
 
-    private func destinationURL(for book: EPUBBook) throws -> URL {
+    private func destinationURL(forSHA256 sha256: String) throws -> URL {
         guard let applicationSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             throw CoverImageExtractorError.cannotCreateApplicationSupportDirectory
         }
@@ -121,13 +120,7 @@ public actor CoverImageExtractor {
             throw CoverImageExtractorError.cannotCreateApplicationSupportDirectory
         }
 
-        let seed = book.identifier.isEmpty ? "\(book.title)-\(book.author)-\(book.language)" : book.identifier
-        let hash = Self.sha256Hex(for: Data(seed.utf8))
-        return coversDirectory.appendingPathComponent("\(hash).jpg")
-    }
-
-    nonisolated private static func sha256Hex(for data: Data) -> String {
-        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        return coversDirectory.appendingPathComponent("\(sha256).jpg")
     }
 }
 
