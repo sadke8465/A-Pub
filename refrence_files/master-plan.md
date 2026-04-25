@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 0.2
-NEXT_TASK       = 0.3
+LAST_COMPLETED  = 0.4
+NEXT_TASK       = 0.5
 GATES_PASSED    = []
-TASKS_DONE      = 2
+TASKS_DONE      = 4
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -275,7 +275,7 @@ Goal: app launches, opens one EPUB, renders it, turns pages, shows progress.
   TARGET   Resources/jszip.min.js, Resources/epub.js
   IMPL     Download jszip 3.10.1 minified from https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js and epub.js 0.3.93 from https://github.com/futurepress/epub.js/releases/tag/v0.3.93 (use epub.js not epub.min.js for debuggability). Add both files to Xcode target. jszip MUST be listed before epub.js in reader.html script tags.
   VERIFY   Both files present in Resources/ and added to app target. File sizes: jszip >100KB, epub.js >200KB.
-- [ ] 0.4  Create reader.html
+- [x] 0.4  Create reader.html
   TARGET   Resources/reader.html
   IMPL     Minimal HTML page that: (1) loads jszip.min.js then epub.js in <head>, (2) has <div id="viewer"> filling full viewport with overflow hidden, (3) defines window.bridge = { send: (type, data) => window.webkit.messageHandlers.bridge.postMessage({type,…data}) }, (4) defines async loadBook(base64) which calls ePub(base64,{encoding:‘base64’}), then book.renderTo(‘viewer’,{flow:‘paginated’,spread:‘none’,minSpreadWidth:9999,width:window.innerWidth,height:window.innerHeight}), attaches relocated/selected/markClicked events that call bridge.send(), then calls rendition.display() and after ready calls bridge.send(‘bookReady’,{}), (5) defines nextPage(), prevPage(), displayCFI(cfi), resizeRendition(w,h) as globals callable from Swift.
   VERIFY   File is valid HTML. Script tags reference correct filenames. No inline event handlers.
