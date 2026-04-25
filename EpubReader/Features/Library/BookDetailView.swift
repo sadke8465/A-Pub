@@ -267,19 +267,29 @@ public struct BookDetailView: View {
     private func saveChanges() {
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedAuthor = author.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedTitle = trimmedTitle.isEmpty ? "Untitled" : trimmedTitle
+        let normalizedAuthor = trimmedAuthor.isEmpty ? "Unknown Author" : trimmedAuthor
 
-        book.title = trimmedTitle.isEmpty ? "Untitled" : trimmedTitle
-        book.author = trimmedAuthor.isEmpty ? "Unknown Author" : trimmedAuthor
+        let objectID = book.objectID
+        let backgroundContext = PersistenceController.shared.backgroundContext()
 
-        guard let context = book.managedObjectContext else {
-            return
-        }
+        backgroundContext.perform {
+            do {
+                guard let persistedBook = try backgroundContext.existingObject(with: objectID) as? Book else {
+                    Log.shared.error("Unable to save metadata edits: book lookup failed")
+                    return
+                }
 
-        do {
-            try context.save()
-        } catch {
-            context.rollback()
-            Log.shared.error("Unable to save metadata edits: \(error.localizedDescription)")
+                persistedBook.title = normalizedTitle
+                persistedBook.author = normalizedAuthor
+
+                if backgroundContext.hasChanges {
+                    try backgroundContext.save()
+                }
+            } catch {
+                backgroundContext.rollback()
+                Log.shared.error("Unable to save metadata edits: \(error.localizedDescription)")
+            }
         }
     }
 }
