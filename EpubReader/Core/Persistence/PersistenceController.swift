@@ -10,7 +10,7 @@ final class PersistenceController {
 
         container.loadPersistentStores { _, error in
             if let error {
-                Logger.shared.error("Failed to load persistent stores: \(error.localizedDescription)")
+                Log.shared.error("Failed to load persistent stores: \(error.localizedDescription)")
                 fatalError("Unresolved error loading persistent store: \(error)")
             }
         }
@@ -50,12 +50,12 @@ final class PersistenceController {
             }
 
             guard let testEPUBURL = Bundle.main.url(forResource: "test", withExtension: "epub") else {
-                Logger.shared.debug("Skipping debug seed: bundled test.epub was not found")
+                Log.shared.debug("Skipping debug seed: bundled test.epub was not found")
                 return
             }
 
             guard let entity = NSEntityDescription.entity(forEntityName: "Book", in: context) else {
-                Logger.shared.error("Skipping debug seed: Book entity not found")
+                Log.shared.error("Skipping debug seed: Book entity not found")
                 return
             }
 
@@ -69,9 +69,9 @@ final class PersistenceController {
             book.setValue(false, forKey: "isDeleted")
 
             try context.save()
-            Logger.shared.info("Seeded debug library with bundled test.epub")
+            Log.shared.info("Seeded debug library with bundled test.epub")
         } catch {
-            Logger.shared.error("Failed to seed debug book: \(error.localizedDescription)")
+            Log.shared.error("Failed to seed debug book: \(error.localizedDescription)")
         }
     }
 #endif
