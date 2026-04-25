@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 0.7
-NEXT_TASK       = 0.8
+LAST_COMPLETED  = 0.8
+NEXT_TASK       = 0.9
 GATES_PASSED    = []
-TASKS_DONE      = 7
+TASKS_DONE      = 8
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -291,7 +291,7 @@ Goal: app launches, opens one EPUB, renders it, turns pages, shows progress.
   TARGET   Core/EPUB/EPUBParser.swift, Core/EPUB/EPUBBook.swift, Core/EPUB/EPUBChapter.swift
   IMPL     EPUBBook: struct with title(String) author(String) language(String) identifier(String) spineItems([EPUBChapter]) manifestItems([EPUBManifestItem]) coverImagePath(URL?). EPUBChapter: struct id(String) href(URL) mediaType(String) label(String) subChapters([EPUBChapter]). EPUBParser: actor with func parse(extractedRoot: URL) async throws -> EPUBBook. Parse META-INF/container.xml with XMLParser → find OPF full-path. Parse OPF: extract <metadata> dc:title/dc:creator/dc:language/dc:identifier, build manifest dict keyed by id, build spine array of EPUBChapter in order. For TOC: prefer EPUB3 nav document (manifest item with properties=“nav”) parsed for <nav epub:type="toc"> hierarchy; fall back to NCX toc.ncx. Cover: check manifest for properties=“cover-image” → if not found check <meta name="cover" content="id"> → resolve to absolute URL from OPF directory.
   VERIFY   Unit test: parse Moby Dick from Standard Ebooks → title=“Moby Dick”, author contains “Melville”, spineItems.count > 100.
-- [ ] 0.8  Implement LeakAvoider and EPUBBridge
+- [x] 0.8  Implement LeakAvoider and EPUBBridge
   TARGET   Core/Utilities/LeakAvoider.swift, Features/Reader/EPUBBridge.swift
   IMPL     LeakAvoider: final class, weak var delegate: WKScriptMessageHandler?, conforms to WKScriptMessageHandler, forwards didReceive to delegate. EPUBBridge: @MainActor final class, holds weak var webView: WKWebView?. func setup() -> WKWebViewConfiguration: creates WKWebViewConfiguration, creates WKUserContentController, adds LeakAvoider(delegate:self) for name “bridge”, sets allowFileAccessFromFileURLs preference, returns config. Conforms to WKScriptMessageHandler. switch on message body[“type”]: “relocated”→onRelocated(cfi:String,pct:Double), “bookReady”→onBookReady(), “selected”→onSelected(cfiRange:String,text:String), “markClicked”→onMarkClicked(id:String), “requestHighlights”→onRequestHighlights(spineHref:String), “chapterLoaded”→onChapterLoaded(). func callJS(_ js: String): calls webView?.evaluateJavaScript(js). deinit: removes “bridge” handler. Callbacks as var closures.
   VERIFY   No retain cycle: EPUBBridge does not strongly hold WKWebView. LeakAvoider.delegate is weak.
