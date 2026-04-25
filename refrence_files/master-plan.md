@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 0.1
-NEXT_TASK       = 0.2
+LAST_COMPLETED  = 0.2
+NEXT_TASK       = 0.3
 GATES_PASSED    = []
-TASKS_DONE      = 1
+TASKS_DONE      = 2
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -267,7 +267,7 @@ Goal: app launches, opens one EPUB, renders it, turns pages, shows progress.
   TARGET   EpubReader.xcodeproj
   IMPL     New iOS App, SwiftUI lifecycle, Swift, bundle ID com.yourname.epubreader, iOS 17 deployment target, no CoreData checkbox (add manually), no tests checkbox (add manually). Add SPM packages: ZIPFoundation (weichsel/ZIPFoundation ≥0.9.0), GRDB.swift (groue/GRDB.swift ≥7.0.0).
   VERIFY   Project builds for simulator with zero errors.
-- [ ] 0.2  Create Logger utility
+- [x] 0.2  Create Logger utility
   TARGET   Core/Utilities/Logger.swift
   IMPL     Public singleton wrapping os.Logger with subsystem=Bundle.main.bundleIdentifier and category per call site. Methods: debug(), info(), error(). All other files use this; no print() anywhere in the codebase.
   VERIFY   File compiles. No print() calls anywhere in project.
