@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>EpubReader</title>
+    <script src="jszip.min.js"></script>
+    <script src="epub.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #FFFFFF;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        #viewer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div id="viewer"></div>
+    <script>
+        (function () {
+            'use strict';
+
+            window.bridge = {
+                send: function (type, data) {
+                    var payload = Object.assign({ type: type }, data || {});
+                    window.webkit.messageHandlers.bridge.postMessage(payload);
+                }
+            };
+
+            window.book = null;
+            window.rendition = null;
+
+            window.loadBook = async function (base64) {
+                window.book = ePub(base64, { encoding: 'base64' });
+
+                window.rendition = window.book.renderTo('viewer', {
+                    flow: 'paginated',
+                    spread: 'none',
+                    minSpreadWidth: 9999,
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                });
+
+                window.rendition.on('relocated', function (location) {
+                    window.bridge.send('relocated', {
+                        cfi: location.start.cfi,
+                        pct: location.start.percentage,
+                        atEnd: location.atEnd === true
+                    });
+                });
+
+                window.rendition.on('selected', function (cfiRange, contents) {
+                    var text = '';
+                    try {
+                        text = contents.window.getSelection().toString();
+                    } catch (_) {
+                        text = '';
+                    }
+                    window.bridge.send('selected', {
+                        cfiRange: cfiRange,
+                        text: text
+                    });
+                });
+
+                window.rendition.on('markClicked', function (cfiRange, data) {
+                    var id = (data && data.id) ? data.id : cfiRange;
+                    window.bridge.send('markClicked', { id: id });
+                });
+
+                await window.rendition.display();
+
+                window.book.ready.then(function () {
+                    return window.book.locations.generate(1024);
+                }).then(function () {
+                    window.bridge.send('bookReady', {});
+                });
+            };
+
+            window.nextPage = function () {
+                if (window.rendition) {
+                    window.rendition.next();
+                }
+            };
+
+            window.prevPage = function () {
+                if (window.rendition) {
+                    window.rendition.prev();
+                }
+            };
+
+            window.displayCFI = function (cfi) {
+                if (window.rendition && cfi) {
+                    window.rendition.display(cfi);
+                }
+            };
+
+            window.resizeRendition = function (w, h) {
+                if (window.rendition) {
+                    window.rendition.resize(w, h);
+                }
+            };
+        })();
+    </script>
+</body>
+</html>
