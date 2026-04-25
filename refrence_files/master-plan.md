@@ -271,7 +271,7 @@ Goal: app launches, opens one EPUB, renders it, turns pages, shows progress.
   TARGET   Core/Utilities/Logger.swift
   IMPL     Public singleton wrapping os.Logger with subsystem=Bundle.main.bundleIdentifier and category per call site. Methods: debug(), info(), error(). All other files use this; no print() anywhere in the codebase.
   VERIFY   File compiles. No print() calls anywhere in project.
-- [ ] 0.3  Vendor epub.js and jszip
+- [x] 0.3  Vendor epub.js and jszip
   TARGET   Resources/jszip.min.js, Resources/epub.js
   IMPL     Download jszip 3.10.1 minified from https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js and epub.js 0.3.93 from https://github.com/futurepress/epub.js/releases/tag/v0.3.93 (use epub.js not epub.min.js for debuggability). Add both files to Xcode target. jszip MUST be listed before epub.js in reader.html script tags.
   VERIFY   Both files present in Resources/ and added to app target. File sizes: jszip >100KB, epub.js >200KB.
