@@ -17,6 +17,7 @@
 		0A0000000000000000000C08 /* epub.js in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B07 /* epub.js */; };
 		0A0000000000000000000C09 /* reader.html in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B08 /* reader.html */; };
 		0A0000000000000000000C0A /* reader.css in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B09 /* reader.css */; };
+		0A0000000000000000000C0B /* EPUBExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B0A /* EPUBExtractor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +30,7 @@
 		0A0000000000000000000B07 /* epub.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = epub.js; sourceTree = "<group>"; };
 		0A0000000000000000000B08 /* reader.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = reader.html; sourceTree = "<group>"; };
 		0A0000000000000000000B09 /* reader.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = reader.css; sourceTree = "<group>"; };
+		0A0000000000000000000B0A /* EPUBExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBExtractor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,9 +89,18 @@
 		0A00000000000000000000A7 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				0A00000000000000000000AA /* EPUB */,
 				0A00000000000000000000A8 /* Utilities */,
 			);
 			path = Core;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000AA /* EPUB */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B0A /* EPUBExtractor.swift */,
+			);
+			path = EPUB;
 			sourceTree = "<group>";
 		};
 		0A00000000000000000000A8 /* Utilities */ = {
@@ -207,6 +218,7 @@
 			files = (
 				0A0000000000000000000C01 /* AppEntry.swift in Sources */,
 				0A0000000000000000000C06 /* Logger.swift in Sources */,
+				0A0000000000000000000C0B /* EPUBExtractor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
