@@ -12,6 +12,7 @@
 		0A0000000000000000000C03 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B04 /* Preview Assets.xcassets */; };
 		0A0000000000000000000C04 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 0A00000000000000000010A2 /* ZIPFoundation */; };
 		0A0000000000000000000C05 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 0A00000000000000000010A3 /* GRDB */; };
+		0A0000000000000000000C06 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B05 /* Logger.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -19,6 +20,7 @@
 		0A0000000000000000000B02 /* AppEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEntry.swift; sourceTree = "<group>"; };
 		0A0000000000000000000B03 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0A0000000000000000000B04 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		0A0000000000000000000B05 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,6 +57,7 @@
 			isa = PBXGroup;
 			children = (
 				0A00000000000000000000A4 /* App */,
+				0A00000000000000000000A7 /* Core */,
 				0A0000000000000000000B03 /* Assets.xcassets */,
 				0A00000000000000000000A5 /* Preview Content */,
 			);
@@ -82,6 +85,22 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000A7 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				0A00000000000000000000A8 /* Utilities */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000A8 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B05 /* Logger.swift */,
+			);
+			path = Utilities;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -163,6 +182,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A0000000000000000000C01 /* AppEntry.swift in Sources */,
+				0A0000000000000000000C06 /* Logger.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
