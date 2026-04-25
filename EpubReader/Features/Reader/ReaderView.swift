@@ -33,6 +33,9 @@ public struct ReaderView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
+        .onAppear {
+            viewModel.loadInitialBookIfNeeded()
+        }
         .onDisappear {
             viewModel.teardownReader()
         }

@@ -6,7 +6,9 @@ public struct LibraryView: View {
     @StateObject private var viewModel: LibraryViewModel
 
     @State private var pendingDeleteBook: Book?
-    @State private var metadataEditBook: Book?
+    @State private var selectedDetailBook: Book?
+    @State private var selectedEditBook: Book?
+    @State private var readerLaunchRequest: ReaderLaunchRequest?
 
     public init(viewModel: LibraryViewModel? = nil) {
         if let viewModel {
@@ -73,8 +75,18 @@ public struct LibraryView: View {
                     pendingDeleteBook = nil
                 }
             }
-            .sheet(item: $metadataEditBook) { book in
-                MetadataEditView(book: book)
+            .sheet(item: $selectedDetailBook) { book in
+                BookDetailView(book: book) { selectedBook in
+                    launchReader(for: selectedBook)
+                }
+            }
+            .sheet(item: $selectedEditBook) { book in
+                BookDetailView(book: book, isEditMode: true) { _ in }
+            }
+            .navigationDestination(item: $readerLaunchRequest) { request in
+                ReaderView(viewModel: ReaderViewModel(initialBookFileURL: request.fileURL))
+                    .navigationTitle(request.title)
+                    .navigationBarTitleDisplayMode(.inline)
             }
         }
     }
@@ -107,6 +119,10 @@ public struct LibraryView: View {
                 LazyVGrid(columns: gridColumns, spacing: 16) {
                     ForEach(viewModel.filteredBooks, id: \.objectID) { book in
                         BookGridCell(book: book)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                selectedDetailBook = book
+                            }
                             .contextMenu {
                                 bookContextActions(for: book)
                             }
@@ -117,6 +133,10 @@ public struct LibraryView: View {
         case .list:
             List(viewModel.filteredBooks, id: \.objectID) { book in
                 BookListCell(book: book)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedDetailBook = book
+                    }
                     .contextMenu {
                         bookContextActions(for: book)
                     }
@@ -149,7 +169,7 @@ public struct LibraryView: View {
         }
 
         Button("Edit Metadata", systemImage: "pencil") {
-            metadataEditBook = book
+            selectedEditBook = book
         }
 
         Button("Delete from Library", systemImage: "trash", role: .destructive) {
@@ -188,63 +208,25 @@ public struct LibraryView: View {
         }
         .disabled(viewModel.isImporting)
     }
-}
 
-private struct MetadataEditView: View {
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var title: String
-    @State private var author: String
-
-    private let book: Book
-
-    init(book: Book) {
-        self.book = book
-        _title = State(initialValue: book.title ?? "")
-        _author = State(initialValue: book.author ?? "")
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                TextField("Title", text: $title)
-                TextField("Author", text: $author)
-            }
-            .navigationTitle("Edit Metadata")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        saveChanges()
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-
-    private func saveChanges() {
-        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedAuthor = author.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        book.title = trimmedTitle.isEmpty ? "Untitled" : trimmedTitle
-        book.author = trimmedAuthor.isEmpty ? "Unknown Author" : trimmedAuthor
-
-        guard let context = book.managedObjectContext else {
+    private func launchReader(for book: Book) {
+        guard let filePath = book.filePath else {
+            Log.shared.error("Unable to open reader: missing file path")
             return
         }
 
-        do {
-            try context.save()
-        } catch {
-            context.rollback()
-            Log.shared.error("Unable to save metadata edits: \(error.localizedDescription)")
-        }
+        selectedDetailBook = nil
+        readerLaunchRequest = ReaderLaunchRequest(
+            fileURL: URL(fileURLWithPath: filePath),
+            title: book.title ?? "Reader"
+        )
     }
+}
+
+private struct ReaderLaunchRequest: Identifiable, Hashable {
+    let id = UUID()
+    let fileURL: URL
+    let title: String
 }
 
 #Preview {

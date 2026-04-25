@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 1.8
-NEXT_TASK       = 1.9
+LAST_COMPLETED  = 1.9
+NEXT_TASK       = 2a.1
 GATES_PASSED    = []
-TASKS_DONE      = 18
+TASKS_DONE      = 19
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -342,7 +342,7 @@ Goal: real library screen, cover extraction, shelves, Core Data schema.
   TARGET   Features/Library/ShelfView.swift (update LibraryView.swift)
   IMPL     ShelfView: horizontal ScrollView of shelf tabs. Tapping a shelf filters LibraryView to that shelf’s books. “All Books” always first. Add shelf button opens an alert for shelf name entry → creates Shelf entity. Long-press a book cell anywhere in LibraryView → contextMenu with: “Add to Shelf” (submenu of shelf names), “Mark as Finished”, “Delete from Library” (destructive, with confirmation), “Edit Metadata” (opens BookDetailView in edit mode).
   VERIFY   Create shelf “Favorites”. Long-press book → Add to Shelf → Favorites. Filter by Favorites → only that book shows.
-- [ ] 1.9  Build BookDetailView
+- [x] 1.9  Build BookDetailView
   TARGET   Features/Library/BookDetailView.swift
   IMPL     Sheet presented on book tap. Cover image (large, 120×180pt). Title (largeTitle). Author, language, description, file size, format badge. “Continue Reading”/“Start Reading” button (full width, accent fill) → dismisses sheet and navigates to ReaderView with this book. Progress bar showing percentage. Import date. If in edit mode (from context menu): title and author are TextFields. Save button commits changes to Core Data.
   VERIFY   Tap book → detail sheet appears. Tap “Start Reading” → ReaderView opens with that book’s content.

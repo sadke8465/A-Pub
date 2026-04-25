@@ -15,9 +15,15 @@ public final class ReaderViewModel: ObservableObject {
     @Published public var currentSpineIndex = 0
 
     private let importer: FileImporter
+    private let initialBookFileURL: URL?
+    private var didAttemptInitialLoad = false
 
-    public init(importer: FileImporter = FileImporter()) {
+    public init(
+        importer: FileImporter = FileImporter(),
+        initialBookFileURL: URL? = nil
+    ) {
         self.importer = importer
+        self.initialBookFileURL = initialBookFileURL
         configureBridgeCallbacks()
     }
 
@@ -39,12 +45,47 @@ public final class ReaderViewModel: ObservableObject {
         }
     }
 
+    public func loadInitialBookIfNeeded() {
+        guard !didAttemptInitialLoad else {
+            return
+        }
+        didAttemptInitialLoad = true
+
+        guard let initialBookFileURL else {
+            return
+        }
+
+        Task {
+            await loadFromLibrary(fileURL: initialBookFileURL)
+        }
+    }
+
     public func toggleOverlay() {
         isOverlayVisible.toggle()
     }
 
     public func teardownReader() {
         bridge.invalidate()
+    }
+
+    private func loadFromLibrary(fileURL: URL) async {
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            let extractor = EPUBExtractor()
+            let parser = EPUBParser()
+            let extractedRoot = try await extractor.extract(fileURL)
+            let parsedBook = try await parser.parse(extractedRoot: extractedRoot)
+            let data = try Data(contentsOf: fileURL)
+            let encoded = data.base64EncodedString()
+
+            book = parsedBook
+            base64Book = encoded
+            escapedBase64Book = encoded.replacingOccurrences(of: "'", with: "\\'")
+        } catch {
+            Log.shared.error("Failed to open library EPUB: \(error.localizedDescription)")
+        }
     }
 
     private func configureBridgeCallbacks() {
