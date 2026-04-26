@@ -43,6 +43,7 @@
 
             window.book = null;
             window.rendition = null;
+            window.currentLoadToken = 0;
 
             var themeMap = {
                 light:  { bg: '#FFFFF8', fg: '#1C1C1E' },
@@ -50,6 +51,30 @@
                 sepia:  { bg: '#F4ECD8', fg: '#3B2F2F' },
                 custom: { bg: '#FFFFF8', fg: '#1C1C1E' }
             };
+
+            function canUseRendition(commandName) {
+                if (!window.rendition) {
+                    window.bridge.send('jsGuardBlocked', { command: commandName, reason: 'missingRendition' });
+                    return false;
+                }
+                if (!window.rendition.manager) {
+                    window.bridge.send('jsGuardBlocked', { command: commandName, reason: 'missingManager' });
+                    return false;
+                }
+                return true;
+            }
+
+            function safeRun(commandName, fn) {
+                if (!canUseRendition(commandName)) {
+                    return;
+                }
+                try {
+                    fn();
+                } catch (error) {
+                    var message = (error && error.message) ? error.message : String(error);
+                    window.bridge.send('bookError', { message: commandName + ': ' + message });
+                }
+            }
 
             function applyContentTheme(name) {
                 if (!window.rendition) { return; }
@@ -105,40 +130,46 @@
             };
 
             window.setFontSize = function (px) {
-                if (!window.rendition) { return; }
-                window.rendition.themes.fontSize(px + 'px');
-                window.rendition.resize(window.innerWidth, window.innerHeight);
+                safeRun('setFontSize', function () {
+                    window.rendition.themes.fontSize(px + 'px');
+                    window.rendition.resize(window.innerWidth, window.innerHeight);
+                });
             };
 
             window.setFontFamily = function (name) {
-                if (!window.rendition) { return; }
-                window.rendition.themes.font(name);
-                window.rendition.resize(window.innerWidth, window.innerHeight);
+                safeRun('setFontFamily', function () {
+                    window.rendition.themes.font(name);
+                    window.rendition.resize(window.innerWidth, window.innerHeight);
+                });
             };
 
             window.setLineSpacing = function (value) {
-                if (!window.rendition) { return; }
-                window.rendition.themes.override('line-height', String(value));
-                window.rendition.resize(window.innerWidth, window.innerHeight);
+                safeRun('setLineSpacing', function () {
+                    window.rendition.themes.override('line-height', String(value));
+                    window.rendition.resize(window.innerWidth, window.innerHeight);
+                });
             };
 
             window.setMargin = function (px) {
-                if (!window.rendition) { return; }
-                window.rendition.themes.override('padding', '20px ' + px + 'px');
-                window.rendition.resize(window.innerWidth, window.innerHeight);
+                safeRun('setMargin', function () {
+                    window.rendition.themes.override('padding', '20px ' + px + 'px');
+                    window.rendition.resize(window.innerWidth, window.innerHeight);
+                });
             };
 
             window.setJustify = function (justify) {
-                if (!window.rendition) { return; }
-                window.rendition.themes.override('text-align', justify ? 'justify' : 'left');
-                window.rendition.resize(window.innerWidth, window.innerHeight);
+                safeRun('setJustify', function () {
+                    window.rendition.themes.override('text-align', justify ? 'justify' : 'left');
+                    window.rendition.resize(window.innerWidth, window.innerHeight);
+                });
             };
 
             window.setHyphenation = function (on) {
-                if (!window.rendition) { return; }
-                window.rendition.themes.override('-webkit-hyphens', on ? 'auto' : 'manual');
-                window.rendition.themes.override('hyphens', on ? 'auto' : 'manual');
-                window.rendition.resize(window.innerWidth, window.innerHeight);
+                safeRun('setHyphenation', function () {
+                    window.rendition.themes.override('-webkit-hyphens', on ? 'auto' : 'manual');
+                    window.rendition.themes.override('hyphens', on ? 'auto' : 'manual');
+                    window.rendition.resize(window.innerWidth, window.innerHeight);
+                });
             };
 
             function extractCharacterOffset(cfi) {
@@ -170,6 +201,8 @@
             window.loadBook = function (bookURL, fallbackBase64) {
                 (async function () {
                     try {
+                        window.currentLoadToken += 1;
+                        var loadToken = window.currentLoadToken;
                         if (typeof bookURL === 'string' && bookURL.length > 0) {
                             window.book = ePub(bookURL);
                         } else if (typeof fallbackBase64 === 'string' && fallbackBase64.length > 0) {
@@ -239,7 +272,9 @@
 
                         await window.rendition.display();
                         await window.book.ready;
-                        window.bridge.send('bookReady', {});
+                        if (loadToken === window.currentLoadToken) {
+                            window.bridge.send('bookReady', {});
+                        }
                     } catch (error) {
                         var message = (error && error.message) ? error.message : String(error);
                         window.bridge.send('bookError', { message: message });
@@ -248,15 +283,15 @@
             };
 
             window.nextPage = function () {
-                if (window.rendition) {
+                safeRun('nextPage', function () {
                     window.rendition.next();
-                }
+                });
             };
 
             window.prevPage = function () {
-                if (window.rendition) {
+                safeRun('prevPage', function () {
                     window.rendition.prev();
-                }
+                });
             };
 
             window.displayCFI = function (cfi) {
@@ -266,9 +301,9 @@
             };
 
             window.resizeRendition = function (w, h) {
-                if (window.rendition) {
+                safeRun('resizeRendition', function () {
                     window.rendition.resize(w, h);
-                }
+                });
             };
 
 

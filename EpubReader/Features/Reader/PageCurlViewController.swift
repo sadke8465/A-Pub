@@ -69,12 +69,53 @@ final class EPUBPageContentViewController: UIViewController, WKNavigationDelegat
 @MainActor
 final class PageCurlViewController: UIPageViewController {
 
+    private enum SlotLifecycleState: Equatable {
+        case htmlLoaded
+        case bookLoading(token: Int)
+        case bookReady(token: Int)
+        case failed(token: Int, error: String)
+
+        var label: String {
+            switch self {
+            case .htmlLoaded: return "htmlLoaded"
+            case .bookLoading: return "bookLoading"
+            case .bookReady: return "bookReady"
+            case .failed: return "failed"
+            }
+        }
+
+        var token: Int? {
+            switch self {
+            case .bookLoading(let token), .bookReady(let token), .failed(let token, _):
+                return token
+            case .htmlLoaded:
+                return nil
+            }
+        }
+    }
+
+    private enum CommandFamily: String {
+        case navigation
+        case appearance
+        case load
+        case display
+    }
+
+    private struct PendingCommand {
+        let js: String
+        let family: CommandFamily
+        let token: Int
+    }
+
     // pool[poolCurrent]       = current (visible)
     // pool[(poolCurrent+2)%3] = previous
     // pool[(poolCurrent+1)%3] = next
     private let pool: [EPUBPageContentViewController]
     private var poolCurrent = 1
-    private var slotReady = [Bool](repeating: false, count: 3)
+    private var slotState = [SlotLifecycleState](repeating: .htmlLoaded, count: 3)
+    private var isHTMLReadyBySlot = [Bool](repeating: false, count: 3)
+    private var loadTokenBySlot = [Int](repeating: 0, count: 3)
+    private var queuedCommandsBySlot = [[PendingCommand]](repeating: [], count: 3)
     private struct PendingLoad {
         let bookURLString: String
         let fallbackEscapedBase64: String?
@@ -94,6 +135,7 @@ final class PageCurlViewController: UIPageViewController {
     var onRequestHighlights: ((String) -> Void)?
     var onAtChapterEnd:      (() -> Void)?
     var onJavaScriptExecutionFailed: ((EPUBBridge.JavaScriptExecutionFailure) -> Void)?
+    var onJSGuardBlocked: ((Int, EPUBBridge.JSGuardBlockedEvent) -> Void)?
 
     // MARK: Init
 
@@ -127,8 +169,6 @@ final class PageCurlViewController: UIPageViewController {
     /// `onBookReady` to avoid triple-triggering the callback.
     func loadBook(fileURL: URL, fallbackEscapedBase64: String? = nil) {
         let bridgedURLString = EPUBFileSchemeHandler.shared.register(fileURL: fileURL).absoluteString
-        pool.forEach { $0.bridge.onBookReady = nil }
-        currentSlot.bridge.onBookReady = { [weak self] in self?.onBookReady?() }
         for slotIndex in pool.indices {
             queueLoadIfNeeded(
                 slotIndex: slotIndex,
@@ -139,16 +179,31 @@ final class PageCurlViewController: UIPageViewController {
     }
 
     func displayCFI(_ cfi: String) {
-        currentSlot.bridge.callJS("displayCFI('\(cfi)')")
+        enqueueOrDispatch(slotIndex: poolCurrent, js: "displayCFI('\(cfi)')", family: .display)
     }
 
     /// Forward a JavaScript call to the current slot's rendition.
     func callJS(_ js: String) {
-        currentSlot.bridge.callJS(js)
+        enqueueOrDispatch(slotIndex: poolCurrent, js: js, family: commandFamily(for: js))
     }
 
     func applyAppearance(_ appearance: ReaderAppearance) {
-        pool.forEach { appearance.applyAll(via: $0.bridge) }
+        for slotIndex in pool.indices {
+            enqueueOrDispatch(slotIndex: slotIndex, js: "setTheme('\(appearance.theme)')", family: .appearance)
+            enqueueOrDispatch(slotIndex: slotIndex, js: "setFontSize(\(Int(appearance.fontSize)))", family: .appearance)
+            let escapedFont = appearance.fontFamily.replacingOccurrences(of: "'", with: "\\'")
+            enqueueOrDispatch(slotIndex: slotIndex, js: "setFontFamily('\(escapedFont)')", family: .appearance)
+            enqueueOrDispatch(slotIndex: slotIndex, js: "setLineSpacing(\(appearance.lineSpacing))", family: .appearance)
+            let margin: Int
+            switch appearance.marginStyle {
+            case "narrow": margin = 8
+            case "wide": margin = 40
+            default: margin = 24
+            }
+            enqueueOrDispatch(slotIndex: slotIndex, js: "setMargin(\(margin))", family: .appearance)
+            enqueueOrDispatch(slotIndex: slotIndex, js: "setJustify(\(appearance.textAlignment == "justify"))", family: .appearance)
+            enqueueOrDispatch(slotIndex: slotIndex, js: "setHyphenation(\(appearance.hyphenation))", family: .appearance)
+        }
     }
 
     /// Tear down all pool bridges (call from `dismantleUIViewController`).
@@ -170,12 +225,22 @@ final class PageCurlViewController: UIPageViewController {
         slot.bridge.onAtChapterEnd      = { [weak self] in
             self?.onAtChapterEnd?()
             // Pre-warm the next slot so its rendition is one chapter ahead.
-            self?.nextSlot.bridge.callJS("nextPage()")
+            guard let self else { return }
+            self.enqueueOrDispatch(slotIndex: self.nextSlot.slotIndex, js: "nextPage()", family: .navigation)
         }
     }
 
     private func wireBridgeFailureCallbacks() {
         pool.forEach { slot in
+            slot.bridge.onBookReady = { [weak self] in
+                self?.handleBookReady(for: slot.slotIndex)
+            }
+            slot.bridge.onBookError = { [weak self] message in
+                self?.handleBookError(for: slot.slotIndex, message: message)
+            }
+            slot.bridge.onJSGuardBlocked = { [weak self] event in
+                self?.onJSGuardBlocked?(slot.slotIndex, event)
+            }
             slot.bridge.onJavaScriptExecutionFailed = { [weak self] failure in
                 self?.onJavaScriptExecutionFailed?(failure)
             }
@@ -185,8 +250,12 @@ final class PageCurlViewController: UIPageViewController {
     private func clearCurrentSlotCallbacks() {
         let slot = currentSlot
         slot.bridge.onRelocated         = nil
-        slot.bridge.onBookReady         = nil
-        slot.bridge.onBookError         = nil
+        slot.bridge.onBookReady         = { [weak self] in
+            self?.handleBookReady(for: slot.slotIndex)
+        }
+        slot.bridge.onBookError         = { [weak self] msg in
+            self?.handleBookError(for: slot.slotIndex, message: msg)
+        }
         slot.bridge.onSelected          = nil
         slot.bridge.onMarkClicked       = nil
         slot.bridge.onRequestHighlights = nil
@@ -196,26 +265,105 @@ final class PageCurlViewController: UIPageViewController {
     // MARK: Pool rotation
 
     private func markSlotReady(_ slotIndex: Int) {
-        slotReady[slotIndex] = true
-        Log.shared.debug("PageCurl slot \(slotIndex) ready=\(slotReady[slotIndex])")
+        isHTMLReadyBySlot[slotIndex] = true
+        slotState[slotIndex] = .htmlLoaded
+        Log.shared.debug("PageCurl slot \(slotIndex) state=\(slotState[slotIndex].label)")
         flushPendingLoad(for: slotIndex)
     }
 
     private func queueLoadIfNeeded(slotIndex: Int, bookURLString: String, fallbackEscapedBase64: String?) {
+        loadTokenBySlot[slotIndex] += 1
+        let token = loadTokenBySlot[slotIndex]
+        queuedCommandsBySlot[slotIndex].removeAll()
+        slotState[slotIndex] = .bookLoading(token: token)
         pendingLoadBySlot[slotIndex] = PendingLoad(
             bookURLString: bookURLString,
             fallbackEscapedBase64: fallbackEscapedBase64
         )
-        Log.shared.debug("PageCurl slot \(slotIndex) ready=\(slotReady[slotIndex])")
+        Log.shared.debug("PageCurl slot \(slotIndex) state=\(slotState[slotIndex].label) token=\(token)")
         flushPendingLoad(for: slotIndex)
     }
 
     private func flushPendingLoad(for slotIndex: Int) {
-        guard slotReady[slotIndex], let pendingLoad = pendingLoadBySlot[slotIndex] else { return }
+        guard isHTMLReadyBySlot[slotIndex],
+              case .bookLoading(let token) = slotState[slotIndex],
+              let pendingLoad = pendingLoadBySlot[slotIndex]
+        else { return }
         pendingLoadBySlot[slotIndex] = nil
-        Log.shared.debug("PageCurl slot \(slotIndex) ready=\(slotReady[slotIndex]) load dispatched")
+        Log.shared.debug("PageCurl slot \(slotIndex) state=\(slotState[slotIndex].label) token=\(token) load dispatched")
         let js = "loadBook('\(pendingLoad.bookURLString)', \(pendingLoad.fallbackEscapedBase64.map { "'\($0)'" } ?? "null"))"
-        pool[slotIndex].bridge.callJS(js)
+        pool[slotIndex].bridge.callJS(
+            js,
+            slotIndex: slotIndex,
+            slotState: slotState[slotIndex].label,
+            loadToken: token,
+            commandFamily: CommandFamily.load.rawValue
+        )
+    }
+
+    private func handleBookReady(for slotIndex: Int) {
+        guard case .bookLoading(let token) = slotState[slotIndex], token == loadTokenBySlot[slotIndex] else {
+            return
+        }
+        slotState[slotIndex] = .bookReady(token: token)
+        flushQueuedCommands(for: slotIndex)
+        if slotIndex == poolCurrent {
+            onBookReady?()
+        }
+    }
+
+    private func handleBookError(for slotIndex: Int, message: String) {
+        let token = loadTokenBySlot[slotIndex]
+        slotState[slotIndex] = .failed(token: token, error: message)
+        queuedCommandsBySlot[slotIndex].removeAll()
+        if slotIndex == poolCurrent {
+            onBookError?(message)
+        }
+    }
+
+    private func enqueueOrDispatch(slotIndex: Int, js: String, family: CommandFamily) {
+        switch slotState[slotIndex] {
+        case .bookReady(let token):
+            dispatch(js: js, to: slotIndex, token: token, family: family)
+        case .bookLoading(let token):
+            queuedCommandsBySlot[slotIndex].append(PendingCommand(js: js, family: family, token: token))
+        case .htmlLoaded:
+            return
+        case .failed:
+            queuedCommandsBySlot[slotIndex].removeAll()
+        }
+    }
+
+    private func flushQueuedCommands(for slotIndex: Int) {
+        guard case .bookReady(let token) = slotState[slotIndex] else { return }
+        let queued = queuedCommandsBySlot[slotIndex]
+        queuedCommandsBySlot[slotIndex].removeAll()
+        for command in queued where command.token == token {
+            dispatch(js: command.js, to: slotIndex, token: token, family: command.family)
+        }
+    }
+
+    private func dispatch(js: String, to slotIndex: Int, token: Int, family: CommandFamily) {
+        pool[slotIndex].bridge.callJS(
+            js,
+            slotIndex: slotIndex,
+            slotState: slotState[slotIndex].label,
+            loadToken: token,
+            commandFamily: family.rawValue
+        )
+    }
+
+    private func commandFamily(for js: String) -> CommandFamily {
+        if js.hasPrefix("nextPage") || js.hasPrefix("prevPage") {
+            return .navigation
+        }
+        if js.hasPrefix("set") {
+            return .appearance
+        }
+        if js.hasPrefix("loadBook") {
+            return .load
+        }
+        return .display
     }
 
     private func rotateForward() {
@@ -223,7 +371,7 @@ final class PageCurlViewController: UIPageViewController {
         poolCurrent = (poolCurrent + 1) % 3
         wireCurrentSlotCallbacks()
         // Advance the recycled slot so it tracks one page behind the new current.
-        prevSlot.bridge.callJS("prevPage()")
+        enqueueOrDispatch(slotIndex: prevSlot.slotIndex, js: "prevPage()", family: .navigation)
     }
 
     private func rotateBackward() {
@@ -231,7 +379,7 @@ final class PageCurlViewController: UIPageViewController {
         poolCurrent = (poolCurrent + 2) % 3
         wireCurrentSlotCallbacks()
         // Retreat the recycled slot so it tracks one page ahead of the new current.
-        nextSlot.bridge.callJS("nextPage()")
+        enqueueOrDispatch(slotIndex: nextSlot.slotIndex, js: "nextPage()", family: .navigation)
     }
 }
 
@@ -392,6 +540,9 @@ struct PageCurlReaderView: UIViewControllerRepresentable {
             }
             vc.onJavaScriptExecutionFailed = { [weak viewModel] failure in
                 viewModel?.handleJavaScriptExecutionFailure(failure)
+            }
+            vc.onJSGuardBlocked = { [weak viewModel] _, event in
+                viewModel?.handleJSGuardBlocked(event)
             }
         }
     }

@@ -21,6 +21,15 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         public let errorDomain: String
         public let errorCode: Int
         public let message: String
+        public let slotIndex: Int?
+        public let slotState: String?
+        public let loadToken: Int?
+        public let commandFamily: String?
+    }
+
+    public struct JSGuardBlockedEvent: Sendable {
+        public let command: String
+        public let reason: String
     }
 
     public static let messageName = "bridge"
@@ -37,6 +46,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     public var onAtChapterEnd: (() -> Void)?
     public var onLocationsSnapshot: ((Int, String?) -> Void)?
     public var onJavaScriptExecutionFailed: ((JavaScriptExecutionFailure) -> Void)?
+    public var onJSGuardBlocked: ((JSGuardBlockedEvent) -> Void)?
 
     public override init() {
         super.init()
@@ -55,7 +65,13 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     }
 
     /// JavaScript evaluation in the bound web view with structured error handling.
-    public func callJS(_ js: String) {
+    public func callJS(
+        _ js: String,
+        slotIndex: Int? = nil,
+        slotState: String? = nil,
+        loadToken: Int? = nil,
+        commandFamily: String? = nil
+    ) {
         webView?.evaluateJavaScript(js) { [weak self] _, error in
             guard let self else { return }
             if let nsError = error as NSError? {
@@ -71,7 +87,11 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
                         commandPrefix: commandPrefix,
                         errorDomain: nsError.domain,
                         errorCode: nsError.code,
-                        message: nsError.localizedDescription
+                        message: nsError.localizedDescription,
+                        slotIndex: slotIndex,
+                        slotState: slotState,
+                        loadToken: loadToken,
+                        commandFamily: commandFamily
                     )
                 )
                 return
@@ -159,6 +179,10 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
             let totalLocations = body["totalLocations"] as? Int ?? 0
             let serialized = body["serializedLocations"] as? String
             onLocationsSnapshot?(totalLocations, serialized)
+        case "jsGuardBlocked":
+            let command = body["command"] as? String ?? "unknown"
+            let reason = body["reason"] as? String ?? "unknown"
+            onJSGuardBlocked?(JSGuardBlockedEvent(command: command, reason: reason))
         default:
             Log.shared.debug("EPUBBridge received unknown message type: \(type)")
         }

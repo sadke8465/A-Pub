@@ -61,6 +61,19 @@ public struct ReaderView: View {
                         .background(.ultraThinMaterial)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+
+                if let recoveryMessage = viewModel.recoveryMessage {
+                    VStack {
+                        Text(recoveryMessage)
+                            .font(.footnote.weight(.semibold))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Capsule())
+                            .padding(.top, 12)
+                        Spacer()
+                    }
+                }
             }
         }
         .onAppear {
