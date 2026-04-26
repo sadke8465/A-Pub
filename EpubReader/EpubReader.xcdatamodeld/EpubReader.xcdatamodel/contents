@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23659" systemVersion="23A344" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="true" userDefinedModelVersionIdentifier="">
     <entity name="Book" representedClassName="Book" syncable="YES" codeGenerationType="class">
-        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO" defaultValueString="00000000-0000-0000-0000-000000000000"/>
         <attribute name="title" optional="YES" attributeType="String"/>
         <attribute name="author" optional="YES" attributeType="String"/>
         <attribute name="filePath" optional="YES" attributeType="String"/>
@@ -10,27 +10,27 @@
         <attribute name="bookDescription" optional="YES" attributeType="String"/>
         <attribute name="sha256" optional="YES" attributeType="String"/>
         <attribute name="importedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="isDeleted" optional="NO" attributeType="Boolean" usesScalarValueType="YES" defaultValueString="NO"/>
+        <attribute name="isSoftDeleted" optional="NO" attributeType="Boolean" usesScalarValueType="YES" defaultValueString="NO"/>
         <attribute name="deletedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="appearanceOverride" optional="YES" attributeType="String"/>
         <attribute name="locationsCache" optional="YES" attributeType="String"/>
         <relationship name="memberships" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ShelfMembership" inverseName="book" inverseEntity="ShelfMembership"/>
     </entity>
     <entity name="Shelf" representedClassName="Shelf" syncable="YES" codeGenerationType="class">
-        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO" defaultValueString="00000000-0000-0000-0000-000000000000"/>
         <attribute name="name" optional="YES" attributeType="String"/>
         <attribute name="order" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="memberships" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ShelfMembership" inverseName="shelf" inverseEntity="ShelfMembership"/>
     </entity>
     <entity name="ShelfMembership" representedClassName="ShelfMembership" syncable="YES" codeGenerationType="class">
-        <attribute name="bookID" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="shelfID" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
-        <relationship name="book" optional="NO" maxCount="1" deletionRule="Nullify" destinationEntity="Book" inverseName="memberships" inverseEntity="Book"/>
-        <relationship name="shelf" optional="NO" maxCount="1" deletionRule="Nullify" destinationEntity="Shelf" inverseName="memberships" inverseEntity="Shelf"/>
+        <attribute name="bookID" optional="NO" attributeType="UUID" usesScalarValueType="NO" defaultValueString="00000000-0000-0000-0000-000000000000"/>
+        <attribute name="shelfID" optional="NO" attributeType="UUID" usesScalarValueType="NO" defaultValueString="00000000-0000-0000-0000-000000000000"/>
+        <relationship name="book" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Book" inverseName="memberships" inverseEntity="Book"/>
+        <relationship name="shelf" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Shelf" inverseName="memberships" inverseEntity="Shelf"/>
     </entity>
     <entity name="ReadingProgress" representedClassName="ReadingProgress" syncable="YES" codeGenerationType="class">
-        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="bookID" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO" defaultValueString="00000000-0000-0000-0000-000000000000"/>
+        <attribute name="bookID" optional="NO" attributeType="UUID" usesScalarValueType="NO" defaultValueString="00000000-0000-0000-0000-000000000000"/>
         <attribute name="cfi" optional="YES" attributeType="String"/>
         <attribute name="spineHref" optional="YES" attributeType="String"/>
         <attribute name="characterOffset" optional="YES" attributeType="Integer 64" usesScalarValueType="YES"/>
@@ -40,8 +40,8 @@
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
     </entity>
     <entity name="Highlight" representedClassName="Highlight" syncable="YES" codeGenerationType="class">
-        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="bookID" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO" defaultValueString="00000000-0000-0000-0000-000000000000"/>
+        <attribute name="bookID" optional="NO" attributeType="UUID" usesScalarValueType="NO" defaultValueString="00000000-0000-0000-0000-000000000000"/>
         <attribute name="cfiRange" optional="YES" attributeType="String"/>
         <attribute name="cfiStart" optional="YES" attributeType="String"/>
         <attribute name="spineHref" optional="YES" attributeType="String"/>
@@ -52,16 +52,16 @@
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
     </entity>
     <entity name="Bookmark" representedClassName="Bookmark" syncable="YES" codeGenerationType="class">
-        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="bookID" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO" defaultValueString="00000000-0000-0000-0000-000000000000"/>
+        <attribute name="bookID" optional="NO" attributeType="UUID" usesScalarValueType="NO" defaultValueString="00000000-0000-0000-0000-000000000000"/>
         <attribute name="cfi" optional="YES" attributeType="String"/>
         <attribute name="spineHref" optional="YES" attributeType="String"/>
         <attribute name="label" optional="YES" attributeType="String"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
     </entity>
     <entity name="ReadingSession" representedClassName="ReadingSession" syncable="YES" codeGenerationType="class">
-        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="bookID" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO" defaultValueString="00000000-0000-0000-0000-000000000000"/>
+        <attribute name="bookID" optional="NO" attributeType="UUID" usesScalarValueType="NO" defaultValueString="00000000-0000-0000-0000-000000000000"/>
         <attribute name="startedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="endedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="wordsRead" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>

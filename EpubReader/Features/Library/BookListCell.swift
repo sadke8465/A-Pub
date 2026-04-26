@@ -76,8 +76,7 @@ public struct BookListCell: View {
             return 0
         }
 
-        var result: Double = 0
-        context.performAndWait {
+        let result = context.performAndWait { () -> Double in
             let request = NSFetchRequest<NSManagedObject>(entityName: "ReadingProgress")
             request.predicate = NSPredicate(format: "bookID == %@", bookID as CVarArg)
             request.sortDescriptors = [NSSortDescriptor(key: "updatedAt", ascending: false)]
@@ -85,8 +84,10 @@ public struct BookListCell: View {
 
             if let progress = try? context.fetch(request).first,
                let percentage = progress.value(forKey: "percentage") as? Double {
-                result = percentage
+                return percentage
             }
+
+            return 0
         }
 
         return min(max(result, 0), 1)

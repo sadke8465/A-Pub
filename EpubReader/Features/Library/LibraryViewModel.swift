@@ -52,7 +52,7 @@ public final class LibraryViewModel: NSObject, ObservableObject {
 
         let request = Book.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(key: "importedAt", ascending: false)]
-        request.predicate = NSPredicate(format: "isDeleted == NO")
+        request.predicate = NSPredicate(format: "isSoftDeleted == NO")
 
         fetchedResultsController = NSFetchedResultsController(
             fetchRequest: request,
@@ -239,7 +239,7 @@ public final class LibraryViewModel: NSObject, ObservableObject {
                 return
             }
 
-            persistedBook.setValue(true, forKey: "isDeleted")
+            persistedBook.setValue(true, forKey: "isSoftDeleted")
             persistedBook.deletedAt = Date()
         }
     }
