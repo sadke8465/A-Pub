@@ -14,6 +14,8 @@ public final class ReaderViewModel: ObservableObject {
     @Published public var escapedBase64Book: String = ""
     @Published public var bridge = EPUBBridge()
     @Published public var currentSpineIndex = 0
+    @Published public var isWebHostReady = false
+    @Published public var hasPendingBookPayload = false
 
     private let importer: FileImporter
     private let initialBookFileURL: URL?
@@ -38,6 +40,8 @@ public final class ReaderViewModel: ObservableObject {
                 book = result.0
                 base64Book = result.1
                 escapedBase64Book = result.2
+                hasPendingBookPayload = !result.2.isEmpty
+                tryLoadBookIntoWebView()
             } catch is CancellationError {
                 Log.shared.info("User cancelled EPUB import")
             } catch {
@@ -66,6 +70,7 @@ public final class ReaderViewModel: ObservableObject {
     }
 
     public func teardownReader() {
+        isWebHostReady = false
         bridge.invalidate()
     }
 
@@ -84,9 +89,28 @@ public final class ReaderViewModel: ObservableObject {
             book = parsedBook
             base64Book = encoded
             escapedBase64Book = encoded.replacingOccurrences(of: "'", with: "\\'")
+            hasPendingBookPayload = !escapedBase64Book.isEmpty
+            tryLoadBookIntoWebView()
         } catch {
             Log.shared.error("Failed to open library EPUB: \(error.localizedDescription)")
         }
+    }
+
+    public func webViewReady() {
+        isWebHostReady = true
+        tryLoadBookIntoWebView()
+    }
+
+    public func tryLoadBookIntoWebView() {
+        guard isWebHostReady,
+              hasPendingBookPayload,
+              !escapedBase64Book.isEmpty
+        else {
+            return
+        }
+
+        bridge.callJS("loadBook('\\(escapedBase64Book)')")
+        hasPendingBookPayload = false
     }
 
     private func configureBridgeCallbacks() {
