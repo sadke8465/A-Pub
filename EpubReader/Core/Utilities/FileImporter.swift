@@ -129,6 +129,17 @@ public struct FileImporter {
         }.value
     }
 
+    /// Resolves a stored `filePath` value to the current sandbox URL.
+    ///
+    /// `filePath` may be a bare filename or a legacy absolute path whose container UUID
+    /// has since changed. Either way, only the `lastPathComponent` is trusted; the
+    /// directory is always re-derived from the current sandbox at call time.
+    nonisolated static func resolvedEPUBURL(for storedPath: String) -> URL? {
+        let filename = URL(fileURLWithPath: storedPath).lastPathComponent
+        guard !filename.isEmpty else { return nil }
+        return try? libraryEPUBDirectory(using: .default).appendingPathComponent(filename)
+    }
+
     nonisolated private static func libraryEPUBDirectory(using fileManager: FileManager) throws -> URL {
         let appSupport = try fileManager.url(
             for: .applicationSupportDirectory,
@@ -189,7 +200,7 @@ public struct FileImporter {
                     book.setValue(UUID(), forKey: "id")
                     book.setValue(metadata.title, forKey: "title")
                     book.setValue(metadata.author, forKey: "author")
-                    book.setValue(sourceURL.path, forKey: "filePath")
+                    book.setValue(sourceURL.lastPathComponent, forKey: "filePath")
                     book.setValue(coverURL?.path, forKey: "coverImagePath")
                     book.setValue(metadata.language, forKey: "language")
                     book.setValue(metadata.bookDescription, forKey: "bookDescription")
