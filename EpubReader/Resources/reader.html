@@ -167,82 +167,84 @@
                 return '';
             }
 
-            window.loadBook = async function (bookURL, fallbackBase64) {
-                try {
-                    if (typeof bookURL === 'string' && bookURL.length > 0) {
-                        window.book = ePub(bookURL);
-                    } else if (typeof fallbackBase64 === 'string' && fallbackBase64.length > 0) {
-                        window.book = ePub(fallbackBase64, { encoding: 'base64' });
-                    } else {
-                        throw new Error('No valid EPUB input provided');
+            window.loadBook = function (bookURL, fallbackBase64) {
+                (async function () {
+                    try {
+                        if (typeof bookURL === 'string' && bookURL.length > 0) {
+                            window.book = ePub(bookURL);
+                        } else if (typeof fallbackBase64 === 'string' && fallbackBase64.length > 0) {
+                            window.book = ePub(fallbackBase64, { encoding: 'base64' });
+                        } else {
+                            throw new Error('No valid EPUB input provided');
+                        }
+
+                        window.rendition = window.book.renderTo('viewer', {
+                            flow: 'paginated',
+                            spread: 'none',
+                            minSpreadWidth: 9999,
+                            width: window.innerWidth,
+                            height: window.innerHeight
+                        });
+
+                        Object.keys(themeMap).forEach(function (name) {
+                            var t = themeMap[name];
+                            window.rendition.themes.register(name, {
+                                'body': { 'background': t.bg, 'color': t.fg }
+                            });
+                        });
+                        window.rendition.themes.select('light');
+                        window.rendition.on('rendered', function () {
+                            applyContentTheme('light');
+                        });
+
+                        window.rendition.on('relocated', function (location) {
+                            var cfi = (location && location.start && location.start.cfi) ? location.start.cfi : '';
+                            var pct = (location && location.start && typeof location.start.percentage === 'number')
+                                ? location.start.percentage
+                                : 0;
+                            var spineHref = (location && location.start && location.start.href) ? location.start.href : '';
+                            var characterOffset = extractCharacterOffset(cfi);
+                            var contextSnippet = extractContextSnippet(location);
+
+                            window.bridge.send('relocated', {
+                                cfi: cfi,
+                                percentage: pct,
+                                spineHref: spineHref,
+                                characterOffset: characterOffset,
+                                contextSnippet: contextSnippet,
+                                atEnd: location.atEnd === true
+                            });
+                            if (location.atEnd === true) {
+                                window.bridge.send('atChapterEnd', {});
+                            }
+                        });
+
+                        window.rendition.on('selected', function (cfiRange, contents) {
+                            var text = '';
+                            try {
+                                text = contents.window.getSelection().toString();
+                            } catch (_) {
+                                text = '';
+                            }
+                            window.bridge.send('selected', {
+                                cfiRange: cfiRange,
+                                text: text
+                            });
+                        });
+
+                        window.rendition.on('markClicked', function (cfiRange, data) {
+                            var id = (data && data.id) ? data.id : cfiRange;
+                            window.bridge.send('markClicked', { id: id });
+                        });
+
+                        await window.rendition.display();
+                        await window.book.ready;
+                        window.bridge.send('bookReady', {});
+                    } catch (error) {
+                        var message = (error && error.message) ? error.message : String(error);
+                        window.bridge.send('bookError', { message: message });
                     }
-
-                    window.rendition = window.book.renderTo('viewer', {
-                        flow: 'paginated',
-                        spread: 'none',
-                        minSpreadWidth: 9999,
-                        width: window.innerWidth,
-                        height: window.innerHeight
-                    });
-
-                    Object.keys(themeMap).forEach(function (name) {
-                        var t = themeMap[name];
-                        window.rendition.themes.register(name, {
-                            'body': { 'background': t.bg, 'color': t.fg }
-                        });
-                    });
-                    window.rendition.themes.select('light');
-                    window.rendition.on('rendered', function () {
-                        applyContentTheme('light');
-                    });
-
-                    window.rendition.on('relocated', function (location) {
-                        var cfi = (location && location.start && location.start.cfi) ? location.start.cfi : '';
-                        var pct = (location && location.start && typeof location.start.percentage === 'number')
-                            ? location.start.percentage
-                            : 0;
-                        var spineHref = (location && location.start && location.start.href) ? location.start.href : '';
-                        var characterOffset = extractCharacterOffset(cfi);
-                        var contextSnippet = extractContextSnippet(location);
-
-                        window.bridge.send('relocated', {
-                            cfi: cfi,
-                            percentage: pct,
-                            spineHref: spineHref,
-                            characterOffset: characterOffset,
-                            contextSnippet: contextSnippet,
-                            atEnd: location.atEnd === true
-                        });
-                        if (location.atEnd === true) {
-                            window.bridge.send('atChapterEnd', {});
-                        }
-                    });
-
-                    window.rendition.on('selected', function (cfiRange, contents) {
-                        var text = '';
-                        try {
-                            text = contents.window.getSelection().toString();
-                        } catch (_) {
-                            text = '';
-                        }
-                        window.bridge.send('selected', {
-                            cfiRange: cfiRange,
-                            text: text
-                        });
-                    });
-
-                    window.rendition.on('markClicked', function (cfiRange, data) {
-                        var id = (data && data.id) ? data.id : cfiRange;
-                        window.bridge.send('markClicked', { id: id });
-                    });
-
-                    await window.rendition.display();
-                    await window.book.ready;
-                    window.bridge.send('bookReady', {});
-                } catch (error) {
-                    var message = (error && error.message) ? error.message : String(error);
-                    window.bridge.send('bookError', { message: message });
-                }
+                })();
             };
 
             window.nextPage = function () {
