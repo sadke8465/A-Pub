@@ -29,7 +29,7 @@ public struct LibraryView: View {
                 )
 
                 Group {
-                    if viewModel.filteredBooks.isEmpty {
+                    if viewModel.books.isEmpty {
                         emptyState
                     } else {
                         content
