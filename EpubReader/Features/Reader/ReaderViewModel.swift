@@ -127,9 +127,17 @@ public final class ReaderViewModel: ObservableObject {
         }
 
         let context = PersistenceController.shared.backgroundContext()
-        let appearance = self.appearance
+        let payload = ReaderAppearanceOverridePayload(
+            fontFamily: appearance.fontFamily,
+            fontSize: appearance.fontSize,
+            theme: appearance.theme,
+            lineSpacing: appearance.lineSpacing,
+            marginStyle: appearance.marginStyle,
+            textAlignment: appearance.textAlignment,
+            hyphenation: appearance.hyphenation
+        )
 
-        Task {
+        Task<Void, Never> {
             await context.perform {
                 let request = NSFetchRequest<Book>(entityName: "Book")
                 request.predicate = NSPredicate(format: "id == %@", bookID as CVarArg)
@@ -140,7 +148,7 @@ public final class ReaderViewModel: ObservableObject {
                         Log.shared.error("Unable to save appearance override: Book not found")
                         return
                     }
-                    storedBook.saveAppearanceOverride(appearance)
+                    storedBook.saveAppearanceOverride(payload)
                     try context.save()
                 } catch {
                     Log.shared.error("Failed saving appearance override: \(error.localizedDescription)")
@@ -216,7 +224,7 @@ public final class ReaderViewModel: ObservableObject {
 
     private func loadAppearanceOverride(for bookID: UUID) async {
         let context = PersistenceController.shared.backgroundContext()
-        if let overrideAppearance = await context.perform({ () -> ReaderAppearance? in
+        if let payload = await context.perform({ () -> ReaderAppearanceOverridePayload? in
             let request = NSFetchRequest<Book>(entityName: "Book")
             request.predicate = NSPredicate(format: "id == %@", bookID as CVarArg)
             request.fetchLimit = 1
@@ -228,13 +236,13 @@ public final class ReaderViewModel: ObservableObject {
                 return nil
             }
         }) {
-            appearance.fontFamily = overrideAppearance.fontFamily
-            appearance.fontSize = overrideAppearance.fontSize
-            appearance.theme = overrideAppearance.theme
-            appearance.lineSpacing = overrideAppearance.lineSpacing
-            appearance.marginStyle = overrideAppearance.marginStyle
-            appearance.textAlignment = overrideAppearance.textAlignment
-            appearance.hyphenation = overrideAppearance.hyphenation
+            appearance.fontFamily = payload.fontFamily
+            appearance.fontSize = payload.fontSize
+            appearance.theme = payload.theme
+            appearance.lineSpacing = payload.lineSpacing
+            appearance.marginStyle = payload.marginStyle
+            appearance.textAlignment = payload.textAlignment
+            appearance.hyphenation = payload.hyphenation
         }
     }
 
@@ -247,7 +255,7 @@ public final class ReaderViewModel: ObservableObject {
         }
 
         let context = PersistenceController.shared.backgroundContext()
-        Task {
+        Task<Void, Never> {
             await context.perform {
                 let request = NSFetchRequest<Book>(entityName: "Book")
                 request.predicate = NSPredicate(format: "id == %@", bookID as CVarArg)
