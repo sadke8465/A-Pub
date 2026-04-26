@@ -25,15 +25,15 @@ public struct ReaderView: View {
                     .transition(.opacity)
             }
 
-            if viewModel.isLoading {
+            if case .loading = viewModel.bookLoadState {
                 ProgressView("Importing…")
                     .padding()
                     .background(.ultraThinMaterial)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
 
-            if !viewModel.readerErrorMessage.isEmpty {
-                readerErrorPanel
+            if case .error(let message) = viewModel.bookLoadState {
+                readerErrorPanel(message: message)
                     .padding()
             }
         }
@@ -49,6 +49,9 @@ public struct ReaderView: View {
                     viewModel.loadFromFile()
                 }
             }
+        }
+        .sheet(isPresented: $viewModel.isDiagnosticsPresented) {
+            diagnosticsSheet
         }
     }
 
@@ -103,7 +106,7 @@ public struct ReaderView: View {
         return book.spineItems[viewModel.currentSpineIndex].label
     }
 
-    private var readerErrorPanel: some View {
+    private func readerErrorPanel(message: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.title2)
@@ -112,20 +115,59 @@ public struct ReaderView: View {
             Text("Reader Error")
                 .font(.headline)
 
-            Text(viewModel.readerErrorMessage)
+            Text(message)
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
 
-            Button("Retry") {
-                viewModel.retryAfterError()
+            HStack(spacing: 8) {
+                Button("Retry Load") {
+                    viewModel.retryAfterError()
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button("Re-import EPUB") {
+                    viewModel.loadFromFile()
+                }
+                .buttonStyle(.bordered)
             }
-            .buttonStyle(.borderedProminent)
+
+            Button("Open Diagnostics") {
+                viewModel.openDiagnostics()
+            }
+            .buttonStyle(.borderless)
         }
         .padding()
         .frame(maxWidth: .infinity)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(radius: 8)
+    }
+
+    private var diagnosticsSheet: some View {
+        NavigationStack {
+            List {
+                LabeledContent("Load State", value: loadStateLabel)
+                LabeledContent("Current CFI", value: viewModel.currentCFI.isEmpty ? "—" : viewModel.currentCFI)
+                LabeledContent("Spine Index", value: String(viewModel.currentSpineIndex))
+                LabeledContent("Web Host Ready", value: viewModel.isWebHostReady ? "Yes" : "No")
+                LabeledContent("Pending Payload", value: viewModel.hasPendingBookPayload ? "Yes" : "No")
+            }
+            .navigationTitle("Reader Diagnostics")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private var loadStateLabel: String {
+        switch viewModel.bookLoadState {
+        case .idle:
+            return "idle"
+        case .loading:
+            return "loading"
+        case .ready:
+            return "ready"
+        case .error(let message):
+            return "error: \(message)"
+        }
     }
 }
 
