@@ -40,6 +40,7 @@ public struct EPUBWebView: UIViewRepresentable {
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
 
+        context.coordinator.attach(to: webView)
         bridge.webView = webView
 
         if let htmlURL = Bundle.main.url(forResource: "reader", withExtension: "html") {
@@ -52,13 +53,49 @@ public struct EPUBWebView: UIViewRepresentable {
     }
 
     public func updateUIView(_ uiView: WKWebView, context: Context) {
+        context.coordinator.resizeIfNeeded(for: uiView)
     }
 
     public final class Coordinator: NSObject, WKNavigationDelegate {
         private let bridge: EPUBBridge
+        private weak var webView: WKWebView?
+        private var currentSize: CGSize = .zero
+        private var orientationObserver: NSObjectProtocol?
 
         init(bridge: EPUBBridge) {
             self.bridge = bridge
+        }
+
+        deinit {
+            if let orientationObserver {
+                NotificationCenter.default.removeObserver(orientationObserver)
+            }
+        }
+
+        func attach(to webView: WKWebView) {
+            self.webView = webView
+            if orientationObserver == nil {
+                orientationObserver = NotificationCenter.default.addObserver(
+                    forName: UIDevice.orientationDidChangeNotification,
+                    object: nil,
+                    queue: .main
+                ) { [weak self] _ in
+                    guard let self, let webView = self.webView else { return }
+                    self.currentSize = .zero
+                    self.resizeIfNeeded(for: webView)
+                }
+            }
+        }
+
+        func resizeIfNeeded(for webView: WKWebView) {
+            let newSize = webView.bounds.size
+            guard newSize.width > 0, newSize.height > 0, newSize != currentSize else {
+                return
+            }
+
+            currentSize = newSize
+            let adjustedHeight = max(0, newSize.height - webView.safeAreaInsets.bottom)
+            bridge.callJS("resizeRendition(\(newSize.width), \(adjustedHeight))")
         }
 
         public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {

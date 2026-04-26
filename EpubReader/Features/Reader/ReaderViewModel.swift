@@ -15,16 +15,22 @@ public final class ReaderViewModel: ObservableObject {
     @Published public var bridge = EPUBBridge()
     @Published public var currentSpineIndex = 0
 
+    let pageController = PageController()
+
     private let importer: FileImporter
     private let initialBookFileURL: URL?
+    private let initialBookID: UUID?
     private var didAttemptInitialLoad = false
+    private var pendingRestoreCFI: String?
 
     public init(
         importer: FileImporter = FileImporter(),
-        initialBookFileURL: URL? = nil
+        initialBookFileURL: URL? = nil,
+        initialBookID: UUID? = nil
     ) {
         self.importer = importer
         self.initialBookFileURL = initialBookFileURL
+        self.initialBookID = initialBookID
         configureBridgeCallbacks()
     }
 
@@ -57,8 +63,42 @@ public final class ReaderViewModel: ObservableObject {
         }
 
         Task {
+            if let initialBookID {
+                pageController.currentBookID = initialBookID
+                pendingRestoreCFI = await pageController.restoreCFI(for: initialBookID)
+            }
             await loadFromLibrary(fileURL: initialBookFileURL)
         }
+    }
+
+    func handleBookReady(in pageCurlVC: PageCurlViewController?) {
+        guard let pendingRestoreCFI else {
+            return
+        }
+        let escapedCFI = pendingRestoreCFI.replacingOccurrences(of: "'", with: "\\'")
+        pageCurlVC?.displayCFI(escapedCFI)
+        self.pendingRestoreCFI = nil
+    }
+
+    func handleRelocated(
+        cfi: String,
+        pct: Double,
+        spineHref: String,
+        characterOffset: Int64,
+        contextSnippet: String,
+        atEnd: Bool
+    ) {
+        currentCFI = cfi
+        percentage = pct
+        updateCurrentSpineIndex(using: spineHref)
+        pageController.onRelocated(
+            cfi: cfi,
+            pct: pct,
+            spineHref: spineHref,
+            characterOffset: characterOffset,
+            contextSnippet: contextSnippet,
+            atEnd: atEnd
+        )
     }
 
     public func toggleOverlay() {
@@ -66,6 +106,7 @@ public final class ReaderViewModel: ObservableObject {
     }
 
     public func teardownReader() {
+        pageController.currentBookID = nil
         bridge.invalidate()
     }
 
@@ -92,9 +133,14 @@ public final class ReaderViewModel: ObservableObject {
     private func configureBridgeCallbacks() {
         bridge.onRelocated = { [weak self] cfi, pct, spineHref, _, _ in
             guard let self else { return }
-            self.currentCFI = cfi
-            self.percentage = pct
-            self.updateCurrentSpineIndex(using: spineHref)
+            self.handleRelocated(
+                cfi: cfi,
+                pct: pct,
+                spineHref: spineHref,
+                characterOffset: 0,
+                contextSnippet: "",
+                atEnd: false
+            )
         }
 
         bridge.onBookReady = {
