@@ -9,6 +9,7 @@ struct ReaderOverlay: View {
     let onBack: () -> Void
     let onSearch: () -> Void
     let onTableOfContents: () -> Void
+    let onGoToLocation: () -> Void
     let onSettings: () -> Void
     let onTextToSpeech: () -> Void
 
@@ -76,6 +77,13 @@ struct ReaderOverlay: View {
                     onTableOfContents()
                 }) {
                     Image(systemName: "list.bullet")
+                }
+
+                Button(action: {
+                    userInteracted()
+                    onGoToLocation()
+                }) {
+                    Image(systemName: "location")
                 }
 
                 Button(action: {

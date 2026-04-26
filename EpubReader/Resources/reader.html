@@ -119,6 +119,54 @@
                 return name;
             }
 
+            function installFootnoteInterceptors(contents) {
+                try {
+                    var doc = contents && contents.document;
+                    if (!doc) { return; }
+                    var links = doc.querySelectorAll('a[epub\\:type~="noteref"], a[role~="doc-noteref"]');
+                    links.forEach(function (link) {
+                        if (link.dataset && link.dataset.apubFootnoteBound === '1') {
+                            return;
+                        }
+
+                        var handler = function (event) {
+                            event.preventDefault();
+                            event.stopPropagation();
+
+                            var href = link.getAttribute('href') || '';
+                            var text = '';
+
+                            if (href.indexOf('#') >= 0) {
+                                var fragment = href.split('#').pop();
+                                if (fragment) {
+                                    var decoded = decodeURIComponent(fragment);
+                                    var byId = doc.getElementById(decoded);
+                                    if (byId && byId.textContent) {
+                                        text = byId.textContent.trim();
+                                    }
+                                }
+                            }
+
+                            if (!text && link.title) {
+                                text = link.title.trim();
+                            }
+                            if (!text && link.textContent) {
+                                text = link.textContent.trim();
+                            }
+
+                            window.bridge.send('footnoteRequest', { href: href, text: text });
+                        };
+
+                        link.addEventListener('click', handler, true);
+                        if (link.dataset) {
+                            link.dataset.apubFootnoteBound = '1';
+                        }
+                    });
+                } catch (_) {
+                    // Non-fatal: footnote interception should never break reading.
+                }
+            }
+
             window.setTheme = function (name) {
                 if (!window.rendition) { return; }
                 var selectedTheme = normalizedThemeName(name);
@@ -323,6 +371,10 @@
                         window.rendition.on('markClicked', function (cfiRange, data) {
                             var id = (data && data.id) ? data.id : cfiRange;
                             window.bridge.send('markClicked', { id: id });
+                        });
+
+                        window.rendition.hooks.content.register(function (contents) {
+                            installFootnoteInterceptors(contents);
                         });
 
                         await window.rendition.display();
