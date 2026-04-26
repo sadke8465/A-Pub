@@ -43,10 +43,10 @@ NEVER:
 ============================================================ -->
 
 LAST_COMPLETED  = 2c.5
-NEXT_TASK       = 2d.1
+NEXT_TASK       = 3a.1
 GATES_PASSED    = []
 TASKS_DONE      = 38
-TASKS_TOTAL     = 94
+TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
 GATE_2_TESTFLIGHT_BETA   = requires 6c.5 done   (all features + sync + integrations)
@@ -459,15 +459,6 @@ Goal: TOC, scrubber, time estimate, chapter navigation.
   VERIFY   Tap a footnote → small sheet appears with footnote text. Dismiss → stays on current page.
 
 PHASE_2c_MILESTONE: Tap screen → overlay. TOC slides in. Drag scrubber. Time estimate shows. Footnote taps open popover.
-
-## PHASE 2d — READER UX POLISH
-
-Goal: make Step 2 reading, appearance, navigation, and footnote flows feel designed, usable, intuitive, and frictionless for daily reading.
-
-- [ ] 2d.1  Reader UX polish pass
-  TARGET   Features/Reader/ReaderView.swift (update), Features/Reader/ReaderOverlay.swift (update), Features/Settings/AppearanceSettings.swift (update), Features/Reader/PageCurlViewController.swift (update), Resources/reader.html (update)
-  IMPL     Redesign Step 2 surfaces as a cohesive reader experience. Core reader: start chrome hidden after readable text appears; use reader-specific loading/recovery states (“Opening…”, “Paginating…”, “Restoring location…”, “Reloading chapter…”); prevent page turns while sheets, scrubber drag, or text selection are active; gate page-curl animation/haptics on Reduce Motion; add RTL gesture/page-turn direction support from EPUB spine metadata. Overlay: fixed 44×44 icon targets with accessibility labels; remove, hide, or disable empty Search/TTS actions until implemented; make long chapter titles compress cleanly; keep auto-hide paused during control interaction, scrubbing, and footnotes; show unknown reading-time state instead of forcing “~1m left”. Appearance: replace long form with compact reader control panel; use fast font-size controls plus presets (Compact/Default/Comfort/Large); remove or implement Custom theme; make “This Book” vs “All Books” scope explicit instead of long-press hidden behavior; throttle live reflow while dragging controls and commit after interaction ends without losing CFI. Navigation: make scrubber a book map with larger invisible hit target, chapter ticks, current chapter/percent preview, disabled state while locations are unavailable, and commit-on-release behavior; compute chapter preview from epub.js locations/spine data rather than percentage × spine count. Go-to-location: replace form sheet with compact panel, quick jumps (start/current chapter/25/50/75/end), validated percent/location input, and reversible “Moved to X%” confirmation using prior CFI. TOC: add empty state, search/filter for long contents, clearer nested indentation, current chapter indicator, and error handling if navigation fails; rename href navigation API away from displayCFI when target is not a CFI. Footnotes/links: resolve same-file and cross-file noteref targets, sanitize note text, strip backlinks/duplicate note markers, present note text using current reader theme/typography, distinguish external links from internal footnotes, and offer dismiss/open full note/jump to note while preserving return CFI. Keep WKWebView pool capped at three, preserve canonical CFI progress rules, do not add third-party libraries.
-  VERIFY   JS syntax parse passes for reader.html. Xcode build passes. Simulator smoke with at least one known EPUB and one footnote EPUB: readable text appears; bookReady logs; relocated updates CFI and percentage; reopen restores CFI; tap zones/page curl still work; Reduce Motion fallback works; appearance changes preserve location and update all visible/prewarmed slots; TOC empty/large/nested cases are usable; scrubber preview and jump work only after locations are ready; go-to-location can jump and return to previous CFI; same-file and cross-file footnotes open in themed sheet and dismiss without moving the current page; RTL EPUB reverses page direction correctly. Known AppIntents metadata warning remains non-blocking.
 
 ## PHASE 3a — HIGHLIGHTS
 

@@ -13,8 +13,7 @@ struct AppearanceSettings: View {
     var onAppearanceChanged: (() -> Void)? = nil
     var onSaveAsDefaultForBook: (() -> Void)? = nil
 
-    @State private var appearanceScope = "all"
-    @State private var editingLineSpacing = false
+    @State private var showSaveForBookConfirmation = false
 
     private struct FontOption {
         let family: String
@@ -56,16 +55,18 @@ struct AppearanceSettings: View {
             foreground: Color(red: 0.23, green: 0.18, blue: 0.18),
             label: "Sepia"
         ),
+        ThemeOption(
+            name: "custom",
+            background: Color(.systemGray3),
+            foreground: Color.primary,
+            label: "Custom"
+        ),
     ]
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    scopeSection
-                    Divider()
-                    presetSection
-                    Divider()
+                VStack(alignment: .leading, spacing: 24) {
                     fontSizeSection
                     Divider()
                     fontFamilySection
@@ -83,106 +84,40 @@ struct AppearanceSettings: View {
             .navigationTitle("Appearance")
             .navigationBarTitleDisplayMode(.inline)
         }
-        .presentationDetents([.height(520), .large])
+        .presentationDetents([.medium, .large])
+        .confirmationDialog(
+            "Save this appearance only for the current book?",
+            isPresented: $showSaveForBookConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Save as default for this book") {
+                onSaveAsDefaultForBook?()
+            }
+
+            Button("Cancel", role: .cancel) {}
+        }
+        .onLongPressGesture(minimumDuration: 0.8) {
+            showSaveForBookConfirmation = true
+        }
     }
 
     // MARK: - Font Size
 
-    private var scopeSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Apply To")
-            Picker("Apply To", selection: $appearanceScope) {
-                Text("All Books").tag("all")
-                Text("This Book").tag("book")
-            }
-            .pickerStyle(.segmented)
-
-            if appearanceScope == "book" {
-                Button {
-                    onSaveAsDefaultForBook?()
-                } label: {
-                    Label("Save Current Settings for This Book", systemImage: "bookmark")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-            }
-        }
-    }
-
-    private var presetSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Preset")
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 78), spacing: 8)], spacing: 8) {
-                presetButton("Compact", fontSize: 16, lineSpacing: 1.25, marginStyle: "narrow")
-                presetButton("Default", fontSize: 18, lineSpacing: 1.5, marginStyle: "normal")
-                presetButton("Comfort", fontSize: 21, lineSpacing: 1.7, marginStyle: "wide")
-                presetButton("Large", fontSize: 24, lineSpacing: 1.8, marginStyle: "wide")
-            }
-        }
-    }
-
-    private func presetButton(_ title: String, fontSize: Double, lineSpacing: Double, marginStyle: String) -> some View {
-        Button(title) {
-            appearance.fontSize = fontSize
-            appearance.lineSpacing = lineSpacing
-            appearance.marginStyle = marginStyle
-            applyFontSize(Int(fontSize))
-            applyLineSpacing(lineSpacing)
-            applyMargin(marginPixels(for: marginStyle))
-            onAppearanceChanged?()
-        }
-        .buttonStyle(.bordered)
-    }
-
     private var fontSizeSection: some View {
         VStack(alignment: .leading, spacing: 8) {
+            sectionHeader("Font Size")
             HStack {
-                sectionHeader("Font Size")
-                Spacer()
                 Text("\(Int(appearance.fontSize)) pt")
                     .font(.body.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-            HStack(spacing: 12) {
-                Button {
-                    updateFontSize(appearance.fontSize - 1)
-                } label: {
-                    Image(systemName: "minus")
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.bordered)
-
-                Slider(
-                    value: Binding(
-                        get: { appearance.fontSize },
-                        set: { appearance.fontSize = $0 }
-                    ),
-                    in: 12...32,
-                    step: 1,
-                    onEditingChanged: { editing in
-                        if !editing {
-                            applyFontSize(Int(appearance.fontSize))
-                            onAppearanceChanged?()
-                        }
+                    .frame(minWidth: 52, alignment: .leading)
+                Stepper("Font size", value: $appearance.fontSize, in: 12...32, step: 1)
+                    .labelsHidden()
+                    .onChange(of: appearance.fontSize) { _, newValue in
+                        applyFontSize(Int(newValue))
+                        onAppearanceChanged?()
                     }
-                )
-
-                Button {
-                    updateFontSize(appearance.fontSize + 1)
-                } label: {
-                    Image(systemName: "plus")
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.bordered)
             }
         }
-    }
-
-    private func updateFontSize(_ value: Double) {
-        let clamped = value.clamped(to: 12...32)
-        appearance.fontSize = clamped
-        applyFontSize(Int(clamped))
-        onAppearanceChanged?()
     }
 
     // MARK: - Font Family
@@ -308,24 +243,11 @@ struct AppearanceSettings: View {
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-            Slider(
-                value: $appearance.lineSpacing,
-                in: 1.2...2.0,
-                step: 0.1,
-                onEditingChanged: { editing in
-                    editingLineSpacing = editing
-                    if !editing {
-                        applyLineSpacing(appearance.lineSpacing)
-                        onAppearanceChanged?()
-                    }
-                }
-            )
-            .onChange(of: appearance.lineSpacing) { _, newValue in
-                if !editingLineSpacing {
+            Slider(value: $appearance.lineSpacing, in: 1.2...2.0, step: 0.1)
+                .onChange(of: appearance.lineSpacing) { _, newValue in
                     applyLineSpacing(newValue)
                     onAppearanceChanged?()
                 }
-            }
         }
     }
 
@@ -389,10 +311,4 @@ struct AppearanceSettings: View {
                 applyHyphenation: { _ in }
             )
         }
-}
-
-private extension Comparable {
-    func clamped(to range: ClosedRange<Self>) -> Self {
-        min(max(self, range.lowerBound), range.upperBound)
-    }
 }

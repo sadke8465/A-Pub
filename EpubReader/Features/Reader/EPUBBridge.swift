@@ -38,50 +38,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         public let details: String?
     }
 
-    public struct RelocatedEvent: Sendable {
-        public let cfi: String
-        public let percentage: Double
-        public let spineHref: String
-        public let spineIndex: Int
-        public let displayedPage: Int?
-        public let displayedTotal: Int?
-        public let characterOffset: Int64
-        public let contextSnippet: String
-        public let atStart: Bool
-        public let atEnd: Bool
-        public let source: String
-    }
-
-    public struct RenderStateEvent: Sendable {
-        public let loadToken: Int
-        public let phase: String
-        public let hasReadableText: Bool
-        public let textLength: Int
-        public let iframeCount: Int
-        public let managerViewCount: Int
-        public let spineHref: String
-        public let spineIndex: Int
-        public let cfi: String
-        public let percentage: Double?
-        public let textExcerpt: String
-    }
-
-    public struct FirstContentReadyEvent: Sendable {
-        public let loadToken: Int
-        public let phase: String
-        public let textLength: Int
-        public let textExcerpt: String
-        public let spineHref: String
-        public let spineIndex: Int
-    }
-
     public static let messageName = "bridge"
-    private static let sharedProcessPool: AnyObject? = {
-        guard let processPoolClass = NSClassFromString("WKProcessPool") as? NSObject.Type else {
-            return nil
-        }
-        return processPoolClass.init()
-    }()
 
     public weak var webView: WKWebView?
 
@@ -97,12 +54,9 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     public var onLocationsSnapshot: ((Int, String?) -> Void)?
     public var onWordCountSample: (([Int]) -> Void)?
     public var onChapterWordCount: ((Int, Int) -> Void)?
-    public var onRelocatedEvent: ((RelocatedEvent) -> Void)?
     public var onJavaScriptExecutionFailed: ((JavaScriptExecutionFailure) -> Void)?
     public var onJSGuardBlocked: ((JSGuardBlockedEvent) -> Void)?
     public var onJSDiagnostic: ((JSDiagnosticEvent) -> Void)?
-    public var onRenderState: ((RenderStateEvent) -> Void)?
-    public var onFirstContentReady: ((FirstContentReadyEvent) -> Void)?
 
     public override init() {
         super.init()
@@ -117,9 +71,6 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         let proxy = LeakAvoider(delegate: self)
         contentController.add(proxy, name: Self.messageName)
         configuration.userContentController = contentController
-        if let sharedProcessPool = Self.sharedProcessPool {
-            configuration.setValue(sharedProcessPool, forKey: "processPool")
-        }
         return configuration
     }
 
@@ -209,27 +160,12 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
 
         switch type {
         case "relocated":
-            let event = RelocatedEvent(
-                cfi: body["cfi"] as? String ?? "",
-                percentage: Self.optionalDoubleValue(body["percentage"]) ?? Self.optionalDoubleValue(body["pct"]) ?? 0,
-                spineHref: body["spineHref"] as? String ?? "",
-                spineIndex: Self.intValue(body["spineIndex"]),
-                displayedPage: Self.optionalIntValue(body["displayedPage"]),
-                displayedTotal: Self.optionalIntValue(body["displayedTotal"]),
-                characterOffset: Self.int64Value(body["characterOffset"]),
-                contextSnippet: body["contextSnippet"] as? String ?? "",
-                atStart: Self.boolValue(body["atStart"]),
-                atEnd: Self.boolValue(body["atEnd"]),
-                source: body["source"] as? String ?? "event"
-            )
-            onRelocatedEvent?(event)
-            onRelocated?(
-                event.cfi,
-                event.percentage,
-                event.spineHref,
-                event.characterOffset,
-                event.contextSnippet
-            )
+            let cfi = body["cfi"] as? String ?? ""
+            let pct = (body["percentage"] as? Double) ?? (body["pct"] as? Double) ?? 0
+            let spineHref = body["spineHref"] as? String ?? ""
+            let characterOffset = body["characterOffset"] as? Int64 ?? 0
+            let contextSnippet = body["contextSnippet"] as? String ?? ""
+            onRelocated?(cfi, pct, spineHref, characterOffset, contextSnippet)
         case "bookReady":
             onBookReady?()
         case "bookError":
@@ -293,47 +229,6 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
                     Log.shared.debug("JS diagnostic [\(level)]: \(message)")
                 }
             }
-        case "renderState":
-            let location = body["location"] as? [String: Any]
-            let spine = body["spine"] as? [String: Any]
-            let event = RenderStateEvent(
-                loadToken: Self.intValue(body["loadToken"]),
-                phase: body["phase"] as? String ?? "unknown",
-                hasReadableText: Self.boolValue(body["hasReadableText"]),
-                textLength: Self.intValue(body["textLength"]),
-                iframeCount: Self.intValue(body["iframeCount"]),
-                managerViewCount: Self.intValue(body["managerViewCount"]),
-                spineHref: spine?["href"] as? String ?? "",
-                spineIndex: Self.intValue(spine?["index"]),
-                cfi: location?["cfi"] as? String ?? "",
-                percentage: Self.optionalDoubleValue(location?["percentage"]),
-                textExcerpt: body["textExcerpt"] as? String ?? ""
-            )
-            onRenderState?(event)
-            Log.shared.debug(
-                """
-                JS renderState phase=\(event.phase) token=\(event.loadToken) \
-                readable=\(event.hasReadableText) textLength=\(event.textLength) \
-                iframes=\(event.iframeCount) views=\(event.managerViewCount) \
-                spine=\(event.spineIndex):\(event.spineHref) cfi=\(event.cfi)
-                """
-            )
-        case "firstContentReady":
-            let event = FirstContentReadyEvent(
-                loadToken: Self.intValue(body["loadToken"]),
-                phase: body["phase"] as? String ?? "unknown",
-                textLength: Self.intValue(body["textLength"]),
-                textExcerpt: body["textExcerpt"] as? String ?? "",
-                spineHref: body["spineHref"] as? String ?? "",
-                spineIndex: Self.intValue(body["spineIndex"])
-            )
-            onFirstContentReady?(event)
-            Log.shared.info(
-                """
-                JS firstContentReady token=\(event.loadToken) phase=\(event.phase) \
-                textLength=\(event.textLength) spine=\(event.spineIndex):\(event.spineHref)
-                """
-            )
         default:
             Log.shared.debug("EPUBBridge received unknown message type: \(type)")
         }
@@ -361,70 +256,5 @@ private extension EPUBBridge {
             return singleLine
         }
         return "\(singleLine.prefix(limit))…"
-    }
-
-    static func intValue(_ value: Any?) -> Int {
-        if let value = value as? Int {
-            return value
-        }
-        if let value = value as? Double {
-            return Int(value)
-        }
-        if let value = value as? NSNumber {
-            return value.intValue
-        }
-        return 0
-    }
-
-    static func optionalIntValue(_ value: Any?) -> Int? {
-        if let value = value as? Int {
-            return value
-        }
-        if let value = value as? Double {
-            return Int(value)
-        }
-        if let value = value as? NSNumber {
-            return value.intValue
-        }
-        return nil
-    }
-
-    static func int64Value(_ value: Any?) -> Int64 {
-        if let value = value as? Int64 {
-            return value
-        }
-        if let value = value as? Int {
-            return Int64(value)
-        }
-        if let value = value as? Double {
-            return Int64(value)
-        }
-        if let value = value as? NSNumber {
-            return value.int64Value
-        }
-        return 0
-    }
-
-    static func optionalDoubleValue(_ value: Any?) -> Double? {
-        if let value = value as? Double {
-            return value
-        }
-        if let value = value as? Int {
-            return Double(value)
-        }
-        if let value = value as? NSNumber {
-            return value.doubleValue
-        }
-        return nil
-    }
-
-    static func boolValue(_ value: Any?) -> Bool {
-        if let value = value as? Bool {
-            return value
-        }
-        if let value = value as? NSNumber {
-            return value.boolValue
-        }
-        return false
     }
 }

@@ -18,10 +18,6 @@ public final class ReaderViewModel: ObservableObject {
     @Published public var minutesRemainingInChapter = 0
     @Published public var lastJavaScriptExecutionError: String?
     @Published public var recoveryMessage: String?
-    @Published public var readerStatusMessage: String?
-    @Published public var isReaderContentReady = false
-    @Published public var areLocationsReady = false
-    @Published public var isRightToLeftReading = false
 
     let pageController = PageController()
     let appearance: ReaderAppearance
@@ -32,8 +28,7 @@ public final class ReaderViewModel: ObservableObject {
     private var didAttemptInitialLoad = false
     private var pendingRestoreCFI: String?
     private var needsLocationsSnapshotAfterReflow = false
-    private let allowLegacyBase64Fallback = true
-    private weak var pageCurlController: PageCurlViewController?
+    private let allowLegacyBase64Fallback = false
     private var jsGuardBlockedCount = 0
     private var wordCountsBySpineIndex: [Int: Int] = [:]
     private var averageWordsPerChapter: Int = 0
@@ -55,20 +50,17 @@ public final class ReaderViewModel: ObservableObject {
     public func loadFromFile() {
         Task {
             isLoading = true
-            readerStatusMessage = "Opening..."
             defer { isLoading = false }
 
             do {
                 let result = try await importer.importSingleEPUBForReader()
+                book = result.0
                 bookFileURL = result.1
                 legacyEscapedBase64Book = result.2 ?? ""
-                book = result.0
-                isRightToLeftReading = Self.isRightToLeftLanguage(result.0.language)
             } catch is CancellationError {
                 Log.shared.info("User cancelled EPUB import")
             } catch {
                 Log.shared.error("Failed to import EPUB: \(error.localizedDescription)")
-                readerStatusMessage = nil
             }
         }
     }
@@ -94,18 +86,15 @@ public final class ReaderViewModel: ObservableObject {
     }
 
     func handleBookReady(in pageCurlVC: PageCurlViewController?) {
-        pageCurlController = pageCurlVC
         pageCurlVC?.applyAppearance(appearance)
-        pageCurlVC?.setRightToLeftReading(isRightToLeftReading)
         loadPersonalizedReadingSpeed()
         requestCurrentChapterWordCount()
 
         guard let pendingRestoreCFI else {
-            readerStatusMessage = isReaderContentReady ? nil : "Paginating..."
             return
         }
-        readerStatusMessage = "Restoring location..."
-        pageCurlVC?.displayCFI(pendingRestoreCFI)
+        let escapedCFI = pendingRestoreCFI.replacingOccurrences(of: "'", with: "\\'")
+        pageCurlVC?.displayCFI(escapedCFI)
         self.pendingRestoreCFI = nil
     }
 
@@ -131,7 +120,7 @@ public final class ReaderViewModel: ObservableObject {
 
         if needsLocationsSnapshotAfterReflow {
             needsLocationsSnapshotAfterReflow = false
-            pageCurlController?.requestLocationsSnapshot()
+            bridge.requestLocationsSnapshot()
         }
 
         updateMinutesRemaining(characterOffset: characterOffset)
@@ -141,8 +130,6 @@ public final class ReaderViewModel: ObservableObject {
     func handleAppearanceChange() {
         pageController.invalidatePaginationMetricsForReflow()
         needsLocationsSnapshotAfterReflow = true
-        areLocationsReady = false
-        readerStatusMessage = "Paginating..."
     }
 
     func handleJavaScriptExecutionFailure(_ failure: EPUBBridge.JavaScriptExecutionFailure) {
@@ -162,32 +149,6 @@ public final class ReaderViewModel: ObservableObject {
         if jsGuardBlockedCount >= 3 {
             recoveryMessage = "Reloading chapter…"
         }
-    }
-
-    func handleRenderState(slotIndex: Int, event: EPUBBridge.RenderStateEvent) {
-        if event.hasReadableText {
-            recoveryMessage = nil
-        }
-        Log.shared.debug(
-            """
-            Reader renderState slot=\(slotIndex) phase=\(event.phase) \
-            textLength=\(event.textLength) iframeCount=\(event.iframeCount) \
-            spine=\(event.spineIndex):\(event.spineHref)
-            """
-        )
-    }
-
-    func handleFirstContentReady(slotIndex: Int, event: EPUBBridge.FirstContentReadyEvent) {
-        isReaderContentReady = true
-        readerStatusMessage = nil
-        isOverlayVisible = false
-        recoveryMessage = nil
-        Log.shared.info(
-            """
-            Reader firstContentReady slot=\(slotIndex) phase=\(event.phase) \
-            textLength=\(event.textLength) spine=\(event.spineIndex):\(event.spineHref)
-            """
-        )
     }
 
     func saveCurrentAppearanceOverrideForCurrentBook() {
@@ -231,22 +192,13 @@ public final class ReaderViewModel: ObservableObject {
         isOverlayVisible.toggle()
     }
 
-    func attachPageCurlController(_ controller: PageCurlViewController?) {
-        pageCurlController = controller
-        controller?.setRightToLeftReading(isRightToLeftReading)
-    }
-
     public func teardownReader() {
         pageController.currentBookID = nil
-        pageCurlController = nil
         bridge.invalidate()
     }
 
     private func loadFromLibrary(fileURL: URL) async {
         isLoading = true
-        isReaderContentReady = false
-        areLocationsReady = false
-        readerStatusMessage = "Opening..."
         defer { isLoading = false }
 
         do {
@@ -255,22 +207,13 @@ public final class ReaderViewModel: ObservableObject {
             let extractedRoot = try await extractor.extract(fileURL)
             let parsedBook = try await parser.parse(extractedRoot: extractedRoot)
 
-            let escapedBase64 = allowLegacyBase64Fallback
+            book = parsedBook
+            bookFileURL = fileURL
+            legacyEscapedBase64Book = allowLegacyBase64Fallback
                 ? (try await Self.loadAndEscapeBase64(fileURL: fileURL))
                 : ""
-            bookFileURL = fileURL
-            legacyEscapedBase64Book = escapedBase64
-            book = parsedBook
-            isRightToLeftReading = Self.isRightToLeftLanguage(parsedBook.language)
-            pageCurlController?.setRightToLeftReading(isRightToLeftReading)
-            if pendingRestoreCFI != nil {
-                readerStatusMessage = "Restoring location..."
-            } else {
-                readerStatusMessage = "Paginating..."
-            }
         } catch {
             Log.shared.error("Failed to open library EPUB: \(error.localizedDescription)")
-            readerStatusMessage = nil
         }
     }
 
@@ -304,15 +247,28 @@ public final class ReaderViewModel: ObservableObject {
         }
 
         bridge.onLocationsSnapshot = { [weak self] totalLocations, serializedLocations in
-            self?.handleLocationsSnapshot(totalLocations: totalLocations, serializedLocations: serializedLocations)
+            guard let self else { return }
+            self.pageController.updateTotalLocationCount(totalLocations)
+            self.persistLocationsCache(serializedLocations)
         }
 
         bridge.onWordCountSample = { [weak self] counts in
-            self?.handleWordCountSample(counts)
+            guard let self else { return }
+            let validCounts = counts.filter { $0 > 0 }
+            guard !validCounts.isEmpty else {
+                return
+            }
+            let sum = validCounts.reduce(0, +)
+            self.averageWordsPerChapter = max(1, sum / validCounts.count)
         }
 
         bridge.onChapterWordCount = { [weak self] index, count in
-            self?.handleChapterWordCount(index: index, count: count)
+            guard let self else { return }
+            guard count > 0 else {
+                return
+            }
+            self.wordCountsBySpineIndex[index] = count
+            self.updateMinutesRemaining(characterOffset: self.pageController.currentCharacterOffset)
         }
 
         bridge.onJavaScriptExecutionFailed = { [weak self] failure in
@@ -372,32 +328,6 @@ public final class ReaderViewModel: ObservableObject {
         }
     }
 
-    func handleLocationsSnapshot(totalLocations: Int, serializedLocations: String?) {
-        pageController.updateTotalLocationCount(totalLocations)
-        areLocationsReady = totalLocations > 0
-        if totalLocations > 0, isReaderContentReady {
-            readerStatusMessage = nil
-        }
-        persistLocationsCache(serializedLocations)
-    }
-
-    func handleWordCountSample(_ counts: [Int]) {
-        let validCounts = counts.filter { $0 > 0 }
-        guard !validCounts.isEmpty else {
-            return
-        }
-        let sum = validCounts.reduce(0, +)
-        averageWordsPerChapter = max(1, sum / validCounts.count)
-    }
-
-    func handleChapterWordCount(index: Int, count: Int) {
-        guard count > 0 else {
-            return
-        }
-        wordCountsBySpineIndex[index] = count
-        updateMinutesRemaining(characterOffset: pageController.currentCharacterOffset)
-    }
-
     private func updateCurrentSpineIndex(using spineHref: String) {
         guard !spineHref.isEmpty,
               let book,
@@ -424,7 +354,7 @@ public final class ReaderViewModel: ObservableObject {
         guard currentSpineIndex >= 0 else {
             return
         }
-        pageCurlController?.requestChapterWordCount(currentSpineIndex)
+        bridge.callJS("requestChapterWordCount(\(currentSpineIndex))")
     }
 
     private func updateMinutesRemaining(characterOffset: Int64) {
@@ -462,15 +392,6 @@ public final class ReaderViewModel: ObservableObject {
             return "reader.wpm.book.\(identifier)"
         }
         return "reader.wpm.book.unknown"
-    }
-
-    private static func isRightToLeftLanguage(_ language: String) -> Bool {
-        let normalized = language
-            .lowercased()
-            .split(whereSeparator: { $0 == "-" || $0 == "_" })
-            .first
-            .map(String.init) ?? ""
-        return ["ar", "fa", "he", "iw", "ur", "yi"].contains(normalized)
     }
 }
 
