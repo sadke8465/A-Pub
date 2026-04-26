@@ -44,6 +44,20 @@
             window.book = null;
             window.rendition = null;
 
+            var themeMap = {
+                light: { bg: '#FFFFF8', fg: '#1C1C1E' },
+                dark:  { bg: '#1C1C1E', fg: '#E5E5EA' },
+                sepia: { bg: '#F4ECD8', fg: '#3B2F2F' }
+            };
+
+            window.setTheme = function (name) {
+                if (!window.rendition) { return; }
+                var t = themeMap[name] || themeMap.light;
+                window.rendition.themes.select(name);
+                document.documentElement.style.background = t.bg;
+                document.body.style.background = t.bg;
+            };
+
             function extractCharacterOffset(cfi) {
                 if (!cfi || typeof cfi !== 'string') {
                     return 0;
@@ -81,6 +95,14 @@
                         width: window.innerWidth,
                         height: window.innerHeight
                     });
+
+                    Object.keys(themeMap).forEach(function (name) {
+                        var t = themeMap[name];
+                        window.rendition.themes.register(name, {
+                            'body': { 'background': t.bg, 'color': t.fg }
+                        });
+                    });
+                    window.rendition.themes.select('light');
 
                     window.rendition.on('relocated', function (location) {
                         var cfi = (location && location.start && location.start.cfi) ? location.start.cfi : '';
