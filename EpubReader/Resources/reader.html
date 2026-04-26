@@ -76,6 +76,71 @@
                 }
             }
 
+            function trimText(value) {
+                if (typeof value !== 'string') {
+                    return '';
+                }
+                return value.replace(/\s+/g, ' ').trim();
+            }
+
+            function resolveFootnoteText(anchor, href, doc) {
+                var anchorText = trimText(anchor && anchor.textContent ? anchor.textContent : '');
+                var targetText = '';
+                try {
+                    if (typeof href === 'string' && href.indexOf('#') >= 0) {
+                        var parts = href.split('#');
+                        var hash = parts.length > 1 ? parts[1] : '';
+                        if (hash.length > 0) {
+                            var target = doc.getElementById(hash);
+                            if (!target) {
+                                target = doc.querySelector('[id="' + CSS.escape(hash) + '"]');
+                            }
+                            if (target) {
+                                targetText = trimText(target.textContent || '');
+                            }
+                        }
+                    }
+                } catch (_) {
+                    targetText = '';
+                }
+
+                if (targetText.length > 0) {
+                    return targetText;
+                }
+                return anchorText;
+            }
+
+            function installFootnoteInterceptors(contents) {
+                if (!contents || !contents.document) {
+                    return;
+                }
+                var doc = contents.document;
+                var links = doc.querySelectorAll('a[epub\\:type~="noteref"], a[role="doc-noteref"], a[epub\\:type="noteref"]');
+                links.forEach(function (anchor) {
+                    if (anchor.dataset.apubFootnoteBound === '1') {
+                        return;
+                    }
+                    anchor.dataset.apubFootnoteBound = '1';
+                    anchor.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        var href = anchor.getAttribute('href') || '';
+                        var title = trimText(anchor.getAttribute('title') || anchorTextFallback(anchor));
+                        var text = resolveFootnoteText(anchor, href, doc);
+                        window.bridge.send('footnoteRequest', {
+                            href: href,
+                            title: title,
+                            text: text
+                        });
+                    });
+                });
+            }
+
+            function anchorTextFallback(anchor) {
+                var text = trimText(anchor && anchor.textContent ? anchor.textContent : '');
+                return text.length > 0 ? text : 'Footnote';
+            }
+
             function applyContentTheme(name) {
                 if (!window.rendition) { return; }
 
@@ -285,6 +350,10 @@
                             applyContentTheme('light');
                         });
 
+                        window.rendition.hooks.content.register(function (contents) {
+                            installFootnoteInterceptors(contents);
+                        });
+
                         window.rendition.on('relocated', function (location) {
                             var cfi = (location && location.start && location.start.cfi) ? location.start.cfi : '';
                             var pct = (location && location.start && typeof location.start.percentage === 'number')
@@ -351,7 +420,14 @@
             };
 
             window.displayCFI = function (cfi) {
-                if (window.rendition && cfi) {
+                if (!window.rendition) {
+                    return;
+                }
+                if (typeof cfi === 'number') {
+                    window.rendition.display(cfi);
+                    return;
+                }
+                if (typeof cfi === 'string' && cfi.length > 0) {
                     window.rendition.display(cfi);
                 }
             };
