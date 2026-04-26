@@ -16,6 +16,7 @@ public final class ReaderViewModel: ObservableObject {
     @Published public var bridge = EPUBBridge()
     @Published public var currentSpineIndex = 0
     @Published public var lastJavaScriptExecutionError: String?
+    @Published public var recoveryMessage: String?
 
     let pageController = PageController()
     let appearance: ReaderAppearance
@@ -27,6 +28,7 @@ public final class ReaderViewModel: ObservableObject {
     private var pendingRestoreCFI: String?
     private var needsLocationsSnapshotAfterReflow = false
     private let allowLegacyBase64Fallback = false
+    private var jsGuardBlockedCount = 0
 
     init(
         importer: FileImporter = FileImporter(),
@@ -125,10 +127,20 @@ public final class ReaderViewModel: ObservableObject {
     func handleJavaScriptExecutionFailure(_ failure: EPUBBridge.JavaScriptExecutionFailure) {
         let message = """
         JavaScript execution failed for \(failure.commandPrefix) \
-        [\(failure.errorDomain):\(failure.errorCode)] \(failure.message)
+        [\(failure.errorDomain):\(failure.errorCode)] \(failure.message) \
+        [slot=\(failure.slotIndex.map(String.init) ?? "n/a") state=\(failure.slotState ?? "n/a") \
+        token=\(failure.loadToken.map(String.init) ?? "n/a") family=\(failure.commandFamily ?? "n/a")]
         """
         lastJavaScriptExecutionError = message
         Log.shared.error(message)
+    }
+
+    func handleJSGuardBlocked(_ event: EPUBBridge.JSGuardBlockedEvent) {
+        jsGuardBlockedCount += 1
+        Log.shared.error("JS guard blocked command=\(event.command) reason=\(event.reason)")
+        if jsGuardBlockedCount >= 3 {
+            recoveryMessage = "Reloading chapter…"
+        }
     }
 
     func saveCurrentAppearanceOverrideForCurrentBook() {
