@@ -70,6 +70,7 @@ final class EPUBPageContentViewController: UIViewController, WKNavigationDelegat
 final class PageCurlViewController: UIPageViewController {
 
     private enum SlotLifecycleState: Equatable {
+        case htmlLoading
         case htmlLoaded
         case bookLoading(token: Int)
         case bookReady(token: Int)
@@ -77,6 +78,7 @@ final class PageCurlViewController: UIPageViewController {
 
         var label: String {
             switch self {
+            case .htmlLoading: return "htmlLoading"
             case .htmlLoaded: return "htmlLoaded"
             case .bookLoading: return "bookLoading"
             case .bookReady: return "bookReady"
@@ -88,7 +90,7 @@ final class PageCurlViewController: UIPageViewController {
             switch self {
             case .bookLoading(let token), .bookReady(let token), .failed(let token, _):
                 return token
-            case .htmlLoaded:
+            case .htmlLoading, .htmlLoaded:
                 return nil
             }
         }
@@ -112,7 +114,7 @@ final class PageCurlViewController: UIPageViewController {
     // pool[(poolCurrent+1)%3] = next
     private let pool: [EPUBPageContentViewController]
     private var poolCurrent = 1
-    private var slotState = [SlotLifecycleState](repeating: .htmlLoaded, count: 3)
+    private var slotState = [SlotLifecycleState](repeating: .htmlLoading, count: 3)
     private var isHTMLReadyBySlot = [Bool](repeating: false, count: 3)
     private var loadTokenBySlot = [Int](repeating: 0, count: 3)
     private var queuedCommandsBySlot = [[PendingCommand]](repeating: [], count: 3)
@@ -189,21 +191,56 @@ final class PageCurlViewController: UIPageViewController {
     }
 
     func applyAppearance(_ appearance: ReaderAppearance) {
+        applyTheme(appearance.theme)
+        applyFontSize(Int(appearance.fontSize))
+        applyFontFamily(appearance.fontFamily)
+        applyLineSpacing(appearance.lineSpacing)
+        applyMargin(Self.marginPixels(for: appearance.marginStyle))
+        applyJustify(appearance.textAlignment == "justify")
+        applyHyphenation(appearance.hyphenation)
+    }
+
+    func applyTheme(_ theme: String) {
+        let escaped = theme.replacingOccurrences(of: "'", with: "\\'")
+        broadcastAppearance("setTheme('\(escaped)')")
+    }
+
+    func applyFontSize(_ px: Int) {
+        broadcastAppearance("setFontSize(\(px))")
+    }
+
+    func applyFontFamily(_ family: String) {
+        let escaped = family.replacingOccurrences(of: "'", with: "\\'")
+        broadcastAppearance("setFontFamily('\(escaped)')")
+    }
+
+    func applyLineSpacing(_ value: Double) {
+        broadcastAppearance("setLineSpacing(\(value))")
+    }
+
+    func applyMargin(_ px: Int) {
+        broadcastAppearance("setMargin(\(px))")
+    }
+
+    func applyJustify(_ justify: Bool) {
+        broadcastAppearance("setJustify(\(justify))")
+    }
+
+    func applyHyphenation(_ on: Bool) {
+        broadcastAppearance("setHyphenation(\(on))")
+    }
+
+    private func broadcastAppearance(_ js: String) {
         for slotIndex in pool.indices {
-            enqueueOrDispatch(slotIndex: slotIndex, js: "setTheme('\(appearance.theme)')", family: .appearance)
-            enqueueOrDispatch(slotIndex: slotIndex, js: "setFontSize(\(Int(appearance.fontSize)))", family: .appearance)
-            let escapedFont = appearance.fontFamily.replacingOccurrences(of: "'", with: "\\'")
-            enqueueOrDispatch(slotIndex: slotIndex, js: "setFontFamily('\(escapedFont)')", family: .appearance)
-            enqueueOrDispatch(slotIndex: slotIndex, js: "setLineSpacing(\(appearance.lineSpacing))", family: .appearance)
-            let margin: Int
-            switch appearance.marginStyle {
-            case "narrow": margin = 8
-            case "wide": margin = 40
-            default: margin = 24
-            }
-            enqueueOrDispatch(slotIndex: slotIndex, js: "setMargin(\(margin))", family: .appearance)
-            enqueueOrDispatch(slotIndex: slotIndex, js: "setJustify(\(appearance.textAlignment == "justify"))", family: .appearance)
-            enqueueOrDispatch(slotIndex: slotIndex, js: "setHyphenation(\(appearance.hyphenation))", family: .appearance)
+            enqueueOrDispatch(slotIndex: slotIndex, js: js, family: .appearance)
+        }
+    }
+
+    static func marginPixels(for style: String) -> Int {
+        switch style {
+        case "narrow": return 8
+        case "wide": return 40
+        default: return 24
         }
     }
 
@@ -271,8 +308,16 @@ final class PageCurlViewController: UIPageViewController {
 
     private func markSlotReady(_ slotIndex: Int) {
         isHTMLReadyBySlot[slotIndex] = true
-        slotState[slotIndex] = .htmlLoaded
-        Log.shared.debug("PageCurl slot \(slotIndex) state=\(slotState[slotIndex].label)")
+        switch slotState[slotIndex] {
+        case .htmlLoading:
+            slotState[slotIndex] = .htmlLoaded
+        case .htmlLoaded, .bookLoading, .bookReady, .failed:
+            // Preserve any later lifecycle state already reached. In particular,
+            // do not regress `.bookLoading(token:)` set by `queueLoadIfNeeded`
+            // back to `.htmlLoaded` — `flushPendingLoad` requires `.bookLoading`.
+            break
+        }
+        Log.shared.debug("PageCurl slot \(slotIndex) htmlReady=true state=\(slotState[slotIndex].label)")
         flushPendingLoad(for: slotIndex)
     }
 
@@ -295,7 +340,10 @@ final class PageCurlViewController: UIPageViewController {
               let pendingLoad = pendingLoadBySlot[slotIndex]
         else { return }
         pendingLoadBySlot[slotIndex] = nil
-        Log.shared.debug("PageCurl slot \(slotIndex) state=\(slotState[slotIndex].label) token=\(token) load dispatched")
+        let host = URL(string: pendingLoad.bookURLString)?.host ?? "unknown"
+        Log.shared.debug(
+            "PageCurl slot \(slotIndex) load dispatched token=\(token) host=\(host)"
+        )
         let js = "loadBook('\(pendingLoad.bookURLString)', \(pendingLoad.fallbackEscapedBase64.map { "'\($0)'" } ?? "null"))"
         pool[slotIndex].bridge.callJS(
             js,
@@ -311,6 +359,7 @@ final class PageCurlViewController: UIPageViewController {
             return
         }
         slotState[slotIndex] = .bookReady(token: token)
+        Log.shared.debug("PageCurl slot \(slotIndex) state=bookReady token=\(token)")
         flushQueuedCommands(for: slotIndex)
         if slotIndex == poolCurrent {
             onBookReady?()
@@ -332,8 +381,11 @@ final class PageCurlViewController: UIPageViewController {
             dispatch(js: js, to: slotIndex, token: token, family: family)
         case .bookLoading(let token):
             queuedCommandsBySlot[slotIndex].append(PendingCommand(js: js, family: family, token: token))
-        case .htmlLoaded:
-            return
+        case .htmlLoading, .htmlLoaded:
+            let prefix = Self.truncatedJSPrefix(js)
+            Log.shared.debug(
+                "PageCurl slot \(slotIndex) dropped \(family.rawValue) command (no book loaded): \(prefix)"
+            )
         case .failed:
             queuedCommandsBySlot[slotIndex].removeAll()
         }
@@ -356,6 +408,12 @@ final class PageCurlViewController: UIPageViewController {
             loadToken: token,
             commandFamily: family.rawValue
         )
+    }
+
+    private static func truncatedJSPrefix(_ js: String, limit: Int = 80) -> String {
+        let singleLine = js.replacingOccurrences(of: "\n", with: " ")
+        guard singleLine.count > limit else { return singleLine }
+        return "\(singleLine.prefix(limit))…"
     }
 
     private func commandFamily(for js: String) -> CommandFamily {

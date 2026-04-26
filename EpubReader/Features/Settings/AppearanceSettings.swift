@@ -3,7 +3,13 @@ import SwiftUI
 struct AppearanceSettings: View {
 
     @Bindable var appearance: ReaderAppearance
-    let bridge: EPUBBridge
+    let applyFontSize: (Int) -> Void
+    let applyFontFamily: (String) -> Void
+    let applyTheme: (String) -> Void
+    let applyMargin: (Int) -> Void
+    let applyLineSpacing: (Double) -> Void
+    let applyJustify: (Bool) -> Void
+    let applyHyphenation: (Bool) -> Void
     var onAppearanceChanged: (() -> Void)? = nil
     var onSaveAsDefaultForBook: (() -> Void)? = nil
 
@@ -107,7 +113,7 @@ struct AppearanceSettings: View {
                 Stepper("Font size", value: $appearance.fontSize, in: 12...32, step: 1)
                     .labelsHidden()
                     .onChange(of: appearance.fontSize) { _, newValue in
-                        bridge.applyFontSize(Int(newValue))
+                        applyFontSize(Int(newValue))
                         onAppearanceChanged?()
                     }
             }
@@ -135,7 +141,7 @@ struct AppearanceSettings: View {
         let isSelected = appearance.fontFamily == option.family
         return Button {
             appearance.fontFamily = option.family
-            bridge.applyFontFamily(option.family)
+            applyFontFamily(option.family)
             onAppearanceChanged?()
         } label: {
             VStack(spacing: 4) {
@@ -180,7 +186,7 @@ struct AppearanceSettings: View {
         let isSelected = appearance.theme == option.name
         return Button {
             appearance.theme = option.name
-            bridge.applyTheme(option.name)
+            applyTheme(option.name)
             onAppearanceChanged?()
         } label: {
             VStack(spacing: 6) {
@@ -220,7 +226,7 @@ struct AppearanceSettings: View {
             }
             .pickerStyle(.segmented)
             .onChange(of: appearance.marginStyle) { _, newValue in
-                bridge.applyMargin(marginPixels(for: newValue))
+                applyMargin(marginPixels(for: newValue))
                 onAppearanceChanged?()
             }
         }
@@ -239,7 +245,7 @@ struct AppearanceSettings: View {
             }
             Slider(value: $appearance.lineSpacing, in: 1.2...2.0, step: 0.1)
                 .onChange(of: appearance.lineSpacing) { _, newValue in
-                    bridge.applyLineSpacing(newValue)
+                    applyLineSpacing(newValue)
                     onAppearanceChanged?()
                 }
         }
@@ -254,7 +260,7 @@ struct AppearanceSettings: View {
             Divider()
             Toggle("Hyphenation", isOn: $appearance.hyphenation)
                 .onChange(of: appearance.hyphenation) { _, newValue in
-                    bridge.applyHyphenation(newValue)
+                    applyHyphenation(newValue)
                     onAppearanceChanged?()
                 }
                 .padding(.vertical, 8)
@@ -268,7 +274,7 @@ struct AppearanceSettings: View {
             get: { appearance.textAlignment == "justify" },
             set: { newValue in
                 appearance.textAlignment = newValue ? "justify" : "left"
-                bridge.applyJustify(newValue)
+                applyJustify(newValue)
                 onAppearanceChanged?()
             }
         )
@@ -296,7 +302,13 @@ struct AppearanceSettings: View {
         .sheet(isPresented: .constant(true)) {
             AppearanceSettings(
                 appearance: ReaderAppearance(),
-                bridge: EPUBBridge()
+                applyFontSize: { _ in },
+                applyFontFamily: { _ in },
+                applyTheme: { _ in },
+                applyMargin: { _ in },
+                applyLineSpacing: { _ in },
+                applyJustify: { _ in },
+                applyHyphenation: { _ in }
             )
         }
 }

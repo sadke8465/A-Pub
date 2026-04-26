@@ -109,7 +109,13 @@ public struct ReaderView: View {
         .sheet(isPresented: $showingAppearanceSettings) {
             AppearanceSettings(
                 appearance: viewModel.appearance,
-                bridge: pageCurlVC?.currentSlot.bridge ?? viewModel.bridge,
+                applyFontSize: { px in pageCurlVC?.applyFontSize(px) },
+                applyFontFamily: { family in pageCurlVC?.applyFontFamily(family) },
+                applyTheme: { theme in pageCurlVC?.applyTheme(theme) },
+                applyMargin: { px in pageCurlVC?.applyMargin(px) },
+                applyLineSpacing: { value in pageCurlVC?.applyLineSpacing(value) },
+                applyJustify: { justify in pageCurlVC?.applyJustify(justify) },
+                applyHyphenation: { on in pageCurlVC?.applyHyphenation(on) },
                 onAppearanceChanged: { viewModel.handleAppearanceChange() },
                 onSaveAsDefaultForBook: { viewModel.saveCurrentAppearanceOverrideForCurrentBook() }
             )
