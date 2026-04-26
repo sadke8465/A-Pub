@@ -31,6 +31,11 @@ public struct ReaderView: View {
                     .background(.ultraThinMaterial)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
+
+            if !viewModel.readerErrorMessage.isEmpty {
+                readerErrorPanel
+                    .padding()
+            }
         }
         .onAppear {
             viewModel.loadInitialBookIfNeeded()
@@ -96,6 +101,31 @@ public struct ReaderView: View {
         }
 
         return book.spineItems[viewModel.currentSpineIndex].label
+    }
+
+    private var readerErrorPanel: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.title2)
+                .foregroundStyle(.yellow)
+
+            Text("Reader Error")
+                .font(.headline)
+
+            Text(viewModel.readerErrorMessage)
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+
+            Button("Retry") {
+                viewModel.retryAfterError()
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+        .frame(maxWidth: .infinity)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(radius: 8)
     }
 }
 

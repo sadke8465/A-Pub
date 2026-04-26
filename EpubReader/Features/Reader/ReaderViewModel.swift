@@ -16,6 +16,7 @@ public final class ReaderViewModel: ObservableObject {
     @Published public var currentSpineIndex = 0
     @Published public var isWebHostReady = false
     @Published public var hasPendingBookPayload = false
+    @Published public var readerErrorMessage: String = ""
 
     private let importer: FileImporter
     private let initialBookFileURL: URL?
@@ -41,6 +42,7 @@ public final class ReaderViewModel: ObservableObject {
                 base64Book = result.1
                 escapedBase64Book = result.2
                 hasPendingBookPayload = !result.2.isEmpty
+                readerErrorMessage = ""
                 tryLoadBookIntoWebView()
             } catch is CancellationError {
                 Log.shared.info("User cancelled EPUB import")
@@ -90,6 +92,7 @@ public final class ReaderViewModel: ObservableObject {
             base64Book = encoded
             escapedBase64Book = encoded.replacingOccurrences(of: "'", with: "\\'")
             hasPendingBookPayload = !escapedBase64Book.isEmpty
+            readerErrorMessage = ""
             tryLoadBookIntoWebView()
         } catch {
             Log.shared.error("Failed to open library EPUB: \(error.localizedDescription)")
@@ -113,6 +116,18 @@ public final class ReaderViewModel: ObservableObject {
         hasPendingBookPayload = false
     }
 
+    public func retryAfterError() {
+        readerErrorMessage = ""
+
+        guard !escapedBase64Book.isEmpty else {
+            loadFromFile()
+            return
+        }
+
+        hasPendingBookPayload = true
+        tryLoadBookIntoWebView()
+    }
+
     private func configureBridgeCallbacks() {
         bridge.onRelocated = { [weak self] cfi, pct, spineHref in
             guard let self else { return }
@@ -121,12 +136,21 @@ public final class ReaderViewModel: ObservableObject {
             self.updateCurrentSpineIndex(using: spineHref)
         }
 
-        bridge.onBookReady = {
+        bridge.onBookReady = { [weak self] in
             Log.shared.info("EPUB book ready")
+            self?.readerErrorMessage = ""
         }
 
-        bridge.onBookError = { message in
+        bridge.onBookError = { [weak self] message in
+            guard let self else { return }
             Log.shared.error("EPUB book load failed: \(message)")
+            self.readerErrorMessage = message
+        }
+
+        bridge.onJavaScriptEvalError = { [weak self] message in
+            guard let self else { return }
+            Log.shared.error("EPUB bridge JavaScript evaluation error: \(message)")
+            self.readerErrorMessage = message
         }
     }
 
