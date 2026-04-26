@@ -2,6 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Literata-Regular.ttf</string>
+		<string>Literata-Italic.ttf</string>
+		<string>EBGaramond-Regular.ttf</string>
+		<string>EBGaramond-Italic.ttf</string>
+		<string>iAWriterQuattroS-Regular.ttf</string>
+		<string>iAWriterQuattroS-Italic.ttf</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -25,15 +36,6 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UIAppFonts</key>
-	<array>
-		<string>Fonts/Literata-Regular.ttf</string>
-		<string>Fonts/Literata-Italic.ttf</string>
-		<string>Fonts/EBGaramond-Regular.ttf</string>
-		<string>Fonts/EBGaramond-Italic.ttf</string>
-		<string>Fonts/iAWriterQuattroS-Regular.ttf</string>
-		<string>Fonts/iAWriterQuattroS-Italic.ttf</string>
 	</array>
 </dict>
 </plist>

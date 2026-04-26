@@ -107,7 +107,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0A00000000000000000000A1 /* MainGroup */ = {
+		0A00000000000000000000A1 = {
 			isa = PBXGroup;
 			children = (
 				0A00000000000000000000A3 /* EpubReader */,
@@ -139,126 +139,6 @@
 			path = EpubReader;
 			sourceTree = "<group>";
 		};
-		0A00000000000000000000AB /* Features */ = {
-			isa = PBXGroup;
-			children = (
-				0A00000000000000000000AE /* Library */,
-				0A00000000000000000000AC /* Reader */,
-				0A00000000000000000000B1 /* Settings */,
-			);
-			path = Features;
-			sourceTree = "<group>";
-		};
-		0A00000000000000000000B1 /* Settings */ = {
-			isa = PBXGroup;
-			children = (
-				0A0000000000000000000B28 /* AppearanceSettings.swift */,
-			);
-			path = Settings;
-			sourceTree = "<group>";
-		};
-		0A00000000000000000000AE /* Library */ = {
-			isa = PBXGroup;
-			children = (
-				0A0000000000000000000B18 /* LibraryView.swift */,
-				0A0000000000000000000B19 /* LibraryViewModel.swift */,
-				0A0000000000000000000B1A /* BookGridCell.swift */,
-				0A0000000000000000000B1B /* BookListCell.swift */,
-				0A0000000000000000000B1C /* BookDetailView.swift */,
-				0A0000000000000000000B1D /* ShelfView.swift */,
-			);
-			path = Library;
-			sourceTree = "<group>";
-		};
-		0A00000000000000000000AC /* Reader */ = {
-			isa = PBXGroup;
-			children = (
-				0A0000000000000000000B0F /* EPUBBridge.swift */,
-				0A0000000000000000000B10 /* EPUBWebView.swift */,
-				0A0000000000000000000B1E /* PageController.swift */,
-				0A0000000000000000000B1F /* PageCurlViewController.swift */,
-				0A0000000000000000000B20 /* ReaderSettings.swift */,
-				0A0000000000000000000B12 /* ReaderView.swift */,
-				0A0000000000000000000B13 /* ReaderViewModel.swift */,
-			);
-			path = Reader;
-			sourceTree = "<group>";
-		};
-		0A00000000000000000000A9 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				0A0000000000000000000B06 /* jszip.min.js */,
-				0A0000000000000000000B07 /* epub.js */,
-				0A0000000000000000000B08 /* reader.html */,
-				0A0000000000000000000B09 /* reader.css */,
-				0A00000000000000000000AF /* Fonts */,
-			);
-			path = Resources;
-			sourceTree = "<group>";
-		};
-		0A00000000000000000000AF /* Fonts */ = {
-			isa = PBXGroup;
-			children = (
-				0A0000000000000000000B22 /* Literata-Regular.ttf */,
-				0A0000000000000000000B23 /* Literata-Italic.ttf */,
-				0A0000000000000000000B24 /* EBGaramond-Regular.ttf */,
-				0A0000000000000000000B25 /* EBGaramond-Italic.ttf */,
-				0A0000000000000000000B26 /* iAWriterQuattroS-Regular.ttf */,
-				0A0000000000000000000B27 /* iAWriterQuattroS-Italic.ttf */,
-			);
-			path = Fonts;
-			sourceTree = "<group>";
-		};
-		0A00000000000000000000A7 /* Core */ = {
-			isa = PBXGroup;
-			children = (
-				0A00000000000000000000AA /* EPUB */,
-				0A00000000000000000000AD /* Persistence */,
-				0A00000000000000000000B2 /* Models */,
-				0A00000000000000000000A8 /* Utilities */,
-			);
-			path = Core;
-			sourceTree = "<group>";
-		};
-		0A00000000000000000000AD /* Persistence */ = {
-			isa = PBXGroup;
-			children = (
-				0A0000000000000000000B15 /* PersistenceController.swift */,
-			);
-			path = Persistence;
-			sourceTree = "<group>";
-		};
-		0A00000000000000000000AA /* EPUB */ = {
-			isa = PBXGroup;
-			children = (
-				0A0000000000000000000B0A /* EPUBExtractor.swift */,
-				0A0000000000000000000B0B /* EPUBChapter.swift */,
-				0A0000000000000000000B0C /* EPUBBook.swift */,
-				0A0000000000000000000B0D /* EPUBParser.swift */,
-			);
-			path = EPUB;
-			sourceTree = "<group>";
-		};
-		0A00000000000000000000B2 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				0A0000000000000000000B29 /* Book.swift */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		0A00000000000000000000A8 /* Utilities */ = {
-			isa = PBXGroup;
-			children = (
-				0A0000000000000000000B05 /* Logger.swift */,
-				0A0000000000000000000B0E /* LeakAvoider.swift */,
-				0A0000000000000000000B11 /* FileImporter.swift */,
-				0A0000000000000000000B16 /* MetadataExtractor.swift */,
-				0A0000000000000000000B17 /* CoverImageExtractor.swift */,
-			);
-			path = Utilities;
-			sourceTree = "<group>";
-		};
 		0A00000000000000000000A4 /* App */ = {
 			isa = PBXGroup;
 			children = (
@@ -280,6 +160,126 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000A7 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				0A00000000000000000000AA /* EPUB */,
+				0A00000000000000000000AD /* Persistence */,
+				0A00000000000000000000B2 /* Models */,
+				0A00000000000000000000A8 /* Utilities */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000A8 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B05 /* Logger.swift */,
+				0A0000000000000000000B0E /* LeakAvoider.swift */,
+				0A0000000000000000000B11 /* FileImporter.swift */,
+				0A0000000000000000000B16 /* MetadataExtractor.swift */,
+				0A0000000000000000000B17 /* CoverImageExtractor.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000A9 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B06 /* jszip.min.js */,
+				0A0000000000000000000B07 /* epub.js */,
+				0A0000000000000000000B08 /* reader.html */,
+				0A0000000000000000000B09 /* reader.css */,
+				0A00000000000000000000AF /* Fonts */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000AA /* EPUB */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B0A /* EPUBExtractor.swift */,
+				0A0000000000000000000B0B /* EPUBChapter.swift */,
+				0A0000000000000000000B0C /* EPUBBook.swift */,
+				0A0000000000000000000B0D /* EPUBParser.swift */,
+			);
+			path = EPUB;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000AB /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				0A00000000000000000000AE /* Library */,
+				0A00000000000000000000AC /* Reader */,
+				0A00000000000000000000B1 /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000AC /* Reader */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B0F /* EPUBBridge.swift */,
+				0A0000000000000000000B10 /* EPUBWebView.swift */,
+				0A0000000000000000000B1E /* PageController.swift */,
+				0A0000000000000000000B1F /* PageCurlViewController.swift */,
+				0A0000000000000000000B20 /* ReaderSettings.swift */,
+				0A0000000000000000000B12 /* ReaderView.swift */,
+				0A0000000000000000000B13 /* ReaderViewModel.swift */,
+			);
+			path = Reader;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000AD /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B15 /* PersistenceController.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000AE /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B18 /* LibraryView.swift */,
+				0A0000000000000000000B19 /* LibraryViewModel.swift */,
+				0A0000000000000000000B1A /* BookGridCell.swift */,
+				0A0000000000000000000B1B /* BookListCell.swift */,
+				0A0000000000000000000B1C /* BookDetailView.swift */,
+				0A0000000000000000000B1D /* ShelfView.swift */,
+			);
+			path = Library;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000AF /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B22 /* Literata-Regular.ttf */,
+				0A0000000000000000000B23 /* Literata-Italic.ttf */,
+				0A0000000000000000000B24 /* EBGaramond-Regular.ttf */,
+				0A0000000000000000000B25 /* EBGaramond-Italic.ttf */,
+				0A0000000000000000000B26 /* iAWriterQuattroS-Regular.ttf */,
+				0A0000000000000000000B27 /* iAWriterQuattroS-Italic.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000B1 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B28 /* AppearanceSettings.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000B2 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B29 /* Book.swift */,
+			);
+			path = Models;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -530,6 +530,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"EpubReader/Preview Content\"";
+				DEVELOPMENT_TEAM = B3X5JXT7NJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = EpubReader/Info.plist;
@@ -539,7 +540,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.epubreader;
+				PRODUCT_BUNDLE_IDENTIFIER = com.noamsadi.epubreader;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -559,6 +560,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"EpubReader/Preview Content\"";
+				DEVELOPMENT_TEAM = B3X5JXT7NJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = EpubReader/Info.plist;
@@ -568,7 +570,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.epubreader;
+				PRODUCT_BUNDLE_IDENTIFIER = com.noamsadi.epubreader;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;

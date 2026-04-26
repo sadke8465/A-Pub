@@ -1,4 +1,4 @@
-import SwiftUI
+@preconcurrency import SwiftUI
 import WebKit
 
 /// SwiftUI host for the epub.js `WKWebView` reader.
