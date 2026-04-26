@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2c.1
-NEXT_TASK       = 2c.2
+LAST_COMPLETED  = 2c.2
+NEXT_TASK       = 2c.3
 GATES_PASSED    = []
-TASKS_DONE      = 34
+TASKS_DONE      = 35
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -441,7 +441,7 @@ Goal: TOC, scrubber, time estimate, chapter navigation.
   TARGET   Features/Reader/ReaderOverlay.swift
   IMPL     ZStack over the reader. Top bar: HStack with back button (chevron.left + “Library”), Spacer, chapter title (lineLimit 1), Spacer, HStack of icon buttons (magnifyingglass, list.bullet, gearshape). Bottom bar: HStack with text.book icon, Spacer, progress text “X% · ~Nm left”, Spacer, speaker.wave icon. Both bars use .ultraThinMaterial background with safe area padding. Visibility controlled by @State isVisible. Single tap anywhere in the reader (not on a button or text) toggles isVisible. Auto-hide: set a Timer for 3s after show; cancel timer on hide or interaction. All transitions: .opacity with .easeInOut(duration:0.2).
   VERIFY   Single tap → overlay appears. Wait 3 seconds → fades out. Tap again → reappears.
-- [ ] 2c.2  Build TOCPanel
+- [x] 2c.2  Build TOCPanel
   TARGET   Features/Reader/TOCPanel.swift
   IMPL     Slide-in from leading edge as a .sheet or custom overlay. List of EPUBChapter items. Chapters with subChapters use DisclosureGroup. Current chapter highlighted with accent color background. Tap any chapter: call bridge.callJS(“displayCFI(’(chapter.href)’)”) and dismiss panel. Chapter label truncated to 2 lines.
   VERIFY   Open TOC. Tap chapter 5. Reader jumps to chapter 5. Current chapter highlighted in TOC.
