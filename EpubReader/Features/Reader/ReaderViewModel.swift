@@ -11,8 +11,7 @@ public final class ReaderViewModel: ObservableObject {
     @Published public var percentage: Double = 0
     @Published public var isOverlayVisible = true
 
-    @Published public var base64Book: String = ""
-    @Published public var escapedBase64Book: String = ""
+    @Published public var bookSource: String = ""
     @Published public var bridge = EPUBBridge()
     @Published public var currentSpineIndex = 0
 
@@ -47,8 +46,7 @@ public final class ReaderViewModel: ObservableObject {
             do {
                 let result = try await importer.importSingleEPUBForReader()
                 book = result.0
-                base64Book = result.1
-                escapedBase64Book = result.2
+                bookSource = result.1.absoluteString
             } catch is CancellationError {
                 Log.shared.info("User cancelled EPUB import")
             } catch {
@@ -175,23 +173,11 @@ public final class ReaderViewModel: ObservableObject {
             let parser = EPUBParser()
             let extractedRoot = try await extractor.extract(fileURL)
             let parsedBook = try await parser.parse(extractedRoot: extractedRoot)
-            let (encoded, escaped) = try await Self.loadAndEncode(fileURL: fileURL)
-
             book = parsedBook
-            base64Book = encoded
-            escapedBase64Book = escaped
+            bookSource = fileURL.absoluteString
         } catch {
             Log.shared.error("Failed to open library EPUB: \(error.localizedDescription)")
         }
-    }
-
-    nonisolated private static func loadAndEncode(fileURL: URL) async throws -> (String, String) {
-        try await Task.detached(priority: .userInitiated) {
-            let data = try Data(contentsOf: fileURL)
-            let encoded = data.base64EncodedString()
-            let escaped = encoded.replacingOccurrences(of: "'", with: "\\'")
-            return (encoded, escaped)
-        }.value
     }
 
     private func configureBridgeCallbacks() {

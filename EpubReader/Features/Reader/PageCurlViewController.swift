@@ -2,6 +2,47 @@ import UIKit
 import WebKit
 import SwiftUI
 
+private final class ReaderAssetSchemeHandler: NSObject, WKURLSchemeHandler {
+    static let scheme = "reader-asset"
+
+    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
+        guard let requestURL = urlSchemeTask.request.url else {
+            urlSchemeTask.didFailWithError(NSError(domain: NSURLErrorDomain, code: NSURLErrorBadURL))
+            return
+        }
+
+        let encodedPath = requestURL.host.map { "/" + $0 } ?? ""
+        let decodedPath = (encodedPath + requestURL.path).removingPercentEncoding ?? (encodedPath + requestURL.path)
+        let fileURL = URL(fileURLWithPath: decodedPath)
+
+        do {
+            let data = try Data(contentsOf: fileURL)
+            let response = URLResponse(
+                url: requestURL,
+                mimeType: Self.mimeType(for: fileURL.pathExtension),
+                expectedContentLength: data.count,
+                textEncodingName: nil
+            )
+            urlSchemeTask.didReceive(response)
+            urlSchemeTask.didReceive(data)
+            urlSchemeTask.didFinish()
+        } catch {
+            urlSchemeTask.didFailWithError(error)
+        }
+    }
+
+    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {}
+
+    private static func mimeType(for fileExtension: String) -> String {
+        switch fileExtension.lowercased() {
+        case "epub":
+            return "application/epub+zip"
+        default:
+            return "application/octet-stream"
+        }
+    }
+}
+
 // MARK: - EPUBPageContentViewController
 
 /// One slot in the three-element WKWebView pool.  Each slot owns an
@@ -12,6 +53,7 @@ final class EPUBPageContentViewController: UIViewController {
 
     let bridge: EPUBBridge
     private(set) var webView: WKWebView!
+    private let assetSchemeHandler = ReaderAssetSchemeHandler()
 
     init() {
         bridge = EPUBBridge()
@@ -24,6 +66,7 @@ final class EPUBPageContentViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         let config = bridge.setup()
+        config.setURLSchemeHandler(assetSchemeHandler, forURLScheme: ReaderAssetSchemeHandler.scheme)
         let viewportSource = "var m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no';document.head.appendChild(m);"
         config.userContentController.addUserScript(
             WKUserScript(source: viewportSource, injectionTime: .atDocumentStart, forMainFrameOnly: false)
@@ -100,10 +143,28 @@ final class PageCurlViewController: UIPageViewController {
 
     /// Load the same EPUB into every pool slot.  Only the current slot fires
     /// `onBookReady` to avoid triple-triggering the callback.
-    func loadBook(escapedBase64: String) {
+    func loadBook(source: String, isBase64: Bool = false) {
+        let resolvedSource: String
+        if !isBase64, let sourceURL = URL(string: source), sourceURL.isFileURL {
+            resolvedSource = readerAssetURL(for: sourceURL)
+        } else {
+            resolvedSource = source
+        }
+
         pool.forEach { $0.bridge.onBookReady = nil }
         currentSlot.bridge.onBookReady = { [weak self] in self?.onBookReady?() }
-        pool.forEach { $0.bridge.callJS("loadBook('\(escapedBase64)')") }
+        guard let data = try? JSONSerialization.data(withJSONObject: ["source": resolvedSource, "isBase64": isBase64]),
+              let payload = String(data: data, encoding: .utf8)
+        else {
+            onBookError?("Unable to serialize book source payload for JavaScript bridge")
+            return
+        }
+        pool.forEach { $0.bridge.callJS("loadBook(\(payload))") }
+    }
+
+    func readerAssetURL(for fileURL: URL) -> String {
+        let encodedPath = fileURL.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? fileURL.path
+        return "\(ReaderAssetSchemeHandler.scheme)://\(encodedPath)"
     }
 
     func displayCFI(_ cfi: String) {

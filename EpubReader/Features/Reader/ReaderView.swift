@@ -40,9 +40,10 @@ public struct ReaderView: View {
                     }
                 }
                 .onChange(of: viewModel.book?.identifier) { _, _ in
-                    if !viewModel.escapedBase64Book.isEmpty {
-                        pageCurlVC?.loadBook(escapedBase64: viewModel.escapedBase64Book)
+                    guard !viewModel.bookSource.isEmpty else {
+                        return
                     }
+                    pageCurlVC?.loadBook(source: viewModel.bookSource)
                 }
 
                 if viewModel.isOverlayVisible {

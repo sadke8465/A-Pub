@@ -130,9 +130,29 @@
                 return '';
             }
 
-            window.loadBook = async function (base64) {
+            window.loadBook = async function (input) {
                 try {
-                    window.book = ePub(base64, { encoding: 'base64' });
+                    var source = '';
+                    var isBase64 = false;
+
+                    if (typeof input === 'string') {
+                        source = input;
+                    } else if (input && typeof input === 'object') {
+                        source = (typeof input.source === 'string') ? input.source : '';
+                        isBase64 = input.isBase64 === true;
+                    }
+
+                    if (!source) {
+                        throw new Error('No EPUB source provided');
+                    }
+
+                    if (isBase64) {
+                        // Temporary migration fallback while native callers move to URL-based input.
+                        window.book = ePub(source, { encoding: 'base64' });
+                    } else {
+                        // File/custom-scheme URL source; epub.js will fetch and unzip the archive.
+                        window.book = ePub(source);
+                    }
 
                     window.rendition = window.book.renderTo('viewer', {
                         flow: 'paginated',
