@@ -20,26 +20,25 @@ struct TOCPanel: View {
         }
     }
 
-    @ViewBuilder
-    private func chapterRow(_ chapter: EPUBChapter) -> some View {
+    private func chapterRow(_ chapter: EPUBChapter) -> AnyView {
         if chapter.subChapters.isEmpty {
-            Button {
+            return AnyView(Button {
                 onSelectChapter(chapter)
                 dismiss()
             } label: {
                 chapterLabel(for: chapter)
             }
             .buttonStyle(.plain)
-            .listRowBackground(isCurrentChapter(chapter) ? Color.accentColor.opacity(0.2) : Color.clear)
+            .listRowBackground(isCurrentChapter(chapter) ? Color.accentColor.opacity(0.2) : Color.clear))
         } else {
-            DisclosureGroup {
+            return AnyView(DisclosureGroup {
                 ForEach(chapter.subChapters) { subChapter in
                     chapterRow(subChapter)
                 }
             } label: {
                 chapterLabel(for: chapter)
             }
-            .listRowBackground(isCurrentChapter(chapter) ? Color.accentColor.opacity(0.2) : Color.clear)
+            .listRowBackground(isCurrentChapter(chapter) ? Color.accentColor.opacity(0.2) : Color.clear))
         }
     }
 
@@ -61,7 +60,7 @@ struct TOCPanel: View {
 
         if let url = URL(string: fragmentDropped),
            let host = url.host,
-           host == EPUBFileSchemeHandler.host {
+           host == "book" {
             return url.path
         }
 
