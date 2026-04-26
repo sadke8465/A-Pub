@@ -279,7 +279,7 @@ private enum FileImporterError: Error {
 }
 
 private enum AssociatedKeys {
-    static var coordinator: UInt8 = 0
+    static let coordinator: UInt8 = 0
 }
 
 private final class DocumentPickerCoordinator: NSObject, UIDocumentPickerDelegate {

@@ -37,20 +37,23 @@ public final class Log: @unchecked Sendable {
         _ message: @autoclosure () -> String,
         category: String = #fileID
     ) {
-        logger(for: category).debug("\(message())")
+        let renderedMessage = message()
+        logger(for: category).debug("\(renderedMessage)")
     }
 
     public func info(
         _ message: @autoclosure () -> String,
         category: String = #fileID
     ) {
-        logger(for: category).info("\(message())")
+        let renderedMessage = message()
+        logger(for: category).info("\(renderedMessage)")
     }
 
     public func error(
         _ message: @autoclosure () -> String,
         category: String = #fileID
     ) {
-        logger(for: category).error("\(message())")
+        let renderedMessage = message()
+        logger(for: category).error("\(renderedMessage)")
     }
 }

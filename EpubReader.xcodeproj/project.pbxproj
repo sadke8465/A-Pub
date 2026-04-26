@@ -395,6 +395,7 @@
 				0A0000000000000000000C20 /* PageCurlViewController.swift in Sources */,
 				0A0000000000000000000C21 /* ReaderSettings.swift in Sources */,
 				0A0000000000000000000C28 /* AppearanceSettings.swift in Sources */,
+				0A0000000000000000000C29 /* Book.swift in Sources */,
 				0A0000000000000000000C15 /* EpubReader.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
