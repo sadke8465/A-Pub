@@ -12,6 +12,8 @@
         <attribute name="importedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="isDeleted" optional="NO" attributeType="Boolean" usesScalarValueType="YES" defaultValueString="NO"/>
         <attribute name="deletedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="appearanceOverride" optional="YES" attributeType="String"/>
+        <attribute name="locationsCache" optional="YES" attributeType="String"/>
         <relationship name="memberships" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ShelfMembership" inverseName="book" inverseEntity="ShelfMembership"/>
     </entity>
     <entity name="Shelf" representedClassName="Shelf" syncable="YES" codeGenerationType="class">

@@ -4,6 +4,7 @@ public struct ReaderView: View {
 
     @StateObject private var viewModel: ReaderViewModel
     @State private var pageCurlVC: PageCurlViewController?
+    @State private var showingAppearanceSettings = false
 
     public init(viewModel: ReaderViewModel = ReaderViewModel()) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -63,6 +64,14 @@ public struct ReaderView: View {
         .onDisappear {
             viewModel.teardownReader()
         }
+        .sheet(isPresented: $showingAppearanceSettings) {
+            AppearanceSettings(
+                appearance: viewModel.appearance,
+                bridge: pageCurlVC?.currentSlot.bridge ?? viewModel.bridge,
+                onAppearanceChanged: { viewModel.handleAppearanceChange() },
+                onSaveAsDefaultForBook: { viewModel.saveCurrentAppearanceOverrideForCurrentBook() }
+            )
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -86,6 +95,14 @@ public struct ReaderView: View {
                     .lineLimit(1)
 
                 Spacer()
+
+                Button {
+                    showingAppearanceSettings = true
+                } label: {
+                    Image(systemName: "textformat.size")
+                        .font(.headline)
+                }
+                .buttonStyle(.plain)
 
                 Text("\(Int(viewModel.percentage * 100))%")
                     .font(.subheadline.monospacedDigit())

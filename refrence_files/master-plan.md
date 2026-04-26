@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2b.5
-NEXT_TASK       = 2b.6
+LAST_COMPLETED  = 2b.7
+NEXT_TASK       = 2c.1
 GATES_PASSED    = []
-TASKS_DONE      = 31
+TASKS_DONE      = 33
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -408,11 +408,11 @@ Goal: font, theme, margins, line spacing all configurable and live-updating.
   TARGET   Features/Settings/AppearanceSettings.swift
   IMPL     View presented as .sheet with .presentationDetents([.medium, .large]). Sections: (1) Font size: stepper + label showing current size. (2) Font family: horizontal ScrollView of font name buttons, each rendering “Aa” in that font; selected has accent border. (3) Theme: 4 color swatches (light/dark/sepia/custom placeholder). (4) Margins: segmented control Narrow/Normal/Wide. (5) Line spacing: slider 1.2–2.0. (6) Toggles: Justify text, Hyphenation. All changes apply instantly via ReaderAppearance model which fires to EPUBBridge. No “Save” button needed.
   VERIFY   Open settings. Change font → reader updates behind the sheet. Close sheet. Settings persisted on relaunch.
-- [ ] 2b.6  Per-book appearance override scaffold
+- [x] 2b.6  Per-book appearance override scaffold
   TARGET   Core/Models/Book.swift (update)
   IMPL     Add optional JSON field `appearanceOverride: String?` to Book entity. Add computed property func appearanceSettings() -> ReaderAppearance? decoding from JSON. Add func saveAppearanceOverride(_ appearance: ReaderAppearance). Wire: if book has override, use it instead of global settings when opening ReaderView. UI: long-press in AppearanceSettings → “Save as default for this book” option.
   VERIFY   Set custom font for one book. Open another book → different font. Return to first book → custom font restored.
-- [ ] 2b.7  Locations cache save after appearance changes
+- [x] 2b.7  Locations cache save after appearance changes
   TARGET   Features/Reader/ReaderViewModel.swift (update)
   IMPL     After any appearance change triggers reflow: invalidate cached page count (it changes with font size). Do NOT invalidate the saved CFI — CFIs are position-stable across reflows. After reflow completes (next relocated event), re-query total pages from JS and update PageController. Serialize locations if they change: call book.locations.save() → store in Book.locationsCache via backgroundContext.
   VERIFY   Change font size → progress percentage stays accurate (doesn’t jump to wrong position).

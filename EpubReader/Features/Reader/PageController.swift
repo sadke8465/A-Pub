@@ -16,6 +16,7 @@ final class PageController: ObservableObject {
     @Published var currentSpineHref: String = ""
     @Published var currentCharacterOffset: Int64 = 0
     @Published var currentContextSnippet: String = ""
+    @Published var totalLocationCount: Int = 0
 
     /// Set this before the first ``onRelocated`` call so the debounced save
     /// knows which book to update.
@@ -24,6 +25,14 @@ final class PageController: ObservableObject {
     private var saveDebounceTask: Task<Void, Never>?
 
     // MARK: - Public API
+
+    func invalidatePaginationMetricsForReflow() {
+        totalLocationCount = 0
+    }
+
+    func updateTotalLocationCount(_ count: Int) {
+        totalLocationCount = max(0, count)
+    }
 
     func onRelocated(
         cfi: String,

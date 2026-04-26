@@ -11,34 +11,37 @@ import Observation
 final class ReaderAppearance {
 
     var fontFamily: String {
-        didSet { UserDefaults.standard.set(fontFamily, forKey: Keys.fontFamily) }
+        didSet { persistToDefaultsIfNeeded(fontFamily, key: Keys.fontFamily) }
     }
 
     var fontSize: Double {
-        didSet { UserDefaults.standard.set(fontSize, forKey: Keys.fontSize) }
+        didSet { persistToDefaultsIfNeeded(fontSize, key: Keys.fontSize) }
     }
 
     var theme: String {
-        didSet { UserDefaults.standard.set(theme, forKey: Keys.theme) }
+        didSet { persistToDefaultsIfNeeded(theme, key: Keys.theme) }
     }
 
     var lineSpacing: Double {
-        didSet { UserDefaults.standard.set(lineSpacing, forKey: Keys.lineSpacing) }
+        didSet { persistToDefaultsIfNeeded(lineSpacing, key: Keys.lineSpacing) }
     }
 
     var marginStyle: String {
-        didSet { UserDefaults.standard.set(marginStyle, forKey: Keys.marginStyle) }
+        didSet { persistToDefaultsIfNeeded(marginStyle, key: Keys.marginStyle) }
     }
 
     var textAlignment: String {
-        didSet { UserDefaults.standard.set(textAlignment, forKey: Keys.textAlignment) }
+        didSet { persistToDefaultsIfNeeded(textAlignment, key: Keys.textAlignment) }
     }
 
     var hyphenation: Bool {
-        didSet { UserDefaults.standard.set(hyphenation, forKey: Keys.hyphenation) }
+        didSet { persistToDefaultsIfNeeded(hyphenation, key: Keys.hyphenation) }
     }
 
-    init() {
+    private let persistToDefaults: Bool
+
+    init(persistToDefaults: Bool = true) {
+        self.persistToDefaults = persistToDefaults
         let ud = UserDefaults.standard
         fontFamily    = ud.string(forKey: Keys.fontFamily) ?? "Literata"
         let storedSize = ud.double(forKey: Keys.fontSize)
@@ -73,6 +76,12 @@ final class ReaderAppearance {
         bridge.callJS("setMargin(\(marginInt))")
         bridge.callJS("setJustify(\(textAlignment == "justify"))")
         bridge.callJS("setHyphenation(\(hyphenation))")
+    }
+
+
+    private func persistToDefaultsIfNeeded(_ value: Any, key: String) {
+        guard persistToDefaults else { return }
+        UserDefaults.standard.set(value, forKey: key)
     }
 
     private var marginPixels: String { "\(marginInt)px" }
