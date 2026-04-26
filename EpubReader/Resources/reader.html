@@ -45,6 +45,41 @@
             window.rendition = null;
             window.currentLoadToken = 0;
 
+            function withTimeout(promise, timeoutMs, label) {
+                return Promise.race([
+                    promise,
+                    new Promise(function (_, reject) {
+                        setTimeout(function () {
+                            reject(new Error(label + ' timed out after ' + timeoutMs + 'ms'));
+                        }, timeoutMs);
+                    })
+                ]);
+            }
+
+            function teardownCurrentBook() {
+                try {
+                    if (window.rendition) {
+                        window.rendition.destroy();
+                    }
+                } catch (_) {
+                }
+
+                try {
+                    if (window.book && typeof window.book.destroy === 'function') {
+                        window.book.destroy();
+                    }
+                } catch (_) {
+                }
+
+                window.rendition = null;
+                window.book = null;
+
+                var viewer = document.getElementById('viewer');
+                if (viewer) {
+                    viewer.innerHTML = '';
+                }
+            }
+
             var themeMap = {
                 light:  { bg: '#FFFFF8', fg: '#1C1C1E' },
                 dark:   { bg: '#1C1C1E', fg: '#E5E5EA' },
@@ -306,14 +341,24 @@
                     try {
                         window.currentLoadToken += 1;
                         var loadToken = window.currentLoadToken;
+                        teardownCurrentBook();
+
+                        var loadedBook = null;
                         if (typeof bookURL === 'string' && bookURL.length > 0) {
-                            window.book = ePub(bookURL);
+                            loadedBook = ePub(bookURL);
                         } else if (typeof fallbackBase64 === 'string' && fallbackBase64.length > 0) {
-                            window.book = ePub(fallbackBase64, { encoding: 'base64' });
+                            loadedBook = ePub(fallbackBase64, { encoding: 'base64' });
                         } else {
                             throw new Error('No valid EPUB input provided');
                         }
 
+                        await withTimeout(loadedBook.opened, 15000, 'book.opened');
+
+                        if (loadToken !== window.currentLoadToken) {
+                            return;
+                        }
+
+                        window.book = loadedBook;
                         window.rendition = window.book.renderTo('viewer', {
                             flow: 'paginated',
                             spread: 'none',
@@ -377,8 +422,8 @@
                             installFootnoteInterceptors(contents);
                         });
 
-                        await window.rendition.display();
-                        await window.book.ready;
+                        await withTimeout(window.rendition.display(), 15000, 'rendition.display');
+                        await withTimeout(window.book.ready, 15000, 'book.ready');
                         if (loadToken === window.currentLoadToken) {
                             await sendWordCountSample();
                             window.bridge.send('bookReady', {});
