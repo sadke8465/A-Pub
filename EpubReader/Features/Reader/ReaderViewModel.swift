@@ -15,6 +15,7 @@ public final class ReaderViewModel: ObservableObject {
     @Published public var legacyEscapedBase64Book: String = ""
     @Published public var bridge = EPUBBridge()
     @Published public var currentSpineIndex = 0
+    @Published public var minutesRemainingInChapter = 0
     @Published public var lastJavaScriptExecutionError: String?
     @Published public var recoveryMessage: String?
 
@@ -29,6 +30,9 @@ public final class ReaderViewModel: ObservableObject {
     private var needsLocationsSnapshotAfterReflow = false
     private let allowLegacyBase64Fallback = false
     private var jsGuardBlockedCount = 0
+    private var wordCountsBySpineIndex: [Int: Int] = [:]
+    private var averageWordsPerChapter: Int = 0
+    private var personalizedWPM: Int = 238
 
     init(
         importer: FileImporter = FileImporter(),
@@ -83,6 +87,8 @@ public final class ReaderViewModel: ObservableObject {
 
     func handleBookReady(in pageCurlVC: PageCurlViewController?) {
         pageCurlVC?.applyAppearance(appearance)
+        loadPersonalizedReadingSpeed()
+        requestCurrentChapterWordCount()
 
         guard let pendingRestoreCFI else {
             return
@@ -116,6 +122,8 @@ public final class ReaderViewModel: ObservableObject {
             needsLocationsSnapshotAfterReflow = false
             bridge.requestLocationsSnapshot()
         }
+
+        updateMinutesRemaining(characterOffset: characterOffset)
     }
 
 
@@ -244,6 +252,25 @@ public final class ReaderViewModel: ObservableObject {
             self.persistLocationsCache(serializedLocations)
         }
 
+        bridge.onWordCountSample = { [weak self] counts in
+            guard let self else { return }
+            let validCounts = counts.filter { $0 > 0 }
+            guard !validCounts.isEmpty else {
+                return
+            }
+            let sum = validCounts.reduce(0, +)
+            self.averageWordsPerChapter = max(1, sum / validCounts.count)
+        }
+
+        bridge.onChapterWordCount = { [weak self] index, count in
+            guard let self else { return }
+            guard count > 0 else {
+                return
+            }
+            self.wordCountsBySpineIndex[index] = count
+            self.updateMinutesRemaining(characterOffset: self.pageController.currentCharacterOffset)
+        }
+
         bridge.onJavaScriptExecutionFailed = { [weak self] failure in
             self?.handleJavaScriptExecutionFailure(failure)
         }
@@ -314,8 +341,57 @@ public final class ReaderViewModel: ObservableObject {
         if let matchedIndex = book.spineItems.firstIndex(where: { chapter in
             chapter.href.deletingFragment().standardizedFileURL == relocatedURL
         }) {
-            currentSpineIndex = matchedIndex
+            if currentSpineIndex != matchedIndex {
+                currentSpineIndex = matchedIndex
+                requestCurrentChapterWordCount()
+            } else {
+                currentSpineIndex = matchedIndex
+            }
         }
+    }
+
+    private func requestCurrentChapterWordCount() {
+        guard currentSpineIndex >= 0 else {
+            return
+        }
+        bridge.callJS("requestChapterWordCount(\(currentSpineIndex))")
+    }
+
+    private func updateMinutesRemaining(characterOffset: Int64) {
+        let chapterWords = estimatedWordsForCurrentChapter()
+        guard chapterWords > 0 else {
+            minutesRemainingInChapter = 0
+            return
+        }
+
+        let estimatedWordsRead = max(0, Int(characterOffset) / 5)
+        let wordsRemaining = max(chapterWords - estimatedWordsRead, 0)
+        let wpm = max(personalizedWPM, 120)
+        let minutes = Int(ceil(Double(wordsRemaining) / Double(wpm)))
+        minutesRemainingInChapter = max(minutes, 1)
+    }
+
+    private func estimatedWordsForCurrentChapter() -> Int {
+        if let chapterWords = wordCountsBySpineIndex[currentSpineIndex], chapterWords > 0 {
+            return chapterWords
+        }
+        return averageWordsPerChapter
+    }
+
+    private func loadPersonalizedReadingSpeed() {
+        let defaultsKey = readingSpeedDefaultsKeyForCurrentBook()
+        let storedWPM = UserDefaults.standard.integer(forKey: defaultsKey)
+        personalizedWPM = storedWPM > 0 ? storedWPM : 238
+    }
+
+    private func readingSpeedDefaultsKeyForCurrentBook() -> String {
+        if let initialBookID {
+            return "reader.wpm.book.\(initialBookID.uuidString.lowercased())"
+        }
+        if let identifier = book?.identifier, !identifier.isEmpty {
+            return "reader.wpm.book.\(identifier)"
+        }
+        return "reader.wpm.book.unknown"
     }
 }
 

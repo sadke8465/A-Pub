@@ -198,6 +198,61 @@
                 return '';
             }
 
+            function countWordsFromText(text) {
+                if (typeof text !== 'string') {
+                    return 0;
+                }
+                var trimmed = text.trim();
+                if (trimmed.length === 0) {
+                    return 0;
+                }
+                return trimmed.split(/\s+/).length;
+            }
+
+            async function loadSectionWordCount(index) {
+                if (!window.book || !window.book.spine || typeof index !== 'number' || index < 0) {
+                    return 0;
+                }
+
+                var section = window.book.spine.get(index);
+                if (!section) {
+                    return 0;
+                }
+
+                try {
+                    var loaded = await section.load(window.book.load.bind(window.book));
+                    var text = '';
+                    if (loaded && loaded.document && loaded.document.body) {
+                        text = loaded.document.body.innerText || loaded.document.body.textContent || '';
+                    }
+                    return countWordsFromText(text);
+                } catch (_) {
+                    return 0;
+                } finally {
+                    try {
+                        section.unload();
+                    } catch (_) {
+                    }
+                }
+            }
+
+            async function sendWordCountSample() {
+                var counts = [];
+                counts.push(await loadSectionWordCount(0));
+                counts.push(await loadSectionWordCount(1));
+                window.bridge.send('wordCountSample', { counts: counts });
+            }
+
+            window.requestChapterWordCount = function (index) {
+                (async function () {
+                    var count = await loadSectionWordCount(index);
+                    window.bridge.send('chapterWordCount', {
+                        index: index,
+                        count: count
+                    });
+                })();
+            };
+
             window.loadBook = function (bookURL, fallbackBase64) {
                 (async function () {
                     try {
@@ -273,6 +328,7 @@
                         await window.rendition.display();
                         await window.book.ready;
                         if (loadToken === window.currentLoadToken) {
+                            await sendWordCountSample();
                             window.bridge.send('bookReady', {});
                         }
                     } catch (error) {

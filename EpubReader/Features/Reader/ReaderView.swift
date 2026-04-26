@@ -57,7 +57,7 @@ public struct ReaderView: View {
                     isVisible: $viewModel.isOverlayVisible,
                     chapterTitle: currentChapterTitle,
                     progressPercentage: viewModel.percentage,
-                    minutesLeft: 8,
+                    minutesLeft: viewModel.minutesRemainingInChapter,
                     onBack: { dismiss() },
                     onSearch: {},
                     onTableOfContents: { showingTOCPanel = true },

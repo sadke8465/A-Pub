@@ -45,6 +45,8 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     public var onChapterLoaded: (() -> Void)?
     public var onAtChapterEnd: (() -> Void)?
     public var onLocationsSnapshot: ((Int, String?) -> Void)?
+    public var onWordCountSample: (([Int]) -> Void)?
+    public var onChapterWordCount: ((Int, Int) -> Void)?
     public var onJavaScriptExecutionFailed: ((JavaScriptExecutionFailure) -> Void)?
     public var onJSGuardBlocked: ((JSGuardBlockedEvent) -> Void)?
 
@@ -179,6 +181,13 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
             let totalLocations = body["totalLocations"] as? Int ?? 0
             let serialized = body["serializedLocations"] as? String
             onLocationsSnapshot?(totalLocations, serialized)
+        case "wordCountSample":
+            let counts = body["counts"] as? [Int] ?? []
+            onWordCountSample?(counts)
+        case "chapterWordCount":
+            let index = body["index"] as? Int ?? 0
+            let count = body["count"] as? Int ?? 0
+            onChapterWordCount?(index, count)
         case "jsGuardBlocked":
             let command = body["command"] as? String ?? "unknown"
             let reason = body["reason"] as? String ?? "unknown"
