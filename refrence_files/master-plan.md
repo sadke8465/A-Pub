@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2c.2
-NEXT_TASK       = 2c.3
+LAST_COMPLETED  = 2c.3
+NEXT_TASK       = 2c.4
 GATES_PASSED    = []
-TASKS_DONE      = 35
+TASKS_DONE      = 36
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -445,7 +445,7 @@ Goal: TOC, scrubber, time estimate, chapter navigation.
   TARGET   Features/Reader/TOCPanel.swift
   IMPL     Slide-in from leading edge as a .sheet or custom overlay. List of EPUBChapter items. Chapters with subChapters use DisclosureGroup. Current chapter highlighted with accent color background. Tap any chapter: call bridge.callJS(“displayCFI(’(chapter.href)’)”) and dismiss panel. Chapter label truncated to 2 lines.
   VERIFY   Open TOC. Tap chapter 5. Reader jumps to chapter 5. Current chapter highlighted in TOC.
-- [ ] 2c.3  Build progress scrubber
+- [x] 2c.3  Build progress scrubber
   TARGET   Features/Reader/ReaderView.swift (update)
   IMPL     Capsule at very bottom of screen (above home indicator, below bottom bar). Height 4pt. Tap/drag: compute percentage from gesture x position / frame.width, call bridge.callJS(“displayCFI((pct))”). While dragging: show floating tooltip above thumb with chapter name at that percentage (resolve via book.spine lookup). Scrubber is always visible (not gated on overlay visibility).
   VERIFY   Drag scrubber to 50% → book jumps to midpoint. Tooltip shows chapter name.

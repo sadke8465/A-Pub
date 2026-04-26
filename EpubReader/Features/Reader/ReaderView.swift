@@ -6,6 +6,7 @@ public struct ReaderView: View {
     @State private var pageCurlVC: PageCurlViewController?
     @State private var showingAppearanceSettings = false
     @State private var showingTOCPanel = false
+    @State private var scrubberDragPercentage: Double?
     @Environment(\.dismiss) private var dismiss
 
     init(viewModel: ReaderViewModel = ReaderViewModel()) {
@@ -83,6 +84,8 @@ public struct ReaderView: View {
                         Spacer()
                     }
                 }
+
+                scrubberView
             }
         }
         .onAppear {
@@ -138,6 +141,99 @@ public struct ReaderView: View {
             return "No Book Loaded"
         }
         return book.spineItems[viewModel.currentSpineIndex].label
+    }
+
+    private var activeScrubberPercentage: Double {
+        scrubberDragPercentage ?? viewModel.percentage
+    }
+
+    private var scrubberView: some View {
+        GeometryReader { geometry in
+            let horizontalPadding: CGFloat = 20
+            let trackWidth = max(geometry.size.width - (horizontalPadding * 2), 1)
+            let activePercentage = activeScrubberPercentage.clamped(to: 0...1)
+            let thumbX = horizontalPadding + (trackWidth * activePercentage)
+
+            VStack(spacing: 8) {
+                if let dragPercentage = scrubberDragPercentage {
+                    Text(chapterTitle(for: dragPercentage))
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Capsule())
+                        .position(x: thumbX, y: 14)
+                } else {
+                    Spacer()
+                        .frame(height: 28)
+                }
+
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.2))
+                        .frame(height: 4)
+
+                    Capsule()
+                        .fill(Color.accentColor)
+                        .frame(width: max(4, trackWidth * activePercentage), height: 4)
+                }
+                .frame(width: trackWidth, height: 24)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let percentage = percentageFrom(
+                                globalX: value.location.x,
+                                frame: geometry.frame(in: .global),
+                                horizontalPadding: horizontalPadding,
+                                trackWidth: trackWidth
+                            )
+                            scrubberDragPercentage = percentage
+                        }
+                        .onEnded { value in
+                            let percentage = percentageFrom(
+                                globalX: value.location.x,
+                                frame: geometry.frame(in: .global),
+                                horizontalPadding: horizontalPadding,
+                                trackWidth: trackWidth
+                            )
+                            scrubberDragPercentage = nil
+                            pageCurlVC?.callJS("displayCFI(\(percentage))")
+                        }
+                )
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .padding(.bottom, 6)
+            .allowsHitTesting(true)
+        }
+        .ignoresSafeArea(edges: .bottom)
+    }
+
+    private func percentageFrom(
+        globalX: CGFloat,
+        frame: CGRect,
+        horizontalPadding: CGFloat,
+        trackWidth: CGFloat
+    ) -> Double {
+        let originX = frame.minX + horizontalPadding
+        let localX = (globalX - originX).clamped(to: 0...trackWidth)
+        return Double(localX / trackWidth)
+    }
+
+    private func chapterTitle(for percentage: Double) -> String {
+        guard let book = viewModel.book, !book.spineItems.isEmpty else {
+            return "No Chapter"
+        }
+        let clamped = percentage.clamped(to: 0...1)
+        let rawIndex = Int(floor(clamped * Double(book.spineItems.count)))
+        let index = min(max(rawIndex, 0), book.spineItems.count - 1)
+        return book.spineItems[index].label
+    }
+}
+
+private extension Comparable {
+    func clamped(to range: ClosedRange<Self>) -> Self {
+        min(max(self, range.lowerBound), range.upperBound)
     }
 }
 
