@@ -5,6 +5,7 @@ public struct ReaderView: View {
     @StateObject private var viewModel: ReaderViewModel
     @State private var pageCurlVC: PageCurlViewController?
     @State private var showingAppearanceSettings = false
+    @State private var showingTOCPanel = false
     @Environment(\.dismiss) private var dismiss
 
     init(viewModel: ReaderViewModel = ReaderViewModel()) {
@@ -58,7 +59,7 @@ public struct ReaderView: View {
                     minutesLeft: 8,
                     onBack: { dismiss() },
                     onSearch: {},
-                    onTableOfContents: {},
+                    onTableOfContents: { showingTOCPanel = true },
                     onSettings: { showingAppearanceSettings = true },
                     onTextToSpeech: {}
                 )
@@ -98,6 +99,17 @@ public struct ReaderView: View {
                 onSaveAsDefaultForBook: { viewModel.saveCurrentAppearanceOverrideForCurrentBook() }
             )
         }
+        .sheet(isPresented: $showingTOCPanel) {
+            TOCPanel(
+                chapters: viewModel.book?.spineItems ?? [],
+                currentSpineHref: currentChapterHref,
+                onSelectChapter: { chapter in
+                    let href = chapter.href.relativeString.replacingOccurrences(of: "'", with: "\\'")
+                    pageCurlVC?.callJS("displayCFI('\(href)')")
+                }
+            )
+            .presentationDetents([.medium, .large])
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -108,6 +120,15 @@ public struct ReaderView: View {
                 .accessibilityLabel("Open EPUB")
             }
         }
+    }
+
+    private var currentChapterHref: String {
+        guard let book = viewModel.book,
+              book.spineItems.indices.contains(viewModel.currentSpineIndex)
+        else {
+            return ""
+        }
+        return book.spineItems[viewModel.currentSpineIndex].href.relativeString
     }
 
     private var currentChapterTitle: String {
