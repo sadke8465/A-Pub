@@ -344,10 +344,10 @@
                         teardownCurrentBook();
 
                         var loadedBook = null;
-                        if (typeof bookURL === 'string' && bookURL.length > 0) {
-                            loadedBook = ePub(bookURL);
-                        } else if (typeof fallbackBase64 === 'string' && fallbackBase64.length > 0) {
+                        if (typeof fallbackBase64 === 'string' && fallbackBase64.length > 0) {
                             loadedBook = ePub(fallbackBase64, { encoding: 'base64' });
+                        } else if (typeof bookURL === 'string' && bookURL.length > 0) {
+                            loadedBook = ePub(bookURL);
                         } else {
                             throw new Error('No valid EPUB input provided');
                         }
