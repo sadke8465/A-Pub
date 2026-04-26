@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2a.7
-NEXT_TASK       = 2b.1
+LAST_COMPLETED  = 2b.1
+NEXT_TASK       = 2b.2
 GATES_PASSED    = []
-TASKS_DONE      = 26
+TASKS_DONE      = 27
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -388,7 +388,7 @@ PHASE_2a_MILESTONE: Open book, read 15 pages, quit. Reopen → resumes at page 1
 
 Goal: font, theme, margins, line spacing all configurable and live-updating.
 
-- [ ] 2b.1  Define ReaderAppearance model
+- [x] 2b.1  Define ReaderAppearance model
   TARGET   Features/Reader/ReaderSettings.swift
   IMPL     @Observable class ReaderAppearance (or ObservableObject). All properties backed by @AppStorage: fontFamily(String=“Literata”), fontSize(Double=18), theme(String=“light”), lineSpacing(Double=1.5), marginStyle(String=“normal”), textAlignment(String=“justify”), hyphenation(Bool=true). Expose computed cssVariables: [String:String] dict mapping each setting to its CSS value. Expose func applyAll(via bridge: EPUBBridge) calling all inject methods.
   VERIFY   Change fontSize via code → @AppStorage persists across app restarts.

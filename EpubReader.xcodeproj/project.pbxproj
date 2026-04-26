@@ -39,6 +39,7 @@
 		0A0000000000000000000C1E /* ShelfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B1D /* ShelfView.swift */; };
 		0A0000000000000000000C1F /* PageController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B1E /* PageController.swift */; };
 		0A0000000000000000000C20 /* PageCurlViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B1F /* PageCurlViewController.swift */; };
+		0A0000000000000000000C21 /* ReaderSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B20 /* ReaderSettings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -73,6 +74,7 @@
 		0A0000000000000000000B1D /* ShelfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShelfView.swift; sourceTree = "<group>"; };
 		0A0000000000000000000B1E /* PageController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageController.swift; sourceTree = "<group>"; };
 		0A0000000000000000000B1F /* PageCurlViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageCurlViewController.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B20 /* ReaderSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSettings.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -148,6 +150,7 @@
 				0A0000000000000000000B10 /* EPUBWebView.swift */,
 				0A0000000000000000000B1E /* PageController.swift */,
 				0A0000000000000000000B1F /* PageCurlViewController.swift */,
+				0A0000000000000000000B20 /* ReaderSettings.swift */,
 				0A0000000000000000000B12 /* ReaderView.swift */,
 				0A0000000000000000000B13 /* ReaderViewModel.swift */,
 			);
@@ -334,6 +337,7 @@
 				0A0000000000000000000C1E /* ShelfView.swift in Sources */,
 				0A0000000000000000000C1F /* PageController.swift in Sources */,
 				0A0000000000000000000C20 /* PageCurlViewController.swift in Sources */,
+				0A0000000000000000000C21 /* ReaderSettings.swift in Sources */,
 				0A0000000000000000000C15 /* EpubReader.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
