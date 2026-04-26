@@ -119,15 +119,23 @@ public final class ReaderViewModel: ObservableObject {
             let parser = EPUBParser()
             let extractedRoot = try await extractor.extract(fileURL)
             let parsedBook = try await parser.parse(extractedRoot: extractedRoot)
-            let data = try Data(contentsOf: fileURL)
-            let encoded = data.base64EncodedString()
+            let (encoded, escaped) = try await Self.loadAndEncode(fileURL: fileURL)
 
             book = parsedBook
             base64Book = encoded
-            escapedBase64Book = encoded.replacingOccurrences(of: "'", with: "\\'")
+            escapedBase64Book = escaped
         } catch {
             Log.shared.error("Failed to open library EPUB: \(error.localizedDescription)")
         }
+    }
+
+    nonisolated private static func loadAndEncode(fileURL: URL) async throws -> (String, String) {
+        try await Task.detached(priority: .userInitiated) {
+            let data = try Data(contentsOf: fileURL)
+            let encoded = data.base64EncodedString()
+            let escaped = encoded.replacingOccurrences(of: "'", with: "\\'")
+            return (encoded, escaped)
+        }.value
     }
 
     private func configureBridgeCallbacks() {
