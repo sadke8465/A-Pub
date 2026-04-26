@@ -332,7 +332,7 @@ public final class LibraryViewModel: NSObject, ObservableObject {
     }
 }
 
-extension LibraryViewModel: @preconcurrency NSFetchedResultsControllerDelegate {
+extension LibraryViewModel: NSFetchedResultsControllerDelegate {
     nonisolated public func controllerDidChangeContent(_ controller: NSFetchedResultsController<any NSFetchRequestResult>) {
         Task { @MainActor [weak self] in
             self?.books = self?.fetchedResultsController.fetchedObjects ?? []
