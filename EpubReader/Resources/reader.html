@@ -56,6 +56,24 @@
                         height: window.innerHeight
                     });
 
+                    window.rendition.themes.register('app-default', {
+                        body: {
+                            color: '#111111',
+                            'background-color': 'transparent'
+                        }
+                    });
+                    window.rendition.themes.register('app-dark', {
+                        body: {
+                            color: '#E5E7EB',
+                            'background-color': '#111827'
+                        }
+                    });
+                    window.rendition.themes.select('app-default');
+
+                    window.rendition.hooks.content.register(function (contents) {
+                        return contents.addStylesheet('reader.css');
+                    });
+
                     window.rendition.on('relocated', function (location) {
                         window.bridge.send('relocated', {
                             cfi: location.start.cfi,
@@ -114,6 +132,14 @@
                 if (window.rendition) {
                     window.rendition.resize(w, h);
                 }
+            };
+
+            window.setTheme = function (appearance) {
+                if (!window.rendition) {
+                    return;
+                }
+                var theme = appearance === 'dark' ? 'app-dark' : 'app-default';
+                window.rendition.themes.select(theme);
             };
         })();
     </script>
