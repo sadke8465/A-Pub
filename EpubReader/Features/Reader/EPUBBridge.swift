@@ -27,6 +27,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     public var onMarkClicked: ((String) -> Void)?
     public var onRequestHighlights: ((String) -> Void)?
     public var onChapterLoaded: (() -> Void)?
+    public var onJavaScriptEvalError: ((String) -> Void)?
 
     public override init() {
         super.init()
@@ -44,9 +45,17 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         return configuration
     }
 
-    /// Fire-and-forget JavaScript evaluation in the bound web view.
+    /// JavaScript evaluation in the bound web view with error capture.
     public func callJS(_ js: String) {
-        webView?.evaluateJavaScript(js, completionHandler: nil)
+        webView?.evaluateJavaScript(js) { [weak self] result, error in
+            if let error {
+                Log.shared.error("JavaScript evaluation failed. js=\(js), result=\(String(describing: result)), error=\(error.localizedDescription)")
+                self?.onJavaScriptEvalError?(error.localizedDescription)
+                return
+            }
+
+            Log.shared.debug("JavaScript evaluation succeeded. js=\(js), result=\(String(describing: result)), error=nil")
+        }
     }
 
     public func userContentController(
