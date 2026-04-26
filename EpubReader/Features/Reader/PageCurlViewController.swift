@@ -233,15 +233,33 @@ struct PageCurlReaderView: UIViewControllerRepresentable {
     @MainActor
     final class Coordinator {
         func wire(_ vc: PageCurlViewController, to viewModel: ReaderViewModel) {
-            vc.onRelocated = { [weak viewModel] cfi, pct, _, _, _ in
-                viewModel?.currentCFI = cfi
-                viewModel?.percentage = pct
+            vc.onRelocated = { [weak viewModel] cfi, pct, spineHref, characterOffset, contextSnippet in
+                viewModel?.handleRelocated(
+                    cfi: cfi,
+                    pct: pct,
+                    spineHref: spineHref,
+                    characterOffset: characterOffset,
+                    contextSnippet: contextSnippet,
+                    atEnd: false
+                )
             }
-            vc.onBookReady = {
+            vc.onBookReady = { [weak viewModel, weak vc] in
                 Log.shared.info("EPUB book ready (PageCurl pool)")
+                viewModel?.handleBookReady(in: vc)
             }
             vc.onBookError = { msg in
                 Log.shared.error("EPUB book load failed: \(msg)")
+            }
+            vc.onAtChapterEnd = { [weak viewModel] in
+                guard let viewModel else { return }
+                viewModel.handleRelocated(
+                    cfi: viewModel.currentCFI,
+                    pct: viewModel.percentage,
+                    spineHref: "",
+                    characterOffset: 0,
+                    contextSnippet: "",
+                    atEnd: true
+                )
             }
         }
     }

@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2a.5
-NEXT_TASK       = 2a.6
+LAST_COMPLETED  = 2a.7
+NEXT_TASK       = 2b.1
 GATES_PASSED    = []
-TASKS_DONE      = 24
+TASKS_DONE      = 26
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -373,11 +373,11 @@ Goal: page turns feel like Apple Books. CFI saves and restores correctly.
   TARGET   Features/Reader/ReaderView.swift (update)
   IMPL     Replace the plain EPUBWebView embed with a UIPageViewController (style: .pageCurl, orientation: .horizontal) wrapped via UIViewControllerRepresentable. The page VC manages current and adjacent view controllers each hosting one EPUBWebView from a pool of 3. When dataSource asks for before/after VCs, return pooled WKWebView instances. The page content is the same rendition — Swift controls which rendition.display() is called. On atChapterEnd: pre-display next chapter in the adjacent pooled WKWebView before user reaches it.
   VERIFY   Page turn shows curl animation. Reversing the curl shows previous page correctly.
-- [ ] 2a.6  CFI save and restore wired end-to-end
+- [x] 2a.6  CFI save and restore wired end-to-end
   TARGET   Features/Reader/ReaderViewModel.swift (update), Features/Reader/ReaderView.swift (update)
   IMPL     On ReaderView.onAppear(book): call pageController.restoreCFI(for:book.id) → if non-nil, after bookReady event fires call bridge.callJS(“displayCFI(’(cfi)’)”). On every onRelocated callback: call pageController.onRelocated(cfi:pct:atEnd:). Debounce write: after 500ms with no new relocation, write to Core Data.
   VERIFY   Read to page 20. Force-quit. Relaunch. Book reopens at page 20.
-- [ ] 2a.7  Safe area and rotation handling
+- [x] 2a.7  Safe area and rotation handling
   TARGET   Features/Reader/EPUBWebView.swift (update)
   IMPL     Store currentSize: CGSize. In updateUIView: if newSize != currentSize { currentSize = newSize; let adjH = newSize.height - safeAreaInsets.bottom; bridge.callJS(“resizeRendition((newSize.width), (adjH))”) }. Also call resize on UIDevice.orientationDidChangeNotification. Ensure safeAreaInsets read from the UIView not the window.
   VERIFY   Rotate device. Text reflows correctly. No clipping at bottom on device with home bar.

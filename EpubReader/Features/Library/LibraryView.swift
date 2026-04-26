@@ -84,7 +84,12 @@ public struct LibraryView: View {
                 BookDetailView(book: book, isEditMode: true) { _ in }
             }
             .navigationDestination(item: $readerLaunchRequest) { request in
-                ReaderView(viewModel: ReaderViewModel(initialBookFileURL: request.fileURL))
+                ReaderView(
+                    viewModel: ReaderViewModel(
+                        initialBookFileURL: request.fileURL,
+                        initialBookID: request.bookID
+                    )
+                )
                     .navigationTitle(request.title)
                     .navigationBarTitleDisplayMode(.inline)
             }
@@ -219,6 +224,7 @@ public struct LibraryView: View {
         selectedDetailBook = nil
         readerLaunchRequest = ReaderLaunchRequest(
             fileURL: URL(fileURLWithPath: filePath),
+            bookID: book.id,
             title: book.title ?? "Reader"
         )
     }
@@ -227,6 +233,7 @@ public struct LibraryView: View {
 private struct ReaderLaunchRequest: Identifiable, Hashable {
     let id = UUID()
     let fileURL: URL
+    let bookID: UUID?
     let title: String
 }
 
