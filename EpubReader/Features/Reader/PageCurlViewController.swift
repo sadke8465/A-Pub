@@ -11,8 +11,14 @@ private final class ReaderAssetSchemeHandler: NSObject, WKURLSchemeHandler {
             return
         }
 
-        let encodedPath = requestURL.host.map { "/" + $0 } ?? ""
-        let decodedPath = (encodedPath + requestURL.path).removingPercentEncoding ?? (encodedPath + requestURL.path)
+        guard let components = URLComponents(url: requestURL, resolvingAgainstBaseURL: false),
+              let encodedPath = components.queryItems?.first(where: { $0.name == "path" })?.value,
+              let decodedPath = encodedPath.removingPercentEncoding
+        else {
+            urlSchemeTask.didFailWithError(NSError(domain: NSURLErrorDomain, code: NSURLErrorBadURL))
+            return
+        }
+
         let fileURL = URL(fileURLWithPath: decodedPath)
 
         do {
@@ -163,8 +169,8 @@ final class PageCurlViewController: UIPageViewController {
     }
 
     func readerAssetURL(for fileURL: URL) -> String {
-        let encodedPath = fileURL.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? fileURL.path
-        return "\(ReaderAssetSchemeHandler.scheme)://\(encodedPath)"
+        let encodedPath = fileURL.path.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? fileURL.path
+        return "\(ReaderAssetSchemeHandler.scheme)://epub?path=\(encodedPath)"
     }
 
     func displayCFI(_ cfi: String) {

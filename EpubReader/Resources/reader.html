@@ -130,6 +130,13 @@
                 return '';
             }
 
+            function looksLikeLegacyBase64(value) {
+                if (typeof value !== 'string') { return false; }
+                if (value.length < 128) { return false; }
+                if (value.indexOf('://') !== -1 || value.indexOf('/') === 0) { return false; }
+                return /^[A-Za-z0-9+/=\s]+$/.test(value);
+            }
+
             window.loadBook = async function (input) {
                 try {
                     var source = '';
@@ -137,6 +144,7 @@
 
                     if (typeof input === 'string') {
                         source = input;
+                        isBase64 = looksLikeLegacyBase64(input);
                     } else if (input && typeof input === 'object') {
                         source = (typeof input.source === 'string') ? input.source : '';
                         isBase64 = input.isBase64 === true;
