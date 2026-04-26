@@ -58,6 +58,43 @@
                 document.body.style.background = t.bg;
             };
 
+            window.setFontSize = function (px) {
+                if (!window.rendition) { return; }
+                window.rendition.themes.fontSize(px + 'px');
+                window.rendition.resize(window.innerWidth, window.innerHeight);
+            };
+
+            window.setFontFamily = function (name) {
+                if (!window.rendition) { return; }
+                window.rendition.themes.font(name);
+                window.rendition.resize(window.innerWidth, window.innerHeight);
+            };
+
+            window.setLineSpacing = function (value) {
+                if (!window.rendition) { return; }
+                window.rendition.themes.override('line-height', String(value));
+                window.rendition.resize(window.innerWidth, window.innerHeight);
+            };
+
+            window.setMargin = function (px) {
+                if (!window.rendition) { return; }
+                window.rendition.themes.override('padding', '20px ' + px + 'px');
+                window.rendition.resize(window.innerWidth, window.innerHeight);
+            };
+
+            window.setJustify = function (justify) {
+                if (!window.rendition) { return; }
+                window.rendition.themes.override('text-align', justify ? 'justify' : 'left');
+                window.rendition.resize(window.innerWidth, window.innerHeight);
+            };
+
+            window.setHyphenation = function (on) {
+                if (!window.rendition) { return; }
+                window.rendition.themes.override('-webkit-hyphens', on ? 'auto' : 'manual');
+                window.rendition.themes.override('hyphens', on ? 'auto' : 'manual');
+                window.rendition.resize(window.innerWidth, window.innerHeight);
+            };
+
             function extractCharacterOffset(cfi) {
                 if (!cfi || typeof cfi !== 'string') {
                     return 0;

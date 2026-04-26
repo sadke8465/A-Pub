@@ -57,6 +57,31 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         callJS("setTheme('\(theme)')")
     }
 
+    public func applyFontSize(_ px: Int) {
+        callJS("setFontSize(\(px))")
+    }
+
+    public func applyFontFamily(_ family: String) {
+        let escaped = family.replacingOccurrences(of: "'", with: "\\'")
+        callJS("setFontFamily('\(escaped)')")
+    }
+
+    public func applyLineSpacing(_ value: Double) {
+        callJS("setLineSpacing(\(value))")
+    }
+
+    public func applyMargin(_ px: Int) {
+        callJS("setMargin(\(px))")
+    }
+
+    public func applyJustify(_ justify: Bool) {
+        callJS("setJustify(\(justify))")
+    }
+
+    public func applyHyphenation(_ on: Bool) {
+        callJS("setHyphenation(\(on))")
+    }
+
     public func userContentController(
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
