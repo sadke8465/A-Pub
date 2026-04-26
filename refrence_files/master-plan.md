@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2b.3
-NEXT_TASK       = 2b.4
+LAST_COMPLETED  = 2b.4
+NEXT_TASK       = 2b.5
 GATES_PASSED    = []
-TASKS_DONE      = 29
+TASKS_DONE      = 30
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -400,7 +400,7 @@ Goal: font, theme, margins, line spacing all configurable and live-updating.
   TARGET   Features/Reader/EPUBBridge.swift (update), Resources/reader.html (update)
   IMPL     In reader.html: after rendition created, call rendition.themes.register for each theme: light={body:{background:’#FFFFF8’,color:’#1C1C1E’}}, dark={body:{background:’#1C1C1E’,color:’#E5E5EA’}}, sepia={body:{background:’#F4ECD8’,color:’#3B2F2F’}}. Expose global setTheme(name). In EPUBBridge: func applyTheme(_ theme: String) = callJS(“setTheme(’(theme)’)”). Call on appearance change.
   VERIFY   Switch to dark theme in settings → reader background immediately turns dark.
-- [ ] 2b.4  Implement font, size, spacing injection
+- [x] 2b.4  Implement font, size, spacing injection
   TARGET   Features/Reader/EPUBBridge.swift (update), Resources/reader.html (update)
   IMPL     Expose in reader.html: setFontSize(px:Int), setFontFamily(name:String), setLineSpacing(value:Float), setMargin(px:Int), setJustify(justify:Bool), setHyphenation(on:Bool). Each calls rendition.themes.override with appropriate CSS. EPUBBridge: corresponding Swift functions calling callJS(). After any appearance change, call rendition.resize(w,h) to trigger reflow and update page count.
   VERIFY   Change font size slider → text immediately reflows to new size. Page count updates.
