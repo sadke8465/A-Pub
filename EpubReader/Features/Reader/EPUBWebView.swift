@@ -80,9 +80,11 @@ public struct EPUBWebView: UIViewRepresentable {
                     object: nil,
                     queue: .main
                 ) { [weak self] _ in
-                    guard let self, let webView = self.webView else { return }
-                    self.currentSize = .zero
-                    self.resizeIfNeeded(for: webView)
+                    MainActor.assumeIsolated {
+                        guard let self, let webView = self.webView else { return }
+                        self.currentSize = .zero
+                        self.resizeIfNeeded(for: webView)
+                    }
                 }
             }
         }
