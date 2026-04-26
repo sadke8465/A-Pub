@@ -66,7 +66,7 @@ final class PersistenceController {
             book.setValue(testEPUBURL.path, forKey: "filePath")
             book.setValue("en", forKey: "language")
             book.setValue(Date(), forKey: "importedAt")
-            book.setValue(false, forKey: "isDeleted")
+            book.setValue(false, forKey: "isSoftDeleted")
 
             try context.save()
             Log.shared.info("Seeded debug library with bundled test.epub")
