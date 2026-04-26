@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2b.2
-NEXT_TASK       = 2b.3
+LAST_COMPLETED  = 2b.3
+NEXT_TASK       = 2b.4
 GATES_PASSED    = []
-TASKS_DONE      = 28
+TASKS_DONE      = 29
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -396,7 +396,7 @@ Goal: font, theme, margins, line spacing all configurable and live-updating.
   TARGET   Resources/Fonts/ (Literata-Regular.ttf, Literata-Italic.ttf, EBGaramond-Regular.ttf, EBGaramond-Italic.ttf, iAWriterQuattroS-Regular.ttf, iAWriterQuattroS-Italic.ttf)
   IMPL     Download OFL-licensed fonts: Literata from Google Fonts, EB Garamond from Google Fonts, iA Writer Quattro S from github.com/iaolo/iA-Fonts. Add to Xcode target and Info.plist UIAppFonts array. Note: Charter is a system font, no file needed.
   VERIFY   UIFont(name:“Literata-Regular”,size:18) returns non-nil.
-- [ ] 2b.3  Implement theme injection
+- [x] 2b.3  Implement theme injection
   TARGET   Features/Reader/EPUBBridge.swift (update), Resources/reader.html (update)
   IMPL     In reader.html: after rendition created, call rendition.themes.register for each theme: light={body:{background:’#FFFFF8’,color:’#1C1C1E’}}, dark={body:{background:’#1C1C1E’,color:’#E5E5EA’}}, sepia={body:{background:’#F4ECD8’,color:’#3B2F2F’}}. Expose global setTheme(name). In EPUBBridge: func applyTheme(_ theme: String) = callJS(“setTheme(’(theme)’)”). Call on appearance change.
   VERIFY   Switch to dark theme in settings → reader background immediately turns dark.

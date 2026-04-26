@@ -52,6 +52,11 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         webView?.evaluateJavaScript(js, completionHandler: nil)
     }
 
+    /// Applies a named theme (light / dark / sepia) to the current rendition.
+    public func applyTheme(_ theme: String) {
+        callJS("setTheme('\(theme)')")
+    }
+
     public func userContentController(
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
