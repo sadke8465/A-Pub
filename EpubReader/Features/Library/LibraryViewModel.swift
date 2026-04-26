@@ -42,7 +42,7 @@ public final class LibraryViewModel: NSObject, ObservableObject {
         fetchedResultsController.managedObjectContext
     }
 
-    public init(
+    init(
         context: NSManagedObjectContext,
         importer: FileImporter = FileImporter(),
         persistenceController: PersistenceController = .shared
@@ -332,6 +332,7 @@ public final class LibraryViewModel: NSObject, ObservableObject {
     }
 }
 
+@MainActor
 extension LibraryViewModel: NSFetchedResultsControllerDelegate {
     public func controllerDidChangeContent(_ controller: NSFetchedResultsController<any NSFetchRequestResult>) {
         books = fetchedResultsController.fetchedObjects ?? []

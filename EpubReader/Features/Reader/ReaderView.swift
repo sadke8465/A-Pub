@@ -6,7 +6,7 @@ public struct ReaderView: View {
     @State private var pageCurlVC: PageCurlViewController?
     @State private var showingAppearanceSettings = false
 
-    public init(viewModel: ReaderViewModel = ReaderViewModel()) {
+    init(viewModel: ReaderViewModel = ReaderViewModel()) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 

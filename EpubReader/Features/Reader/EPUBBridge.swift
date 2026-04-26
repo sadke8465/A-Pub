@@ -17,7 +17,6 @@ import WebKit
 public final class EPUBBridge: NSObject, WKScriptMessageHandler {
 
     public static let messageName = "bridge"
-    private static let sharedProcessPool = WKProcessPool()
 
     public weak var webView: WKWebView?
 
@@ -40,7 +39,6 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     /// resource access enabled for the bundled reader assets.
     public func setup() -> WKWebViewConfiguration {
         let configuration = WKWebViewConfiguration()
-        configuration.processPool = Self.sharedProcessPool
         let contentController = WKUserContentController()
         let proxy = LeakAvoider(delegate: self)
         contentController.add(proxy, name: Self.messageName)
