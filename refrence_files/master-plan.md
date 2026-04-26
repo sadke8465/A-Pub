@@ -54,6 +54,20 @@ GATE_3_APPSTORE_V1       = requires 7b.6 done   (polish + accessibility + widget
 GATE_4_V1_1              = requires 8.8 done    (PDF complete)
 
 <!-- ============================================================
+  LOCAL EXECUTION NOTE
+  Regression guard tied to current NEXT_TASK.
+============================================================ -->
+
+NEXT_TASK_SMOKE_GATE (for NEXT_TASK = 2c.1):
+Before implementing any 2c.1 overlay UI work, run this required smoke validation checklist:
+
+1. Import a known EPUB.
+2. Verify first chapter text appears.
+3. Verify at least one `relocated` callback updates percentage.
+4. Verify `bookReady` appears in logs.
+5. Only then proceed with 2c.1 overlay UI tasks.
+
+<!-- ============================================================
   INVARIANTS
   Apply to every single task. Never deviate.
 ============================================================ -->
