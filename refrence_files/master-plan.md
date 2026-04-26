@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2c.3
-NEXT_TASK       = 2c.4
+LAST_COMPLETED  = 2c.4
+NEXT_TASK       = 2c.5
 GATES_PASSED    = []
-TASKS_DONE      = 36
+TASKS_DONE      = 37
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -449,7 +449,7 @@ Goal: TOC, scrubber, time estimate, chapter navigation.
   TARGET   Features/Reader/ReaderView.swift (update)
   IMPL     Capsule at very bottom of screen (above home indicator, below bottom bar). Height 4pt. Tap/drag: compute percentage from gesture x position / frame.width, call bridge.callJS(“displayCFI((pct))”). While dragging: show floating tooltip above thumb with chapter name at that percentage (resolve via book.spine lookup). Scrubber is always visible (not gated on overlay visibility).
   VERIFY   Drag scrubber to 50% → book jumps to midpoint. Tooltip shows chapter name.
-- [ ] 2c.4  Reading time estimate
+- [x] 2c.4  Reading time estimate
   TARGET   Features/Reader/ReaderViewModel.swift (update)
   IMPL     On bookReady: extract text from first 2 spine items via JS (book.spine.get(0).load().then(s=>s.document.body.innerText)) → estimate average words per chapter. Assume 238 WPM reading speed. Compute minutesRemainingInChapter = (wordsInCurrentChapter - wordsRead) / 238. Update on every onRelocated. Store estimated WPM per book in UserDefaults keyed by book sha256 for personalization in future.
   VERIFY   Overlay shows “~8m left” or similar for a normal-length chapter.
