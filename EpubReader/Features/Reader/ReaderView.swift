@@ -6,7 +6,11 @@ public struct ReaderView: View {
     @State private var pageCurlVC: PageCurlViewController?
     @State private var showingAppearanceSettings = false
     @State private var showingTOCPanel = false
+    @State private var showingGoToLocationSheet = false
     @State private var scrubberDragPercentage: Double?
+    @State private var goToPercentage: Double = 0
+    @State private var goToPercentageText: String = "0"
+    @State private var footnotePayload: FootnotePayload?
     @Environment(\.dismiss) private var dismiss
 
     init(viewModel: ReaderViewModel = ReaderViewModel()) {
@@ -18,6 +22,9 @@ public struct ReaderView: View {
             ZStack {
                 PageCurlReaderView(viewModel: viewModel) { vc in
                     pageCurlVC = vc
+                    vc.onFootnoteRequest = { href, text in
+                        footnotePayload = FootnotePayload(href: href, text: text)
+                    }
                 }
                 .ignoresSafeArea()
                 // Swipe left → next page; swipe right → prev page.
@@ -61,6 +68,11 @@ public struct ReaderView: View {
                     onBack: { dismiss() },
                     onSearch: {},
                     onTableOfContents: { showingTOCPanel = true },
+                    onGoToLocation: {
+                        goToPercentage = (viewModel.percentage * 100).clamped(to: 0...100)
+                        goToPercentageText = String(Int(goToPercentage.rounded()))
+                        showingGoToLocationSheet = true
+                    },
                     onSettings: { showingAppearanceSettings = true },
                     onTextToSpeech: {}
                 )
@@ -112,6 +124,72 @@ public struct ReaderView: View {
                 }
             )
             .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingGoToLocationSheet) {
+            NavigationStack {
+                Form {
+                    Section("Location") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Slider(
+                                value: Binding(
+                                    get: { goToPercentage },
+                                    set: { newValue in
+                                        goToPercentage = newValue
+                                        goToPercentageText = String(Int(newValue.rounded()))
+                                    }
+                                ),
+                                in: 0...100,
+                                step: 1
+                            )
+                            Text("\(Int(goToPercentage.rounded()))%")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        TextField("Percent", text: $goToPercentageText)
+                            .keyboardType(.numberPad)
+                            .onChange(of: goToPercentageText) { _, text in
+                                let filtered = text.filter(\.isNumber)
+                                if filtered != text {
+                                    goToPercentageText = filtered
+                                }
+                                if let value = Double(filtered) {
+                                    goToPercentage = value.clamped(to: 0...100)
+                                }
+                            }
+
+                        Button("Go") {
+                            let clamped = goToPercentage.clamped(to: 0...100)
+                            pageCurlVC?.callJS("displayCFI(\(clamped / 100.0))")
+                            showingGoToLocationSheet = false
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                }
+                .navigationTitle("Go to Location")
+                .navigationBarTitleDisplayMode(.inline)
+            }
+            .presentationDetents([.fraction(0.3), .medium])
+        }
+        .sheet(item: $footnotePayload) { footnote in
+            NavigationStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        if !footnote.href.isEmpty {
+                            Text(footnote.href)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Text(footnote.text.isEmpty ? "No footnote content available." : footnote.text)
+                            .font(.body)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding()
+                }
+                .navigationTitle("Footnote")
+                .navigationBarTitleDisplayMode(.inline)
+            }
+            .presentationDetents([.fraction(0.25), .medium])
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -229,6 +307,12 @@ public struct ReaderView: View {
         let index = min(max(rawIndex, 0), book.spineItems.count - 1)
         return book.spineItems[index].label
     }
+}
+
+private struct FootnotePayload: Identifiable {
+    let id = UUID()
+    let href: String
+    let text: String
 }
 
 private extension Comparable {

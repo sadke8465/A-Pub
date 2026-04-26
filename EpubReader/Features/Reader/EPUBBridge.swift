@@ -42,6 +42,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     public var onSelected: ((String, String) -> Void)?
     public var onMarkClicked: ((String) -> Void)?
     public var onRequestHighlights: ((String) -> Void)?
+    public var onFootnoteRequest: ((String, String) -> Void)?
     public var onChapterLoaded: (() -> Void)?
     public var onAtChapterEnd: (() -> Void)?
     public var onLocationsSnapshot: ((Int, String?) -> Void)?
@@ -173,6 +174,10 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         case "requestHighlights":
             let spineHref = body["spineHref"] as? String ?? ""
             onRequestHighlights?(spineHref)
+        case "footnoteRequest":
+            let href = body["href"] as? String ?? ""
+            let text = body["text"] as? String ?? ""
+            onFootnoteRequest?(href, text)
         case "chapterLoaded":
             onChapterLoaded?()
         case "atChapterEnd":
