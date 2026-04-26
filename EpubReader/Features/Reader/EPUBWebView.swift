@@ -25,6 +25,10 @@ public struct EPUBWebView: UIViewRepresentable {
 
     public func makeUIView(context: Context) -> WKWebView {
         let configuration = bridge.setup()
+        let viewportSource = "var m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no';document.head.appendChild(m);"
+        configuration.userContentController.addUserScript(
+            WKUserScript(source: viewportSource, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+        )
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
 

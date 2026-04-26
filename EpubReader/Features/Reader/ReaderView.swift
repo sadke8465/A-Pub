@@ -3,34 +3,58 @@ import SwiftUI
 public struct ReaderView: View {
 
     @StateObject private var viewModel: ReaderViewModel
+    @State private var pageCurlVC: PageCurlViewController?
 
     public init(viewModel: ReaderViewModel = ReaderViewModel()) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 
     public var body: some View {
-        ZStack {
-            EPUBWebView(bridge: viewModel.bridge)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    viewModel.toggleOverlay()
+        GeometryReader { geometry in
+            ZStack {
+                PageCurlReaderView(viewModel: viewModel) { vc in
+                    pageCurlVC = vc
+                }
+                .ignoresSafeArea()
+                // Swipe left → next page; swipe right → prev page.
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 30)
+                        .onEnded { value in
+                            if value.translation.width < -50 {
+                                pageCurlVC?.callJS("nextPage()")
+                            } else if value.translation.width > 50 {
+                                pageCurlVC?.callJS("prevPage()")
+                            }
+                        }
+                )
+                // Zone-based tap: left 25% → prev, right 25% → next, centre → overlay.
+                .onTapGesture(coordinateSpace: .local) { location in
+                    let width = geometry.size.width
+                    if location.x < width * 0.25 {
+                        pageCurlVC?.callJS("prevPage()")
+                    } else if location.x > width * 0.75 {
+                        pageCurlVC?.callJS("nextPage()")
+                    } else {
+                        viewModel.toggleOverlay()
+                    }
                 }
                 .onChange(of: viewModel.book?.identifier) { _, _ in
                     if !viewModel.escapedBase64Book.isEmpty {
-                        viewModel.bridge.callJS("loadBook('\(viewModel.escapedBase64Book)')")
+                        pageCurlVC?.loadBook(escapedBase64: viewModel.escapedBase64Book)
                     }
                 }
 
-            if viewModel.isOverlayVisible {
-                overlay
-                    .transition(.opacity)
-            }
+                if viewModel.isOverlayVisible {
+                    overlay
+                        .transition(.opacity)
+                }
 
-            if viewModel.isLoading {
-                ProgressView("Importing…")
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                if viewModel.isLoading {
+                    ProgressView("Importing…")
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
             }
         }
         .onAppear {
@@ -74,14 +98,14 @@ public struct ReaderView: View {
 
             HStack(spacing: 20) {
                 Button {
-                    viewModel.bridge.callJS("prevPage()")
+                    pageCurlVC?.callJS("prevPage()")
                 } label: {
                     Image(systemName: "chevron.left.circle.fill")
                         .font(.system(size: 36))
                 }
 
                 Button {
-                    viewModel.bridge.callJS("nextPage()")
+                    pageCurlVC?.callJS("nextPage()")
                 } label: {
                     Image(systemName: "chevron.right.circle.fill")
                         .font(.system(size: 36))
@@ -98,7 +122,6 @@ public struct ReaderView: View {
         else {
             return "No Book Loaded"
         }
-
         return book.spineItems[viewModel.currentSpineIndex].label
     }
 }

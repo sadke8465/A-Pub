@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2a.2
-NEXT_TASK       = 2a.3
+LAST_COMPLETED  = 2a.5
+NEXT_TASK       = 2a.6
 GATES_PASSED    = []
-TASKS_DONE      = 21
+TASKS_DONE      = 24
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -361,15 +361,15 @@ Goal: page turns feel like Apple Books. CFI saves and restores correctly.
   TARGET   Resources/reader.html (update)
   IMPL     In loadBook(): set rendition options flow:‘paginated’, spread:‘none’, minSpreadWidth:9999. After rendition created: rendition.on(‘relocated’, loc => { bridge.send(‘relocated’,{cfi:loc.start.cfi, percentage:loc.start.percentage, atEnd:loc.atEnd}) }). Expose resizeRendition(w,h) = rendition.resize(w,h). Expose displayCFI(cfi) = rendition.display(cfi). On relocated, also call: if(loc.atEnd) bridge.send(‘atChapterEnd’,{}).
   VERIFY   After loadBook() call from Swift, relocated event fires and bridge receives it.
-- [ ] 2a.3  Disable WKWebView native scroll and zoom
+- [x] 2a.3  Disable WKWebView native scroll and zoom
   TARGET   Features/Reader/EPUBWebView.swift (update)
   IMPL     In makeUIView: webView.scrollView.isScrollEnabled = false. webView.scrollView.bounces = false. webView.scrollView.minimumZoomScale = 1.0. webView.scrollView.maximumZoomScale = 1.0. Also inject viewport meta tag via WKUserScript at documentStart: “var m=document.createElement(‘meta’);m.name=‘viewport’;m.content=‘width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no’;document.head.appendChild(m);”
   VERIFY   Pinch gesture on reader does not zoom. Scroll gesture does not scroll the page.
-- [ ] 2a.4  Implement swipe gesture handling
+- [x] 2a.4  Implement swipe gesture handling
   TARGET   Features/Reader/ReaderView.swift (update)
   IMPL     Add DragGesture in ReaderView with minimumDistance 30. On gesture end: if translation.width < -50 call bridge.callJS(“nextPage()”). If translation.width > 50 call bridge.callJS(“prevPage()”). Also add tap gesture (single tap on left 25% of screen → prev, right 25% → next, center → toggle overlay). Ensure gesture does not block text selection.
   VERIFY   Swipe left → next page. Swipe right → prev page. Tap left/right edges → page turns.
-- [ ] 2a.5  Implement page-curl animation
+- [x] 2a.5  Implement page-curl animation
   TARGET   Features/Reader/ReaderView.swift (update)
   IMPL     Replace the plain EPUBWebView embed with a UIPageViewController (style: .pageCurl, orientation: .horizontal) wrapped via UIViewControllerRepresentable. The page VC manages current and adjacent view controllers each hosting one EPUBWebView from a pool of 3. When dataSource asks for before/after VCs, return pooled WKWebView instances. The page content is the same rendition — Swift controls which rendition.display() is called. On atChapterEnd: pre-display next chapter in the adjacent pooled WKWebView before user reaches it.
   VERIFY   Page turn shows curl animation. Reversing the curl shows previous page correctly.
