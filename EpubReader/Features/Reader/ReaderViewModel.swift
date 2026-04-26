@@ -15,6 +15,7 @@ public final class ReaderViewModel: ObservableObject {
     @Published public var escapedBase64Book: String = ""
     @Published public var bridge = EPUBBridge()
     @Published public var currentSpineIndex = 0
+    @Published public var lastJavaScriptExecutionError: String?
 
     let pageController = PageController()
     let appearance: ReaderAppearance
@@ -120,6 +121,15 @@ public final class ReaderViewModel: ObservableObject {
         needsLocationsSnapshotAfterReflow = true
     }
 
+    func handleJavaScriptExecutionFailure(_ failure: EPUBBridge.JavaScriptExecutionFailure) {
+        let message = """
+        JavaScript execution failed for \(failure.commandPrefix) \
+        [\(failure.errorDomain):\(failure.errorCode)] \(failure.message)
+        """
+        lastJavaScriptExecutionError = message
+        Log.shared.error(message)
+    }
+
     func saveCurrentAppearanceOverrideForCurrentBook() {
         guard let bookID = initialBookID else {
             Log.shared.debug("Skipping per-book appearance override save: no active library book id")
@@ -219,6 +229,10 @@ public final class ReaderViewModel: ObservableObject {
             guard let self else { return }
             self.pageController.updateTotalLocationCount(totalLocations)
             self.persistLocationsCache(serializedLocations)
+        }
+
+        bridge.onJavaScriptExecutionFailed = { [weak self] failure in
+            self?.handleJavaScriptExecutionFailure(failure)
         }
     }
 

@@ -75,6 +75,7 @@ final class PageCurlViewController: UIPageViewController {
     var onMarkClicked:       ((String) -> Void)?
     var onRequestHighlights: ((String) -> Void)?
     var onAtChapterEnd:      (() -> Void)?
+    var onJavaScriptExecutionFailed: ((EPUBBridge.JavaScriptExecutionFailure) -> Void)?
 
     // MARK: Init
 
@@ -94,6 +95,7 @@ final class PageCurlViewController: UIPageViewController {
         delegate = self
         setViewControllers([currentSlot], direction: .forward, animated: false)
         wireCurrentSlotCallbacks()
+        wireBridgeFailureCallbacks()
     }
 
     // MARK: Public API
@@ -139,6 +141,14 @@ final class PageCurlViewController: UIPageViewController {
             self?.onAtChapterEnd?()
             // Pre-warm the next slot so its rendition is one chapter ahead.
             self?.nextSlot.bridge.callJS("nextPage()")
+        }
+    }
+
+    private func wireBridgeFailureCallbacks() {
+        pool.forEach { slot in
+            slot.bridge.onJavaScriptExecutionFailed = { [weak self] failure in
+                self?.onJavaScriptExecutionFailed?(failure)
+            }
         }
     }
 
@@ -264,6 +274,9 @@ struct PageCurlReaderView: UIViewControllerRepresentable {
                     contextSnippet: "",
                     atEnd: true
                 )
+            }
+            vc.onJavaScriptExecutionFailed = { [weak viewModel] failure in
+                viewModel?.handleJavaScriptExecutionFailure(failure)
             }
         }
     }

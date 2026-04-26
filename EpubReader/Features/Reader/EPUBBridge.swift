@@ -16,6 +16,13 @@ import WebKit
 @MainActor
 public final class EPUBBridge: NSObject, WKScriptMessageHandler {
 
+    public struct JavaScriptExecutionFailure: Sendable {
+        public let commandPrefix: String
+        public let errorDomain: String
+        public let errorCode: Int
+        public let message: String
+    }
+
     public static let messageName = "bridge"
 
     public weak var webView: WKWebView?
@@ -29,6 +36,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     public var onChapterLoaded: (() -> Void)?
     public var onAtChapterEnd: (() -> Void)?
     public var onLocationsSnapshot: ((Int, String?) -> Void)?
+    public var onJavaScriptExecutionFailed: ((JavaScriptExecutionFailure) -> Void)?
 
     public override init() {
         super.init()
@@ -46,9 +54,33 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         return configuration
     }
 
-    /// Fire-and-forget JavaScript evaluation in the bound web view.
+    /// JavaScript evaluation in the bound web view with structured error handling.
     public func callJS(_ js: String) {
-        webView?.evaluateJavaScript(js, completionHandler: nil)
+        webView?.evaluateJavaScript(js) { [weak self] _, error in
+            guard let self else { return }
+            if let nsError = error as NSError? {
+                let commandPrefix = Self.truncatedCommandPrefix(for: js)
+                Log.shared.error(
+                    """
+                    JS execution failed [domain=\(nsError.domain) code=\(nsError.code)]: \
+                    \(nsError.localizedDescription) | commandPrefix=\(commandPrefix)
+                    """
+                )
+                onJavaScriptExecutionFailed?(
+                    JavaScriptExecutionFailure(
+                        commandPrefix: commandPrefix,
+                        errorDomain: nsError.domain,
+                        errorCode: nsError.code,
+                        message: nsError.localizedDescription
+                    )
+                )
+                return
+            }
+
+            if js.hasPrefix("loadBook(") {
+                Log.shared.info("loadBook invoked successfully")
+            }
+        }
     }
 
     /// Applies a named theme (light / dark / sepia) to the current rendition.
@@ -144,5 +176,15 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
 
     deinit {
         // Cleanup is expected to be explicit via `invalidate()` by the owner.
+    }
+}
+
+private extension EPUBBridge {
+    static func truncatedCommandPrefix(for js: String, limit: Int = 120) -> String {
+        let singleLine = js.replacingOccurrences(of: "\n", with: " ")
+        guard singleLine.count > limit else {
+            return singleLine
+        }
+        return "\(singleLine.prefix(limit))…"
     }
 }
