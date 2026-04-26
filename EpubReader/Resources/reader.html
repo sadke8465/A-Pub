@@ -130,9 +130,15 @@
                 return '';
             }
 
-            window.loadBook = async function (base64) {
+            window.loadBook = async function (bookURL, fallbackBase64) {
                 try {
-                    window.book = ePub(base64, { encoding: 'base64' });
+                    if (typeof bookURL === 'string' && bookURL.length > 0) {
+                        window.book = ePub(bookURL);
+                    } else if (typeof fallbackBase64 === 'string' && fallbackBase64.length > 0) {
+                        window.book = ePub(fallbackBase64, { encoding: 'base64' });
+                    } else {
+                        throw new Error('No valid EPUB input provided');
+                    }
 
                     window.rendition = window.book.renderTo('viewer', {
                         flow: 'paginated',
