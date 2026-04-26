@@ -48,6 +48,7 @@
 		0A0000000000000000000C27 /* iAWriterQuattroS-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B27 /* iAWriterQuattroS-Italic.ttf */; };
 		0A0000000000000000000C28 /* AppearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B28 /* AppearanceSettings.swift */; };
 		0A0000000000000000000C29 /* Book.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B29 /* Book.swift */; };
+		0A0000000000000000000C2A /* ReaderOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B2A /* ReaderOverlay.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -92,6 +93,7 @@
 		0A0000000000000000000B27 /* iAWriterQuattroS-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iAWriterQuattroS-Italic.ttf"; sourceTree = "<group>"; };
 		0A0000000000000000000B28 /* AppearanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettings.swift; sourceTree = "<group>"; };
 		0A0000000000000000000B29 /* Book.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Book.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B2A /* ReaderOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderOverlay.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -228,6 +230,7 @@
 				0A0000000000000000000B20 /* ReaderSettings.swift */,
 				0A0000000000000000000B12 /* ReaderView.swift */,
 				0A0000000000000000000B13 /* ReaderViewModel.swift */,
+				0A0000000000000000000B2A /* ReaderOverlay.swift */,
 			);
 			path = Reader;
 			sourceTree = "<group>";
@@ -396,6 +399,7 @@
 				0A0000000000000000000C21 /* ReaderSettings.swift in Sources */,
 				0A0000000000000000000C28 /* AppearanceSettings.swift in Sources */,
 				0A0000000000000000000C29 /* Book.swift in Sources */,
+				0A0000000000000000000C2A /* ReaderOverlay.swift in Sources */,
 				0A0000000000000000000C15 /* EpubReader.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

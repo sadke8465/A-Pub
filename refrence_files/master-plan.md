@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2b.7
-NEXT_TASK       = 2c.1
+LAST_COMPLETED  = 2c.1
+NEXT_TASK       = 2c.2
 GATES_PASSED    = []
-TASKS_DONE      = 33
+TASKS_DONE      = 34
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -437,7 +437,7 @@ PHASE_2b_MILESTONE: Change font to EB Garamond size 22 sepia. Reader updates ins
 
 Goal: TOC, scrubber, time estimate, chapter navigation.
 
-- [ ] 2c.1  Build ReaderOverlay
+- [x] 2c.1  Build ReaderOverlay
   TARGET   Features/Reader/ReaderOverlay.swift
   IMPL     ZStack over the reader. Top bar: HStack with back button (chevron.left + “Library”), Spacer, chapter title (lineLimit 1), Spacer, HStack of icon buttons (magnifyingglass, list.bullet, gearshape). Bottom bar: HStack with text.book icon, Spacer, progress text “X% · ~Nm left”, Spacer, speaker.wave icon. Both bars use .ultraThinMaterial background with safe area padding. Visibility controlled by @State isVisible. Single tap anywhere in the reader (not on a button or text) toggles isVisible. Auto-hide: set a Timer for 3s after show; cancel timer on hide or interaction. All transitions: .opacity with .easeInOut(duration:0.2).
   VERIFY   Single tap → overlay appears. Wait 3 seconds → fades out. Tap again → reappears.
