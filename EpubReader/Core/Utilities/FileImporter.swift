@@ -100,7 +100,10 @@ public struct FileImporter {
 
         let extractedRoot = try await extractor.extract(persistedURL)
         let book = try await parser.parse(extractedRoot: extractedRoot)
-        return (book, persistedURL, nil)
+        let escapedBase64 = epubData
+            .base64EncodedString()
+            .replacingOccurrences(of: "'", with: "\\'")
+        return (book, persistedURL, escapedBase64)
     }
 
     nonisolated private static func readData(from url: URL) async throws -> Data {
