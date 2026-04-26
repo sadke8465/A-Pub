@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2b.4
-NEXT_TASK       = 2b.5
+LAST_COMPLETED  = 2b.5
+NEXT_TASK       = 2b.6
 GATES_PASSED    = []
-TASKS_DONE      = 30
+TASKS_DONE      = 31
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -404,7 +404,7 @@ Goal: font, theme, margins, line spacing all configurable and live-updating.
   TARGET   Features/Reader/EPUBBridge.swift (update), Resources/reader.html (update)
   IMPL     Expose in reader.html: setFontSize(px:Int), setFontFamily(name:String), setLineSpacing(value:Float), setMargin(px:Int), setJustify(justify:Bool), setHyphenation(on:Bool). Each calls rendition.themes.override with appropriate CSS. EPUBBridge: corresponding Swift functions calling callJS(). After any appearance change, call rendition.resize(w,h) to trigger reflow and update page count.
   VERIFY   Change font size slider → text immediately reflows to new size. Page count updates.
-- [ ] 2b.5  Build AppearanceSettings view
+- [x] 2b.5  Build AppearanceSettings view
   TARGET   Features/Settings/AppearanceSettings.swift
   IMPL     View presented as .sheet with .presentationDetents([.medium, .large]). Sections: (1) Font size: stepper + label showing current size. (2) Font family: horizontal ScrollView of font name buttons, each rendering “Aa” in that font; selected has accent border. (3) Theme: 4 color swatches (light/dark/sepia/custom placeholder). (4) Margins: segmented control Narrow/Normal/Wide. (5) Line spacing: slider 1.2–2.0. (6) Toggles: Justify text, Hyphenation. All changes apply instantly via ReaderAppearance model which fires to EPUBBridge. No “Save” button needed.
   VERIFY   Open settings. Change font → reader updates behind the sheet. Close sheet. Settings persisted on relaunch.

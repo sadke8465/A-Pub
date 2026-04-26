@@ -46,6 +46,7 @@
 		0A0000000000000000000C25 /* EBGaramond-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B25 /* EBGaramond-Italic.ttf */; };
 		0A0000000000000000000C26 /* iAWriterQuattroS-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B26 /* iAWriterQuattroS-Regular.ttf */; };
 		0A0000000000000000000C27 /* iAWriterQuattroS-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B27 /* iAWriterQuattroS-Italic.ttf */; };
+		0A0000000000000000000C28 /* AppearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B28 /* AppearanceSettings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -88,6 +89,7 @@
 		0A0000000000000000000B25 /* EBGaramond-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "EBGaramond-Italic.ttf"; sourceTree = "<group>"; };
 		0A0000000000000000000B26 /* iAWriterQuattroS-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iAWriterQuattroS-Regular.ttf"; sourceTree = "<group>"; };
 		0A0000000000000000000B27 /* iAWriterQuattroS-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iAWriterQuattroS-Italic.ttf"; sourceTree = "<group>"; };
+		0A0000000000000000000B28 /* AppearanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettings.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,8 +142,17 @@
 			children = (
 				0A00000000000000000000AE /* Library */,
 				0A00000000000000000000AC /* Reader */,
+				0A00000000000000000000B1 /* Settings */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000B1 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B28 /* AppearanceSettings.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		0A00000000000000000000AE /* Library */ = {
@@ -372,6 +383,7 @@
 				0A0000000000000000000C1F /* PageController.swift in Sources */,
 				0A0000000000000000000C20 /* PageCurlViewController.swift in Sources */,
 				0A0000000000000000000C21 /* ReaderSettings.swift in Sources */,
+				0A0000000000000000000C28 /* AppearanceSettings.swift in Sources */,
 				0A0000000000000000000C15 /* EpubReader.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
