@@ -25,11 +25,6 @@
             width: 100vw;
             height: 100vh;
             overflow: hidden;
-            background: #FFFFF8;
-        }
-        #viewer iframe,
-        #viewer > div {
-            background: #FFFFF8;
         }
     </style>
 </head>
@@ -126,9 +121,6 @@
             window.book = null;
             window.rendition = null;
             window.currentLoadToken = 0;
-            window.firstContentReadyToken = 0;
-            window.currentThemeName = 'light';
-            window.isGeneratingLocations = false;
 
             function withTimeout(promise, timeoutMs, label) {
                 return Promise.race([
@@ -253,7 +245,7 @@
                 try {
                     var doc = contents && contents.document;
                     if (!doc) { return; }
-                    var links = doc.querySelectorAll('a[epub\\:type~="noteref"], a[role~="doc-noteref"], a[rel~="footnote"]');
+                    var links = doc.querySelectorAll('a[epub\\:type~="noteref"], a[role~="doc-noteref"]');
                     links.forEach(function (link) {
                         if (link.dataset && link.dataset.apubFootnoteBound === '1') {
                             return;
@@ -264,19 +256,27 @@
                             event.stopPropagation();
 
                             var href = link.getAttribute('href') || '';
-                            resolveFootnoteText(href, doc).then(function (text) {
-                                var fallback = link.title || link.textContent || '';
-                                window.bridge.send('footnoteRequest', {
-                                    href: href,
-                                    text: cleanFootnoteText(text || fallback)
-                                });
-                            }).catch(function () {
-                                var fallback = link.title || link.textContent || '';
-                                window.bridge.send('footnoteRequest', {
-                                    href: href,
-                                    text: cleanFootnoteText(fallback)
-                                });
-                            });
+                            var text = '';
+
+                            if (href.indexOf('#') >= 0) {
+                                var fragment = href.split('#').pop();
+                                if (fragment) {
+                                    var decoded = decodeURIComponent(fragment);
+                                    var byId = doc.getElementById(decoded);
+                                    if (byId && byId.textContent) {
+                                        text = byId.textContent.trim();
+                                    }
+                                }
+                            }
+
+                            if (!text && link.title) {
+                                text = link.title.trim();
+                            }
+                            if (!text && link.textContent) {
+                                text = link.textContent.trim();
+                            }
+
+                            window.bridge.send('footnoteRequest', { href: href, text: text });
                         };
 
                         link.addEventListener('click', handler, true);
@@ -289,111 +289,21 @@
                 }
             }
 
-            function cleanFootnoteText(text) {
-                if (typeof text !== 'string') {
-                    return '';
-                }
-                return text
-                    .replace(/\s+/g, ' ')
-                    .replace(/(?:↩|↑|back to text|return to text)\s*$/i, '')
-                    .replace(/^\s*(?:\[\d+\]|\d+[\.\)]|[*†‡])\s*/, '')
-                    .trim();
-            }
-
-            async function resolveFootnoteText(href, currentDocument) {
-                if (!href || typeof href !== 'string') {
-                    return '';
-                }
-
-                var parts = href.split('#');
-                var hrefPath = parts[0] || '';
-                var fragment = parts.length > 1 ? decodeURIComponent(parts[1]) : '';
-
-                if (!hrefPath && fragment && currentDocument) {
-                    var sameDocTarget = currentDocument.getElementById(fragment);
-                    return sameDocTarget && sameDocTarget.textContent ? sameDocTarget.textContent : '';
-                }
-
-                if (!window.book || !window.book.spine) {
-                    return '';
-                }
-
-                var sections = getSpineSections();
-                var normalizedHrefPath = normalizeHrefPath(hrefPath);
-                var targetSection = null;
-                sections.some(function (section) {
-                    if (!section || !section.href) {
-                        return false;
-                    }
-                    if (normalizeHrefPath(section.href) === normalizedHrefPath) {
-                        targetSection = section;
-                        return true;
-                    }
-                    return false;
-                });
-
-                if (!targetSection) {
-                    return '';
-                }
-
-                var loaded = await targetSection.load(window.book.load.bind(window.book));
-                try {
-                    var targetDoc = targetSection.document || loaded;
-                    var target = fragment && targetDoc && typeof targetDoc.getElementById === 'function'
-                        ? targetDoc.getElementById(fragment)
-                        : null;
-                    if (!target && loaded && typeof loaded.querySelector === 'function' && fragment) {
-                        target = loaded.querySelector('#' + cssEscapeCompat(fragment));
-                    }
-                    if (target && target.textContent) {
-                        return target.textContent;
-                    }
-                    return textFromSection(targetSection, loaded);
-                } finally {
-                    try {
-                        targetSection.unload();
-                    } catch (_) {
-                    }
-                }
-            }
-
-            function normalizeHrefPath(value) {
-                if (typeof value !== 'string') {
-                    return '';
-                }
-                var stripped = value.split('#')[0].split('?')[0];
-                try {
-                    stripped = decodeURIComponent(stripped);
-                } catch (_) {
-                }
-                return stripped.replace(/^\.\//, '').replace(/^.*\/([^\/]+)$/, '$1');
-            }
-
-            function cssEscapeCompat(value) {
-                if (window.CSS && typeof window.CSS.escape === 'function') {
-                    return window.CSS.escape(value);
-                }
-                return String(value).replace(/["\\#.;?+*~':!^$[\]()=>|\/@]/g, '\\$&');
-            }
-
             window.setTheme = function (name) {
                 if (!window.rendition) { return; }
                 var selectedTheme = normalizedThemeName(name);
                 var t = themeMap[selectedTheme];
-                window.currentThemeName = selectedTheme;
                 logInfo('setTheme', { requested: name, applied: selectedTheme, colors: t });
                 window.rendition.themes.select(selectedTheme);
                 document.documentElement.style.background = t.bg;
                 document.body.style.background = t.bg;
                 applyContentTheme(selectedTheme);
-                sendRenderState('afterSetTheme', window.currentLoadToken, null, { theme: selectedTheme });
             };
 
             window.setFontSize = function (px) {
                 safeRun('setFontSize', function () {
                     window.rendition.themes.fontSize(px + 'px');
                     window.rendition.resize(window.innerWidth, window.innerHeight);
-                    reportCurrentLocation('afterSetFontSize', window.currentLoadToken, false);
                 });
             };
 
@@ -401,7 +311,6 @@
                 safeRun('setFontFamily', function () {
                     window.rendition.themes.font(name);
                     window.rendition.resize(window.innerWidth, window.innerHeight);
-                    reportCurrentLocation('afterSetFontFamily', window.currentLoadToken, false);
                 });
             };
 
@@ -409,7 +318,6 @@
                 safeRun('setLineSpacing', function () {
                     window.rendition.themes.override('line-height', String(value));
                     window.rendition.resize(window.innerWidth, window.innerHeight);
-                    reportCurrentLocation('afterSetLineSpacing', window.currentLoadToken, false);
                 });
             };
 
@@ -417,7 +325,6 @@
                 safeRun('setMargin', function () {
                     window.rendition.themes.override('padding', '20px ' + px + 'px');
                     window.rendition.resize(window.innerWidth, window.innerHeight);
-                    reportCurrentLocation('afterSetMargin', window.currentLoadToken, false);
                 });
             };
 
@@ -425,7 +332,6 @@
                 safeRun('setJustify', function () {
                     window.rendition.themes.override('text-align', justify ? 'justify' : 'left');
                     window.rendition.resize(window.innerWidth, window.innerHeight);
-                    reportCurrentLocation('afterSetJustify', window.currentLoadToken, false);
                 });
             };
 
@@ -434,7 +340,6 @@
                     window.rendition.themes.override('-webkit-hyphens', on ? 'auto' : 'manual');
                     window.rendition.themes.override('hyphens', on ? 'auto' : 'manual');
                     window.rendition.resize(window.innerWidth, window.innerHeight);
-                    reportCurrentLocation('afterSetHyphenation', window.currentLoadToken, false);
                 });
             };
 
@@ -464,386 +369,6 @@
                 return '';
             }
 
-            function rectSummary(target) {
-                try {
-                    if (!target || typeof target.getBoundingClientRect !== 'function') {
-                        return null;
-                    }
-                    var rect = target.getBoundingClientRect();
-                    return {
-                        x: rect.x,
-                        y: rect.y,
-                        width: rect.width,
-                        height: rect.height,
-                        top: rect.top,
-                        right: rect.right,
-                        bottom: rect.bottom,
-                        left: rect.left
-                    };
-                } catch (error) {
-                    return { error: String(error) };
-                }
-            }
-
-            function textFromSection(section, loaded) {
-                try {
-                    var doc = section && section.document ? section.document : null;
-                    var body = doc && doc.body ? doc.body : null;
-                    if (!body && loaded && typeof loaded.querySelector === 'function') {
-                        body = loaded.querySelector('body');
-                    }
-                    if (body) {
-                        return body.innerText || body.textContent || '';
-                    }
-                    if (loaded && typeof loaded.textContent === 'string') {
-                        return loaded.textContent;
-                    }
-                } catch (_) {
-                }
-                return '';
-            }
-
-            function getSpineSections() {
-                if (!window.book || !window.book.spine) {
-                    return [];
-                }
-                if (Array.isArray(window.book.spine.spineItems)) {
-                    return window.book.spine.spineItems;
-                }
-                var sections = [];
-                if (typeof window.book.spine.each === 'function') {
-                    window.book.spine.each(function (section) {
-                        sections.push(section);
-                    });
-                }
-                return sections;
-            }
-
-            function sectionSummary(section) {
-                if (!section) {
-                    return null;
-                }
-                return {
-                    index: typeof section.index === 'number' ? section.index : -1,
-                    href: section.href || '',
-                    linear: section.linear !== false,
-                    idref: section.idref || '',
-                    properties: Array.isArray(section.properties) ? section.properties.slice(0, 8) : []
-                };
-            }
-
-            function compactLocation(location) {
-                var start = location && location.start ? location.start : null;
-                var displayed = start && start.displayed ? start.displayed : null;
-                return {
-                    hasLocation: !!(start && start.cfi),
-                    cfi: start && start.cfi ? start.cfi : '',
-                    percentage: start && typeof start.percentage === 'number' ? start.percentage : null,
-                    href: start && start.href ? start.href : '',
-                    index: start && typeof start.index === 'number' ? start.index : -1,
-                    displayedPage: displayed && typeof displayed.page !== 'undefined' ? displayed.page : null,
-                    displayedTotal: displayed && typeof displayed.total !== 'undefined' ? displayed.total : null,
-                    atStart: location && location.atStart === true,
-                    atEnd: location && location.atEnd === true
-                };
-            }
-
-            function buildRelocatedPayload(location, source) {
-                var start = location && location.start ? location.start : null;
-                var displayed = start && start.displayed ? start.displayed : null;
-                var cfi = (start && start.cfi) ? start.cfi : '';
-                var pct = (start && typeof start.percentage === 'number')
-                    ? start.percentage
-                    : 0;
-                var spineHref = (start && start.href) ? start.href : '';
-                return {
-                    cfi: cfi,
-                    percentage: pct,
-                    spineHref: spineHref,
-                    spineIndex: start && typeof start.index === 'number' ? start.index : -1,
-                    displayedPage: displayed && typeof displayed.page !== 'undefined' ? displayed.page : null,
-                    displayedTotal: displayed && typeof displayed.total !== 'undefined' ? displayed.total : null,
-                    characterOffset: extractCharacterOffset(cfi),
-                    contextSnippet: extractContextSnippet(location),
-                    atStart: location && location.atStart === true,
-                    atEnd: location && location.atEnd === true,
-                    source: source || 'event'
-                };
-            }
-
-            function sendRelocated(location, source) {
-                var payload = buildRelocatedPayload(location, source);
-                logInfo('relocated payload', {
-                    source: payload.source,
-                    cfi: payload.cfi,
-                    percentage: payload.percentage,
-                    spineHref: payload.spineHref,
-                    spineIndex: payload.spineIndex,
-                    displayedPage: payload.displayedPage,
-                    displayedTotal: payload.displayedTotal,
-                    atStart: payload.atStart,
-                    atEnd: payload.atEnd
-                });
-                window.bridge.send('relocated', payload);
-                if (payload.atEnd) {
-                    window.bridge.send('atChapterEnd', {});
-                }
-            }
-
-            async function readCurrentLocation(phase) {
-                if (!window.rendition || !window.rendition.manager) {
-                    return null;
-                }
-
-                try {
-                    if (typeof window.rendition.currentLocation === 'function') {
-                        var direct = window.rendition.currentLocation();
-                        if (direct && direct.then && typeof direct.then === 'function') {
-                            direct = await direct;
-                        }
-                        if (direct && direct.start && direct.start.cfi) {
-                            return direct;
-                        }
-                    }
-                } catch (error) {
-                    logWarn('rendition.currentLocation failed', { phase: phase, message: String(error) });
-                }
-
-                try {
-                    if (typeof window.rendition.manager.currentLocation === 'function') {
-                        var raw = window.rendition.manager.currentLocation();
-                        if (raw && raw.then && typeof raw.then === 'function') {
-                            raw = await raw;
-                        }
-                        if (raw && typeof window.rendition.located === 'function') {
-                            var located = window.rendition.located(raw);
-                            if (located && located.start && located.start.cfi) {
-                                return located;
-                            }
-                        }
-                    }
-                } catch (managerError) {
-                    logWarn('manager.currentLocation failed', { phase: phase, message: String(managerError) });
-                }
-
-                return null;
-            }
-
-            function documentTextSummary(doc) {
-                var body = doc && doc.body ? doc.body : null;
-                var html = doc && doc.documentElement ? doc.documentElement : null;
-                var text = body ? (body.innerText || body.textContent || '') : '';
-                var bodyStyle = null;
-                var htmlStyle = null;
-
-                try {
-                    if (body) {
-                        var computedBody = doc.defaultView.getComputedStyle(body);
-                        bodyStyle = {
-                            display: computedBody.display,
-                            visibility: computedBody.visibility,
-                            opacity: computedBody.opacity,
-                            color: computedBody.color,
-                            backgroundColor: computedBody.backgroundColor
-                        };
-                    }
-                    if (html) {
-                        var computedHTML = doc.defaultView.getComputedStyle(html);
-                        htmlStyle = {
-                            display: computedHTML.display,
-                            visibility: computedHTML.visibility,
-                            opacity: computedHTML.opacity,
-                            color: computedHTML.color,
-                            backgroundColor: computedHTML.backgroundColor
-                        };
-                    }
-                } catch (_) {
-                }
-
-                return {
-                    textLength: text.trim().length,
-                    textExcerpt: text.replace(/\s+/g, ' ').trim().slice(0, 120),
-                    readyState: doc ? doc.readyState : '',
-                    bodyClientWidth: body ? body.clientWidth : 0,
-                    bodyClientHeight: body ? body.clientHeight : 0,
-                    bodyScrollWidth: body ? body.scrollWidth : 0,
-                    bodyScrollHeight: body ? body.scrollHeight : 0,
-                    bodyStyle: bodyStyle,
-                    htmlStyle: htmlStyle
-                };
-            }
-
-            function viewDocument(view) {
-                try {
-                    if (view && view.contents && view.contents.document) {
-                        return view.contents.document;
-                    }
-                    if (view && view.document) {
-                        return view.document;
-                    }
-                    if (view && view.iframe && view.iframe.contentDocument) {
-                        return view.iframe.contentDocument;
-                    }
-                } catch (_) {
-                }
-                return null;
-            }
-
-            function viewTextLength(view) {
-                var summary = documentTextSummary(viewDocument(view));
-                return summary.textLength;
-            }
-
-            function managerViews() {
-                try {
-                    var views = window.rendition && window.rendition.manager && window.rendition.manager.views;
-                    if (views && typeof views.all === 'function') {
-                        return views.all();
-                    }
-                    if (views && Array.isArray(views._views)) {
-                        return views._views;
-                    }
-                } catch (_) {
-                }
-                return [];
-            }
-
-            function collectRenderState(phase, loadToken, location, extra) {
-                var viewer = document.getElementById('viewer');
-                var iframes = viewer ? Array.prototype.slice.call(viewer.querySelectorAll('iframe')) : [];
-                var iframeSummaries = [];
-                var totalTextLength = 0;
-                var firstExcerpt = '';
-
-                iframes.forEach(function (iframe, index) {
-                    var iframeSummary = {
-                        index: index,
-                        rect: rectSummary(iframe),
-                        documentAccessible: false,
-                        readyState: '',
-                        textLength: 0,
-                        textExcerpt: '',
-                        bodyClientWidth: 0,
-                        bodyClientHeight: 0,
-                        bodyScrollWidth: 0,
-                        bodyScrollHeight: 0,
-                        bodyStyle: null,
-                        htmlStyle: null,
-                        error: null
-                    };
-
-                    try {
-                        var doc = iframe.contentDocument || (iframe.contentWindow ? iframe.contentWindow.document : null);
-                        var textSummary = documentTextSummary(doc);
-                        iframeSummary.documentAccessible = !!doc;
-                        iframeSummary.readyState = textSummary.readyState;
-                        iframeSummary.textLength = textSummary.textLength;
-                        iframeSummary.textExcerpt = textSummary.textExcerpt;
-                        iframeSummary.bodyClientWidth = textSummary.bodyClientWidth;
-                        iframeSummary.bodyClientHeight = textSummary.bodyClientHeight;
-                        iframeSummary.bodyScrollWidth = textSummary.bodyScrollWidth;
-                        iframeSummary.bodyScrollHeight = textSummary.bodyScrollHeight;
-                        iframeSummary.bodyStyle = textSummary.bodyStyle;
-                        iframeSummary.htmlStyle = textSummary.htmlStyle;
-                        totalTextLength += textSummary.textLength;
-                        if (!firstExcerpt && textSummary.textExcerpt) {
-                            firstExcerpt = textSummary.textExcerpt;
-                        }
-                    } catch (error) {
-                        iframeSummary.error = String(error);
-                    }
-
-                    iframeSummaries.push(iframeSummary);
-                });
-
-                var locationSummary = compactLocation(location || (window.rendition ? window.rendition.location : null));
-                var spineSection = null;
-                if (locationSummary.index >= 0) {
-                    spineSection = window.book && window.book.spine ? window.book.spine.get(locationSummary.index) : null;
-                }
-
-                var views = managerViews();
-                var state = {
-                    loadToken: loadToken || window.currentLoadToken,
-                    phase: phase,
-                    viewerClientWidth: viewer ? viewer.clientWidth : 0,
-                    viewerClientHeight: viewer ? viewer.clientHeight : 0,
-                    viewerRect: rectSummary(viewer),
-                    viewerChildCount: viewer ? viewer.childNodes.length : 0,
-                    iframeCount: iframes.length,
-                    managerViewCount: views.length,
-                    iframes: iframeSummaries,
-                    textLength: totalTextLength,
-                    textExcerpt: firstExcerpt,
-                    hasReadableText: totalTextLength > 0,
-                    location: locationSummary,
-                    spine: sectionSummary(spineSection),
-                    extra: extra || null
-                };
-                return state;
-            }
-
-            function sendRenderState(phase, loadToken, location, extra) {
-                var state = collectRenderState(phase, loadToken, location, extra);
-                window.bridge.send('renderState', state);
-                logInfo('render-state', {
-                    loadToken: state.loadToken,
-                    phase: state.phase,
-                    viewer: { width: state.viewerClientWidth, height: state.viewerClientHeight },
-                    iframeCount: state.iframeCount,
-                    managerViewCount: state.managerViewCount,
-                    textLength: state.textLength,
-                    textExcerpt: state.textExcerpt,
-                    location: state.location,
-                    spine: state.spine
-                });
-
-                if (state.hasReadableText && window.firstContentReadyToken !== state.loadToken) {
-                    window.firstContentReadyToken = state.loadToken;
-                    window.bridge.send('firstContentReady', {
-                        loadToken: state.loadToken,
-                        phase: state.phase,
-                        textLength: state.textLength,
-                        textExcerpt: state.textExcerpt,
-                        spineHref: state.spine && state.spine.href ? state.spine.href : '',
-                        spineIndex: state.spine && typeof state.spine.index === 'number' ? state.spine.index : -1
-                    });
-                    logInfo('firstContentReady sent', {
-                        loadToken: state.loadToken,
-                        phase: state.phase,
-                        textLength: state.textLength
-                    });
-                }
-
-                return state;
-            }
-
-            function nextAnimationFrame() {
-                return new Promise(function (resolve) {
-                    requestAnimationFrame(function () {
-                        requestAnimationFrame(resolve);
-                    });
-                });
-            }
-
-            async function reportCurrentLocation(phase, loadToken, shouldSendRelocated) {
-                await nextAnimationFrame();
-                var location = await readCurrentLocation(phase);
-                if (location && location.start && location.start.cfi) {
-                    logInfo('manual currentLocation resolved', {
-                        phase: phase,
-                        location: compactLocation(location)
-                    });
-                    if (shouldSendRelocated) {
-                        sendRelocated(location, phase);
-                    }
-                } else {
-                    logWarn('manual currentLocation unavailable', { phase: phase });
-                }
-                sendRenderState(phase, loadToken, location, null);
-                return location;
-            }
-
             function countWordsFromText(text) {
                 if (typeof text !== 'string') {
                     return 0;
@@ -867,7 +392,10 @@
 
                 try {
                     var loaded = await section.load(window.book.load.bind(window.book));
-                    var text = textFromSection(section, loaded);
+                    var text = '';
+                    if (loaded && loaded.document && loaded.document.body) {
+                        text = loaded.document.body.innerText || loaded.document.body.textContent || '';
+                    }
                     return countWordsFromText(text);
                 } catch (_) {
                     return 0;
@@ -879,267 +407,11 @@
                 }
             }
 
-            async function sampleSectionForReadableText(section) {
-                if (!section || !window.book) {
-                    return { textLength: 0, wordCount: 0, excerpt: '' };
-                }
-
-                try {
-                    var loaded = await section.load(window.book.load.bind(window.book));
-                    var text = textFromSection(section, loaded).replace(/\s+/g, ' ').trim();
-                    return {
-                        textLength: text.length,
-                        wordCount: countWordsFromText(text),
-                        excerpt: text.slice(0, 120)
-                    };
-                } catch (error) {
-                    return {
-                        textLength: 0,
-                        wordCount: 0,
-                        excerpt: '',
-                        error: String(error)
-                    };
-                } finally {
-                    try {
-                        section.unload();
-                    } catch (_) {
-                    }
-                }
-            }
-
-            function sectionSearchText(section, sample) {
-                var parts = [];
-                if (section) {
-                    parts.push(section.href || '');
-                    parts.push(section.idref || '');
-                }
-                if (sample && sample.excerpt) {
-                    parts.push(sample.excerpt);
-                }
-                return parts.join(' ').toLowerCase();
-            }
-
-            function sampleLooksLikeBoilerplate(section, sample) {
-                var text = sectionSearchText(section, sample);
-                var boilerplateTerms = [
-                    'public-domain',
-                    'public domain',
-                    'copyright',
-                    'license',
-                    'gutenberg',
-                    'imprint',
-                    'titlepage',
-                    'title-page',
-                    'cover',
-                    'toc',
-                    'contents'
-                ];
-                var matched = boilerplateTerms.some(function (term) {
-                    return text.indexOf(term) !== -1;
-                });
-                return matched && sample && sample.textLength < 1500;
-            }
-
-            function sampleLooksLikeReadingSection(section, sample) {
-                if (!sample || sample.error || sample.wordCount < 10) {
-                    return false;
-                }
-                if (sampleLooksLikeBoilerplate(section, sample)) {
-                    return false;
-                }
-                if (sample.textLength >= 1500 && sample.wordCount >= 220) {
-                    return true;
-                }
-
-                var text = sectionSearchText(section, sample);
-                var readingTerms = [
-                    'chapter',
-                    'introduction',
-                    'preface',
-                    'prologue',
-                    'letter',
-                    'volume',
-                    'part-',
-                    'part_'
-                ];
-                var namedReadingSection = readingTerms.some(function (term) {
-                    return text.indexOf(term) !== -1;
-                });
-                if (namedReadingSection && sample.textLength >= 400 && sample.wordCount >= 60) {
-                    return true;
-                }
-                return sample.textLength >= 900 && sample.wordCount >= 140;
-            }
-
-            async function chooseInitialDisplayTarget(loadToken) {
-                var sections = getSpineSections();
-                var summaries = sections.slice(0, 12).map(sectionSummary);
-                logInfo('spine summary', {
-                    loadToken: loadToken,
-                    spineCount: sections.length,
-                    firstItems: summaries
-                });
-
-                var firstLinear = null;
-                var candidates = [];
-                sections.forEach(function (section) {
-                    if (!firstLinear && section && section.linear !== false) {
-                        firstLinear = section;
-                    }
-                    if (section && section.linear !== false && candidates.length < 10) {
-                        candidates.push(section);
-                    }
-                });
-
-                var fallbackReadable = null;
-                for (var i = 0; i < candidates.length; i += 1) {
-                    var section = candidates[i];
-                    var sample = await sampleSectionForReadableText(section);
-                    var isBoilerplate = sampleLooksLikeBoilerplate(section, sample);
-                    var isReadingSection = sampleLooksLikeReadingSection(section, sample);
-                    logInfo('spine text sample', {
-                        loadToken: loadToken,
-                        section: sectionSummary(section),
-                        textLength: sample.textLength,
-                        wordCount: sample.wordCount,
-                        isBoilerplate: isBoilerplate,
-                        isReadingSection: isReadingSection,
-                        excerpt: sample.excerpt,
-                        error: sample.error || null
-                    });
-                    if (!fallbackReadable && !isBoilerplate && sample.textLength >= 80 && sample.wordCount >= 10) {
-                        fallbackReadable = {
-                            section: section,
-                            sample: sample
-                        };
-                    }
-                    if (isReadingSection) {
-                        return {
-                            target: section.href || section.index,
-                            section: sectionSummary(section),
-                            textLength: sample.textLength,
-                            wordCount: sample.wordCount,
-                            reason: 'first-meaningful-reading-linear'
-                        };
-                    }
-                }
-
-                if (fallbackReadable) {
-                    return {
-                        target: fallbackReadable.section.href || fallbackReadable.section.index,
-                        section: sectionSummary(fallbackReadable.section),
-                        textLength: fallbackReadable.sample.textLength,
-                        wordCount: fallbackReadable.sample.wordCount,
-                        reason: 'fallback-readable-nonboilerplate'
-                    };
-                }
-
-                if (firstLinear) {
-                    return {
-                        target: firstLinear.href || firstLinear.index,
-                        section: sectionSummary(firstLinear),
-                        textLength: 0,
-                        wordCount: 0,
-                        reason: 'fallback-first-linear'
-                    };
-                }
-
-                return {
-                    target: undefined,
-                    section: null,
-                    textLength: 0,
-                    wordCount: 0,
-                    reason: 'default-epubjs'
-                };
-            }
-
             async function sendWordCountSample() {
                 var counts = [];
                 counts.push(await loadSectionWordCount(0));
                 counts.push(await loadSectionWordCount(1));
                 window.bridge.send('wordCountSample', { counts: counts });
-            }
-
-            function currentLocationCount() {
-                if (!window.book || !window.book.locations) {
-                    return 0;
-                }
-                if (Array.isArray(window.book.locations._locations)) {
-                    return window.book.locations._locations.length;
-                }
-                if (typeof window.book.locations.length === 'number') {
-                    return window.book.locations.length;
-                }
-                return 0;
-            }
-
-            async function ensureLocationsGenerated(loadToken) {
-                if (!window.book || !window.book.locations || typeof window.book.locations.generate !== 'function') {
-                    logWarn('locations unavailable for generation', { loadToken: loadToken });
-                    return;
-                }
-
-                var existingCount = currentLocationCount();
-                if (existingCount > 0) {
-                    logInfo('locations already available', {
-                        loadToken: loadToken,
-                        totalLocations: existingCount
-                    });
-                    window.snapshotLocations();
-                    await reportCurrentLocation('afterLocationsAvailable', loadToken, true);
-                    return;
-                }
-
-                if (window.isGeneratingLocations) {
-                    logInfo('locations generation already running', { loadToken: loadToken });
-                    return;
-                }
-
-                window.isGeneratingLocations = true;
-                try {
-                    logInfo('locations generation start', { loadToken: loadToken });
-                    await withTimeout(Promise.resolve(window.book.locations.generate(1024)), 30000, 'locations.generate');
-                    logInfo('locations generation complete', {
-                        loadToken: loadToken,
-                        totalLocations: currentLocationCount()
-                    });
-                    window.snapshotLocations();
-                    await reportCurrentLocation('afterLocationsGenerated', loadToken, true);
-                } catch (error) {
-                    logWarn('locations generation failed', {
-                        loadToken: loadToken,
-                        message: String(error)
-                    });
-                } finally {
-                    window.isGeneratingLocations = false;
-                }
-            }
-
-            function resolveDisplayTarget(target) {
-                var numericTarget = null;
-                if (typeof target === 'number' && isFinite(target)) {
-                    numericTarget = target;
-                } else if (typeof target === 'string' && target.trim() !== '' && isFinite(Number(target))) {
-                    numericTarget = Number(target);
-                }
-
-                if (numericTarget !== null && numericTarget >= 0 && numericTarget <= 1) {
-                    if (window.book && window.book.locations && typeof window.book.locations.cfiFromPercentage === 'function') {
-                        var locationCFI = window.book.locations.cfiFromPercentage(numericTarget);
-                        if (locationCFI) {
-                            logInfo('resolved percentage display target', {
-                                percentage: numericTarget,
-                                cfi: locationCFI
-                            });
-                            return locationCFI;
-                        }
-                    }
-                    logWarn('percentage display target unavailable without generated locations', {
-                        percentage: numericTarget
-                    });
-                }
-
-                return target;
             }
 
             window.requestChapterWordCount = function (index) {
@@ -1157,7 +429,6 @@
                     try {
                         window.currentLoadToken += 1;
                         var loadToken = window.currentLoadToken;
-                        window.firstContentReadyToken = 0;
                         logInfo('loadBook start', {
                             loadToken: loadToken,
                             hasBookURL: typeof bookURL === 'string' && bookURL.length > 0,
@@ -1178,8 +449,6 @@
 
                         await withTimeout(loadedBook.opened, 15000, 'book.opened');
                         logInfo('book.opened resolved', { loadToken: loadToken });
-                        await withTimeout(loadedBook.ready, 15000, 'book.ready');
-                        logInfo('book.ready resolved', { loadToken: loadToken });
 
                         if (loadToken !== window.currentLoadToken) {
                             logWarn('loadBook abandoned due to stale token', { loadToken: loadToken, currentLoadToken: window.currentLoadToken });
@@ -1187,18 +456,6 @@
                         }
 
                         window.book = loadedBook;
-                        if (window.book.loaded && window.book.loaded.navigation) {
-                            window.book.loaded.navigation.then(function (navigation) {
-                                var toc = navigation && Array.isArray(navigation.toc) ? navigation.toc : [];
-                                logInfo('navigation loaded', { loadToken: loadToken, tocCount: toc.length });
-                            }).catch(function (navigationError) {
-                                logWarn('navigation load failed', { loadToken: loadToken, message: String(navigationError) });
-                            });
-                        }
-
-                        var initialTarget = await chooseInitialDisplayTarget(loadToken);
-                        logInfo('initial display target selected', initialTarget);
-
                         window.rendition = window.book.renderTo('viewer', {
                             flow: 'paginated',
                             spread: 'none',
@@ -1215,56 +472,38 @@
                             });
                         });
                         window.rendition.themes.select('light');
-                        window.currentThemeName = 'light';
-
-                        window.rendition.on('rendered', function (section, view) {
-                            applyContentTheme(window.currentThemeName);
-                            logInfo('rendition rendered', {
-                                loadToken: loadToken,
-                                section: sectionSummary(section),
-                                viewRect: rectSummary(view && view.element ? view.element : null),
-                                iframeRect: rectSummary(view && view.iframe ? view.iframe : null),
-                                textLength: viewTextLength(view)
-                            });
-                            sendRenderState('rendered', loadToken, window.rendition.location || null, {
-                                renderedSection: sectionSummary(section),
-                                renderedTextLength: viewTextLength(view)
-                            });
+                        window.rendition.on('rendered', function () {
+                            applyContentTheme('light');
                         });
 
                         window.rendition.on('relocated', function (location) {
-                            sendRenderState('relocated', loadToken, location, null);
-                            sendRelocated(location, 'event');
-                        });
+                            var cfi = (location && location.start && location.start.cfi) ? location.start.cfi : '';
+                            var pct = (location && location.start && typeof location.start.percentage === 'number')
+                                ? location.start.percentage
+                                : 0;
+                            var spineHref = (location && location.start && location.start.href) ? location.start.href : '';
+                            var characterOffset = extractCharacterOffset(cfi);
+                            var contextSnippet = extractContextSnippet(location);
 
-                        window.rendition.on('displayed', function (section) {
-                            logInfo('rendition displayed event', {
-                                loadToken: loadToken,
-                                section: sectionSummary(section)
+                            window.bridge.send('relocated', {
+                                cfi: cfi,
+                                percentage: pct,
+                                spineHref: spineHref,
+                                characterOffset: characterOffset,
+                                contextSnippet: contextSnippet,
+                                atEnd: location.atEnd === true
                             });
-                            sendRenderState('displayedEvent', loadToken, window.rendition.location || null, {
-                                displayedSection: sectionSummary(section)
-                            });
-                        });
-
-                        window.rendition.on('layout', function (layout) {
-                            logInfo('rendition layout event', { loadToken: loadToken, layout: layout || null });
-                        });
-
-                        window.rendition.on('resized', function (size) {
-                            logInfo('rendition resized event', { loadToken: loadToken, size: size || null });
-                            sendRenderState('resized', loadToken, window.rendition.location || null, { size: size || null });
+                            if (location.atEnd === true) {
+                                window.bridge.send('atChapterEnd', {});
+                            }
                         });
 
                         window.rendition.on('selected', function (cfiRange, contents) {
                             var text = '';
                             try {
-                                text = contents.window.getSelection().toString().trim();
+                                text = contents.window.getSelection().toString();
                             } catch (_) {
                                 text = '';
-                            }
-                            if (text.length < 2) {
-                                return;
                             }
                             window.bridge.send('selected', {
                                 cfiRange: cfiRange,
@@ -1281,33 +520,15 @@
                             installFootnoteInterceptors(contents);
                         });
 
-                        sendRenderState('beforeDisplay', loadToken, null, { initialTarget: initialTarget });
-                        await withTimeout(window.rendition.display(initialTarget.target), 15000, 'rendition.display');
-                        logInfo('rendition.display resolved', { loadToken: loadToken, initialTarget: initialTarget });
-                        var displayLocation = await reportCurrentLocation('afterDisplay', loadToken, true);
-                        window.setTimeout(function () {
-                            reportCurrentLocation('afterDisplayDelay250ms', loadToken, false);
-                        }, 250);
-
+                        await withTimeout(window.rendition.display(), 15000, 'rendition.display');
+                        logInfo('rendition.display resolved', { loadToken: loadToken });
+                        await withTimeout(window.book.ready, 15000, 'book.ready');
+                        logInfo('book.ready resolved', { loadToken: loadToken });
                         if (loadToken === window.currentLoadToken) {
+                            await sendWordCountSample();
+                            logInfo('wordCountSample sent', { loadToken: loadToken });
                             window.bridge.send('bookReady', {});
-                            logInfo('bookReady sent', {
-                                loadToken: loadToken,
-                                hasLocation: !!(displayLocation && displayLocation.start && displayLocation.start.cfi)
-                            });
-                            Promise.resolve().then(async function () {
-                                if (loadToken !== window.currentLoadToken) {
-                                    return;
-                                }
-                                await ensureLocationsGenerated(loadToken);
-                                await sendWordCountSample();
-                                logInfo('wordCountSample sent', { loadToken: loadToken });
-                            }).catch(function (postReadyError) {
-                                var postReadyMessage = (postReadyError && postReadyError.message)
-                                    ? postReadyError.message
-                                    : String(postReadyError);
-                                logWarn('post-ready work failed', { message: postReadyMessage, loadToken: loadToken });
-                            });
+                            logInfo('bookReady sent', { loadToken: loadToken });
                         }
                     } catch (error) {
                         var message = (error && error.message) ? error.message : String(error);
@@ -1319,81 +540,20 @@
 
             window.nextPage = function () {
                 safeRun('nextPage', function () {
-                    Promise.resolve(window.rendition.next()).then(function () {
-                        return reportCurrentLocation('afterNextPage', window.currentLoadToken, true);
-                    }).catch(function (error) {
-                        logError('nextPage failed', { message: String(error) });
-                    });
+                    window.rendition.next();
                 });
             };
 
             window.prevPage = function () {
                 safeRun('prevPage', function () {
-                    Promise.resolve(window.rendition.prev()).then(function () {
-                        return reportCurrentLocation('afterPrevPage', window.currentLoadToken, true);
-                    }).catch(function (error) {
-                        logError('prevPage failed', { message: String(error) });
-                    });
+                    window.rendition.prev();
                 });
             };
 
             window.displayCFI = function (cfi) {
-                safeRun('displayCFI', function () {
-                    if (typeof cfi === 'undefined' || cfi === null || cfi === '') {
-                        logWarn('displayCFI called without target');
-                        return;
-                    }
-                    var target = resolveDisplayTarget(cfi);
-                    Promise.resolve(window.rendition.display(target)).then(function () {
-                        return reportCurrentLocation('afterDisplayCFI', window.currentLoadToken, true);
-                    }).catch(function (error) {
-                        logError('displayCFI failed', { message: String(error), target: String(target) });
-                        window.bridge.send('bookError', { message: 'displayCFI: ' + String(error) });
-                    });
-                });
-            };
-
-            window.displayHref = function (href) {
-                window.displayCFI(href);
-            };
-
-            window.displayAndStep = function (target, direction) {
-                safeRun('displayAndStep', function () {
-                    if (typeof target === 'undefined' || target === null || target === '') {
-                        logWarn('displayAndStep called without target');
-                        return;
-                    }
-                    var normalizedDirection = direction === 'prev' ? 'prev' : (direction === 'next' ? 'next' : 'none');
-                    var resolvedTarget = resolveDisplayTarget(target);
-                    Promise.resolve(window.rendition.display(resolvedTarget))
-                        .then(function () {
-                            if (normalizedDirection === 'next') {
-                                return window.rendition.next();
-                            }
-                            if (normalizedDirection === 'prev') {
-                                return window.rendition.prev();
-                            }
-                            return null;
-                        })
-                        .then(function () {
-                            return reportCurrentLocation('afterDisplayAndStep:' + normalizedDirection, window.currentLoadToken, true);
-                        })
-                        .catch(function (error) {
-                            logError('displayAndStep failed', {
-                                message: String(error),
-                                target: String(resolvedTarget),
-                                direction: normalizedDirection
-                            });
-                            window.bridge.send('bookError', { message: 'displayAndStep: ' + String(error) });
-                        });
-                });
-            };
-
-            window.reportCurrentPosition = function (phase) {
-                safeRun('reportCurrentPosition', function () {
-                    var label = phase || 'reportCurrentPosition';
-                    reportCurrentLocation(label, window.currentLoadToken, true);
-                });
+                if (window.rendition && cfi) {
+                    window.rendition.display(cfi);
+                }
             };
 
             window.resizeRendition = function (w, h) {

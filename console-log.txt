@@ -1,161 +1,34 @@
 Skipping debug seed: bundled test.epub was not found
-_dictationButton not yet initialized when setting up for the large content viewer.
-_dictationButton not yet initialized when setting up for the large content viewer.
+Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
 Unable to get ISSymbol for UTI: com.apple.ios-simulator Error: Error Domain=com.apple.iconServices.symbol-error Code=-1 "Failed to find symbol using type id: com.apple.ios-simulator. Options: 1, strategy: 0" UserInfo={NSLocalizedDescription=Failed to find symbol using type id: com.apple.ios-simulator. Options: 1, strategy: 0}
-Failed to associate thumbnails for picked URL file:///Users/reseachit/Library/Developer/CoreSimulator/Devices/FCF58711-C803-4A9C-AA7D-B18F476EAF6A/data/Containers/Shared/AppGroup/1270F481-754A-47D0-88E0-414504F0EC86/File%20Provider%20Storage/Frankenstein.epub with the Inbox copy file:///Users/reseachit/Library/Developer/CoreSimulator/Devices/FCF58711-C803-4A9C-AA7D-B18F476EAF6A/data/Containers/Data/Application/28E517E2-6B18-4D3F-A969-B117438558C7/tmp/com.noamsadi.EpubReader-Inbox/Frankenstein.epub: Error Domain=QLThumbnailErrorDomain Code=102 "(null)" UserInfo={NSUnderlyingError=0x113deff00 {Error Domain=GSLibraryErrorDomain Code=3 "Generation not found" UserInfo={NSDescription=Generation not found}}}
+Failed to associate thumbnails for picked URL file:///Users/noamsadi/Library/Developer/CoreSimulator/Devices/676D0C1F-AD82-4255-93E9-102EE867E690/data/Containers/Shared/AppGroup/7A741217-9713-41E0-B396-DD9C0105D191/File%20Provider%20Storage/Frankenstein.epub with the Inbox copy file:///Users/noamsadi/Library/Developer/CoreSimulator/Devices/676D0C1F-AD82-4255-93E9-102EE867E690/data/Containers/Data/Application/558E933B-110B-4104-A3AE-F43703395274/tmp/com.noamsadi.EpubReader-Inbox/Frankenstein.epub: Error Domain=QLThumbnailErrorDomain Code=102 "(null)" UserInfo={NSUnderlyingError=0x600000ca83f0 {Error Domain=GSLibraryErrorDomain Code=3 "Generation not found" UserInfo={NSDescription=Generation not found}}}
 Unable to get ISSymbol for UTI: com.apple.ios-simulator Error: Error Domain=com.apple.iconServices.symbol-error Code=-1 "Failed to find symbol using type id: com.apple.ios-simulator. Options: 1, strategy: 0" UserInfo={NSLocalizedDescription=Failed to find symbol using type id: com.apple.ios-simulator. Options: 1, strategy: 0}
-<0x107265a40> Gesture: System gesture gate timed out.
-Failed to resolve host network app id to config: bundleID: com.apple.WebKit.Networking instance ID: Optional([_EXExtensionInstanceIdentifier: 46F33721-FEF3-46C7-8796-DCEC69DC9418])
-Registered EPUB custom-scheme token CE71825B-6702-4203-8BCA-5DECB2C9DD0D for 43c35c9bd854a5e57b077eed5f08384dbca961b1b9474b5c10f5acda72d4b331-Frankenstein.epub
-PageCurl slot 1 state=bookLoading token=1
-WebContent[13673] Unable to hide query parameters from script (missing data)
-JS diagnostic [info]: dependency available | {"dependency":"JSZip"}
-JS diagnostic [info]: dependency available | {"dependency":"ePub"}
-JS diagnostic [info]: viewer element located | {"clientWidth":402,"clientHeight":874}
-JS diagnostic [info]: reader bootstrap complete | {"userAgent":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"}
-PageCurl slot 1 htmlReady=true state=bookLoading
-PageCurl slot 1 load dispatched token=1 host=book
-JS diagnostic [info]: loadBook start | {"loadToken":1,"hasBookURL":true,"hasFallbackBase64":true}
-JS diagnostic [info]: teardownCurrentBook start
-JS diagnostic [info]: loading book via base64 fallback
-loadBook invoked successfully
-JS diagnostic [info]: book.opened resolved | {"loadToken":1}
-JS diagnostic [info]: book.ready resolved | {"loadToken":1}
-JS diagnostic [info]: spine summary | {"loadToken":1,"spineCount":39,"firstItems":[{"index":0,"href":"text/cover.xhtml","linear":true,"idref":"cover.xhtml","properties":[]},{"index":1,"href":"text/titlepage.xhtml","linear":true,"idref":"titlepage.xhtml","properties":[]},{"index":2,"href":"text/public-domain.xhtml","linear":true,"idref":"public-domain.xhtml","properties":[]},{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]},{"index":4,"href":"text/preface.xhtml","linear":true,"idref":"preface.xhtml","properties":[]},{"index":5,"href":"text/dedication.xhtml","linear":true,"idref":"dedication.xhtml","properties":[]},{"index":6,"href":"text/epigraph.xhtml","linear":true,"idref":"epigraph.xhtml","properties":[]},{"index":7,"href":"text/halftitlepage.xhtml","linear":true,"idref":"halftitlepage.xhtml","properties":[]},{"index":8,"href":"text/letter-1.xhtml","linear":true,"idref":"letter-1.xhtml","properties":[]},{"index":9,"href":"text/letter-2.xhtml","linear":true,"idref":"letter-2.xhtml","properties":[]},{"index":10,"href":"text/letter-3.xhtml","linear":true,"idref":"letter-3.xhtml","properties":[]},{"index":11,"href":"text/letter-4.xhtml","linear":true,"idref":"letter-4.xhtml","properties":[]}]}
-JS diagnostic [info]: navigation loaded | {"loadToken":1,"tocCount":11}
-JS diagnostic [info]: spine text sample | {"loadToken":1,"section":{"index":0,"href":"text/cover.xhtml","linear":true,"idref":"cover.xhtml","properties":[]},"textLength":0,"wordCount":0,"isBoilerplate":true,"isReadingSection":false,"excerpt":"","error":null}
-JS diagnostic [info]: spine text sample | {"loadToken":1,"section":{"index":1,"href":"text/titlepage.xhtml","linear":true,"idref":"titlepage.xhtml","properties":[]},"textLength":25,"wordCount":3,"isBoilerplate":true,"isReadingSection":false,"excerpt":"Frankenstein Mary Shelley","error":null}
-JS diagnostic [info]: spine text sample | {"loadToken":1,"section":{"index":2,"href":"text/public-domain.xhtml","linear":true,"idref":"public-domain.xhtml","properties":[]},"textLength":550,"wordCount":81,"isBoilerplate":true,"isReadingSection":false,"excerpt":"This book is yours Mary Shelley (1797 - 1851) was an English novelist best known for Frankenstein, a pioneering work of ","error":null}
-JS diagnostic [info]: spine text sample | {"loadToken":1,"section":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]},"textLength":12450,"wordCount":2244,"isBoilerplate":false,"isReadingSection":true,"excerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","error":null}
-JS diagnostic [info]: initial display target selected | {"target":"text/introduction.xhtml","section":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]},"textLength":12450,"wordCount":2244,"reason":"first-meaningful-reading-linear"}
-JS diagnostic [info]: rendition created | {"width":402,"height":874}
-Reader renderState slot=1 phase=beforeDisplay textLength=0 iframeCount=0 spine=0:
-JS renderState phase=beforeDisplay token=1 readable=false textLength=0 iframes=0 views=0 spine=0: cfi=
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"beforeDisplay","viewer":{"width":402,"height":874},"iframeCount":0,"managerViewCount":0,"textLength":0,"textExcerpt":"","location":{"hasLocation":false,"cfi":"","percentage":null,"href":"","index":-1,"displayedPage":null,"displayedTotal":null},"spine":null}
-JS diagnostic [info]: rendition layout event | {"loadToken":1,"layout":{"name":"reflowable","spread":false,"flow":"paginated","width":402,"height":874,"spreadWidth":434,"delta":402,"columnWidth":402,"gap":32,"divisor":1,"pageWidth":402}}
-JS diagnostic [info]: rendition displayed event | {"loadToken":1,"section":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]}}
-Reader renderState slot=1 phase=displayedEvent textLength=12451 iframeCount=1 spine=0:
-PageCurl loading adjacent slots after renderState:displayedEvent
-PageCurl slot 0 view loaded for prewarm bounds=402x874
-PageCurl slot 0 state=bookLoading token=1
-PageCurl slot 2 view loaded for prewarm bounds=402x874
-PageCurl slot 2 state=bookLoading token=1
-JS renderState phase=displayedEvent token=1 readable=true textLength=12451 iframes=1 views=1 spine=0: cfi=
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"displayedEvent","viewer":{"width":402,"height":874},"iframeCount":1,"managerViewCount":1,"textLength":12451,"textExcerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","location":{"hasLocation":false,"cfi":"","percentage":null,"href":"","index":-1,"displayedPage":null,"displayedTotal":null},"spine":null}
-Reader firstContentReady slot=1 phase=displayedEvent textLength=12451 spine=-1:
-JS firstContentReady token=1 phase=displayedEvent textLength=12451 spine=-1:
-JS diagnostic [info]: firstContentReady sent | {"loadToken":1,"phase":"displayedEvent","textLength":12451}
-JS diagnostic [info]: rendition.display resolved | {"loadToken":1,"initialTarget":{"target":"text/introduction.xhtml","section":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]},"textLength":12450,"wordCount":2244,"reason":"first-meaningful-reading-linear"}}
-JS diagnostic [info]: rendition rendered | {"loadToken":1,"section":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]},"viewRect":{"x":0,"y":0,"width":2814,"height":874,"top":0,"right":2814,"bottom":874,"left":0},"iframeRect":{"x":0,"y":0,"width":2814,"height":874,"top":0,"right":2814,"bottom":874,"left":0},"textLength":12451}
-Reader renderState slot=1 phase=rendered textLength=12451 iframeCount=1 spine=0:
-JS renderState phase=rendered token=1 readable=true textLength=12451 iframes=1 views=1 spine=0: cfi=
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"rendered","viewer":{"width":402,"height":874},"iframeCount":1,"managerViewCount":1,"textLength":12451,"textExcerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","location":{"hasLocation":false,"cfi":"","percentage":null,"href":"","index":-1,"displayedPage":null,"displayedTotal":null},"spine":null}
-Reader renderState slot=1 phase=relocated textLength=12451 iframeCount=1 spine=3:text/introduction.xhtml
-JS renderState phase=relocated token=1 readable=true textLength=12451 iframes=1 views=1 spine=3:text/introduction.xhtml cfi=epubcfi(/6/8!/4/2[introduction]/2/1:0)
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"relocated","viewer":{"width":402,"height":874},"iframeCount":1,"managerViewCount":1,"textLength":12451,"textExcerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":7,"atStart":false,"atEnd":false},"spine":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]}}
-JS diagnostic [info]: relocated payload | {"source":"event","cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"spineHref":"text/introduction.xhtml","spineIndex":3,"displayedPage":1,"displayedTotal":7,"atStart":false,"atEnd":false}
-PageCurl currentSlotRelocated slot=1 source=event spine=3:text/introduction.xhtml page=1/7
-JS diagnostic [info]: manual currentLocation resolved | {"phase":"afterDisplay","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":7,"atStart":false,"atEnd":false}}
-JS diagnostic [info]: relocated payload | {"source":"afterDisplay","cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"spineHref":"text/introduction.xhtml","spineIndex":3,"displayedPage":1,"displayedTotal":7,"atStart":false,"atEnd":false}
-PageCurl currentSlotRelocated slot=1 source=afterDisplay spine=3:text/introduction.xhtml page=1/7
-Reader renderState slot=1 phase=afterDisplay textLength=12451 iframeCount=1 spine=3:text/introduction.xhtml
-JS renderState phase=afterDisplay token=1 readable=true textLength=12451 iframes=1 views=1 spine=3:text/introduction.xhtml cfi=epubcfi(/6/8!/4/2[introduction]/2/1:0)
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"afterDisplay","viewer":{"width":402,"height":874},"iframeCount":1,"managerViewCount":1,"textLength":12451,"textExcerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":7,"atStart":false,"atEnd":false},"spine":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]}}
-PageCurl slot 1 state=bookReady token=1
-EPUB book ready (PageCurl pool)
-JS diagnostic [info]: bookReady sent | {"loadToken":1,"hasLocation":true}
-JS diagnostic [info]: locations generation start | {"loadToken":1}
-JS diagnostic [info]: setTheme | {"requested":"light","applied":"light","colors":{"bg":"#FFFFF8","fg":"#1C1C1E"}}
-Reader renderState slot=1 phase=afterSetTheme textLength=12451 iframeCount=1 spine=3:text/introduction.xhtml
-JS renderState phase=afterSetTheme token=1 readable=true textLength=12451 iframes=1 views=1 spine=3:text/introduction.xhtml cfi=epubcfi(/6/8!/4/2[introduction]/2/1:0)
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"afterSetTheme","viewer":{"width":402,"height":874},"iframeCount":1,"managerViewCount":1,"textLength":12451,"textExcerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":7,"atStart":false,"atEnd":false},"spine":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]}}
-JS diagnostic [info]: safeRun executing | {"command":"setFontSize"}
-JS diagnostic [info]: safeRun executing | {"command":"setFontFamily"}
-JS diagnostic [info]: safeRun executing | {"command":"setLineSpacing"}
-JS diagnostic [info]: safeRun executing | {"command":"setMargin"}
-JS diagnostic [info]: safeRun executing | {"command":"setJustify"}
-JS diagnostic [info]: safeRun executing | {"command":"setHyphenation"}
-JS diagnostic [info]: manual currentLocation resolved | {"phase":"afterSetFontSize","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false}}
-Reader renderState slot=1 phase=afterSetFontSize textLength=12451 iframeCount=1 spine=3:text/introduction.xhtml
-JS renderState phase=afterSetFontSize token=1 readable=true textLength=12451 iframes=1 views=1 spine=3:text/introduction.xhtml cfi=epubcfi(/6/8!/4/2[introduction]/2/1:0)
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"afterSetFontSize","viewer":{"width":402,"height":874},"iframeCount":1,"managerViewCount":1,"textLength":12451,"textExcerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false},"spine":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]}}
-JS diagnostic [info]: manual currentLocation resolved | {"phase":"afterSetFontFamily","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false}}
-Reader renderState slot=1 phase=afterSetFontFamily textLength=12451 iframeCount=1 spine=3:text/introduction.xhtml
-JS renderState phase=afterSetFontFamily token=1 readable=true textLength=12451 iframes=1 views=1 spine=3:text/introduction.xhtml cfi=epubcfi(/6/8!/4/2[introduction]/2/1:0)
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"afterSetFontFamily","viewer":{"width":402,"height":874},"iframeCount":1,"managerViewCount":1,"textLength":12451,"textExcerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false},"spine":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]}}
-JS diagnostic [info]: manual currentLocation resolved | {"phase":"afterSetLineSpacing","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false}}
-Reader renderState slot=1 phase=afterSetLineSpacing textLength=12451 iframeCount=1 spine=3:text/introduction.xhtml
-JS renderState phase=afterSetLineSpacing token=1 readable=true textLength=12451 iframes=1 views=1 spine=3:text/introduction.xhtml cfi=epubcfi(/6/8!/4/2[introduction]/2/1:0)
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"afterSetLineSpacing","viewer":{"width":402,"height":874},"iframeCount":1,"managerViewCount":1,"textLength":12451,"textExcerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false},"spine":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]}}
-JS diagnostic [info]: manual currentLocation resolved | {"phase":"afterSetMargin","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false}}
-Reader renderState slot=1 phase=afterSetMargin textLength=12451 iframeCount=1 spine=3:text/introduction.xhtml
-JS renderState phase=afterSetMargin token=1 readable=true textLength=12451 iframes=1 views=1 spine=3:text/introduction.xhtml cfi=epubcfi(/6/8!/4/2[introduction]/2/1:0)
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"afterSetMargin","viewer":{"width":402,"height":874},"iframeCount":1,"managerViewCount":1,"textLength":12451,"textExcerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false},"spine":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]}}
-JS diagnostic [info]: manual currentLocation resolved | {"phase":"afterSetJustify","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false}}
-Reader renderState slot=1 phase=afterSetJustify textLength=12451 iframeCount=1 spine=3:text/introduction.xhtml
-JS renderState phase=afterSetJustify token=1 readable=true textLength=12451 iframes=1 views=1 spine=3:text/introduction.xhtml cfi=epubcfi(/6/8!/4/2[introduction]/2/1:0)
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"afterSetJustify","viewer":{"width":402,"height":874},"iframeCount":1,"managerViewCount":1,"textLength":12451,"textExcerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false},"spine":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]}}
-JS diagnostic [info]: manual currentLocation resolved | {"phase":"afterSetHyphenation","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false}}
-Reader renderState slot=1 phase=afterSetHyphenation textLength=12451 iframeCount=1 spine=3:text/introduction.xhtml
-JS renderState phase=afterSetHyphenation token=1 readable=true textLength=12451 iframes=1 views=1 spine=3:text/introduction.xhtml cfi=epubcfi(/6/8!/4/2[introduction]/2/1:0)
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"afterSetHyphenation","viewer":{"width":402,"height":874},"iframeCount":1,"managerViewCount":1,"textLength":12451,"textExcerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false},"spine":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]}}
-JS diagnostic [info]: manual currentLocation resolved | {"phase":"afterDisplayDelay250ms","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false}}
-Reader renderState slot=1 phase=afterDisplayDelay250ms textLength=12451 iframeCount=1 spine=3:text/introduction.xhtml
-JS renderState phase=afterDisplayDelay250ms token=1 readable=true textLength=12451 iframes=1 views=1 spine=3:text/introduction.xhtml cfi=epubcfi(/6/8!/4/2[introduction]/2/1:0)
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"afterDisplayDelay250ms","viewer":{"width":402,"height":874},"iframeCount":1,"managerViewCount":1,"textLength":12451,"textExcerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false},"spine":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]}}
-JS diagnostic [info]: dependency available | {"dependency":"JSZip"}
-JS diagnostic [info]: dependency available | {"dependency":"ePub"}
-JS diagnostic [info]: viewer element located | {"clientWidth":402,"clientHeight":874}
-JS diagnostic [info]: reader bootstrap complete | {"userAgent":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"}
-PageCurl slot 0 htmlReady=true state=bookLoading
-PageCurl slot 0 load dispatched token=1 host=book
-JS diagnostic [info]: loadBook start | {"loadToken":1,"hasBookURL":true,"hasFallbackBase64":true}
-JS diagnostic [info]: teardownCurrentBook start
-JS diagnostic [info]: loading book via base64 fallback
-JS diagnostic [info]: dependency available | {"dependency":"JSZip"}
-JS diagnostic [info]: dependency available | {"dependency":"ePub"}
-JS diagnostic [info]: viewer element located | {"clientWidth":402,"clientHeight":874}
-JS diagnostic [info]: reader bootstrap complete | {"userAgent":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"}
-PageCurl slot 2 htmlReady=true state=bookLoading
-PageCurl slot 2 load dispatched token=1 host=book
-JS diagnostic [info]: loadBook start | {"loadToken":1,"hasBookURL":true,"hasFallbackBase64":true}
-JS diagnostic [info]: teardownCurrentBook start
-JS diagnostic [info]: loading book via base64 fallback
-loadBook invoked successfully
-JS diagnostic [info]: book.opened resolved | {"loadToken":1}
-JS diagnostic [info]: book.ready resolved | {"loadToken":1}
-JS diagnostic [info]: spine summary | {"loadToken":1,"spineCount":39,"firstItems":[{"index":0,"href":"text/cover.xhtml","linear":true,"idref":"cover.xhtml","properties":[]},{"index":1,"href":"text/titlepage.xhtml","linear":true,"idref":"titlepage.xhtml","properties":[]},{"index":2,"href":"text/public-domain.xhtml","linear":true,"idref":"public-domain.xhtml","properties":[]},{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]},{"index":4,"href":"text/preface.xhtml","linear":true,"idref":"preface.xhtml","properties":[]},{"index":5,"href":"text/dedication.xhtml","linear":true,"idref":"dedication.xhtml","properties":[]},{"index":6,"href":"text/epigraph.xhtml","linear":true,"idref":"epigraph.xhtml","properties":[]},{"index":7,"href":"text/halftitlepage.xhtml","linear":true,"idref":"halftitlepage.xhtml","properties":[]},{"index":8,"href":"text/letter-1.xhtml","linear":true,"idref":"letter-1.xhtml","properties":[]},{"index":9,"href":"text/letter-2.xhtml","linear":true,"idref":"letter-2.xhtml","properties":[]},{"index":10,"href":"text/letter-3.xhtml","linear":true,"idref":"letter-3.xhtml","properties":[]},{"index":11,"href":"text/letter-4.xhtml","linear":true,"idref":"letter-4.xhtml","properties":[]}]}
-JS diagnostic [info]: navigation loaded | {"loadToken":1,"tocCount":11}
-JS diagnostic [info]: spine text sample | {"loadToken":1,"section":{"index":0,"href":"text/cover.xhtml","linear":true,"idref":"cover.xhtml","properties":[]},"textLength":0,"wordCount":0,"isBoilerplate":true,"isReadingSection":false,"excerpt":"","error":null}
-JS diagnostic [info]: spine text sample | {"loadToken":1,"section":{"index":1,"href":"text/titlepage.xhtml","linear":true,"idref":"titlepage.xhtml","properties":[]},"textLength":25,"wordCount":3,"isBoilerplate":true,"isReadingSection":false,"excerpt":"Frankenstein Mary Shelley","error":null}
-JS diagnostic [info]: spine text sample | {"loadToken":1,"section":{"index":2,"href":"text/public-domain.xhtml","linear":true,"idref":"public-domain.xhtml","properties":[]},"textLength":550,"wordCount":81,"isBoilerplate":true,"isReadingSection":false,"excerpt":"This book is yours Mary Shelley (1797 - 1851) was an English novelist best known for Frankenstein, a pioneering work of ","error":null}
-JS diagnostic [info]: spine text sample | {"loadToken":1,"section":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]},"textLength":12450,"wordCount":2244,"isBoilerplate":false,"isReadingSection":true,"excerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","error":null}
-JS diagnostic [info]: initial display target selected | {"target":"text/introduction.xhtml","section":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]},"textLength":12450,"wordCount":2244,"reason":"first-meaningful-reading-linear"}
-JS diagnostic [info]: rendition created | {"width":402,"height":874}
-Reader renderState slot=0 phase=beforeDisplay textLength=0 iframeCount=0 spine=0:
-JS renderState phase=beforeDisplay token=1 readable=false textLength=0 iframes=0 views=0 spine=0: cfi=
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"beforeDisplay","viewer":{"width":402,"height":874},"iframeCount":0,"managerViewCount":0,"textLength":0,"textExcerpt":"","location":{"hasLocation":false,"cfi":"","percentage":null,"href":"","index":-1,"displayedPage":null,"displayedTotal":null},"spine":null}
-loadBook invoked successfully
-JS diagnostic [info]: book.opened resolved | {"loadToken":1}
-JS diagnostic [info]: book.ready resolved | {"loadToken":1}
-JS diagnostic [info]: spine summary | {"loadToken":1,"spineCount":39,"firstItems":[{"index":0,"href":"text/cover.xhtml","linear":true,"idref":"cover.xhtml","properties":[]},{"index":1,"href":"text/titlepage.xhtml","linear":true,"idref":"titlepage.xhtml","properties":[]},{"index":2,"href":"text/public-domain.xhtml","linear":true,"idref":"public-domain.xhtml","properties":[]},{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]},{"index":4,"href":"text/preface.xhtml","linear":true,"idref":"preface.xhtml","properties":[]},{"index":5,"href":"text/dedication.xhtml","linear":true,"idref":"dedication.xhtml","properties":[]},{"index":6,"href":"text/epigraph.xhtml","linear":true,"idref":"epigraph.xhtml","properties":[]},{"index":7,"href":"text/halftitlepage.xhtml","linear":true,"idref":"halftitlepage.xhtml","properties":[]},{"index":8,"href":"text/letter-1.xhtml","linear":true,"idref":"letter-1.xhtml","properties":[]},{"index":9,"href":"text/letter-2.xhtml","linear":true,"idref":"letter-2.xhtml","properties":[]},{"index":10,"href":"text/letter-3.xhtml","linear":true,"idref":"letter-3.xhtml","properties":[]},{"index":11,"href":"text/letter-4.xhtml","linear":true,"idref":"letter-4.xhtml","properties":[]}]}
-JS diagnostic [info]: navigation loaded | {"loadToken":1,"tocCount":11}
-JS diagnostic [info]: spine text sample | {"loadToken":1,"section":{"index":0,"href":"text/cover.xhtml","linear":true,"idref":"cover.xhtml","properties":[]},"textLength":0,"wordCount":0,"isBoilerplate":true,"isReadingSection":false,"excerpt":"","error":null}
-JS diagnostic [info]: spine text sample | {"loadToken":1,"section":{"index":1,"href":"text/titlepage.xhtml","linear":true,"idref":"titlepage.xhtml","properties":[]},"textLength":25,"wordCount":3,"isBoilerplate":true,"isReadingSection":false,"excerpt":"Frankenstein Mary Shelley","error":null}
-JS diagnostic [info]: spine text sample | {"loadToken":1,"section":{"index":2,"href":"text/public-domain.xhtml","linear":true,"idref":"public-domain.xhtml","properties":[]},"textLength":550,"wordCount":81,"isBoilerplate":true,"isReadingSection":false,"excerpt":"This book is yours Mary Shelley (1797 - 1851) was an English novelist best known for Frankenstein, a pioneering work of ","error":null}
-JS diagnostic [info]: spine text sample | {"loadToken":1,"section":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]},"textLength":12450,"wordCount":2244,"isBoilerplate":false,"isReadingSection":true,"excerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","error":null}
-JS diagnostic [info]: initial display target selected | {"target":"text/introduction.xhtml","section":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]},"textLength":12450,"wordCount":2244,"reason":"first-meaningful-reading-linear"}
-JS diagnostic [info]: rendition created | {"width":402,"height":874}
-Reader renderState slot=2 phase=beforeDisplay textLength=0 iframeCount=0 spine=0:
-JS renderState phase=beforeDisplay token=1 readable=false textLength=0 iframes=0 views=0 spine=0: cfi=
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"beforeDisplay","viewer":{"width":402,"height":874},"iframeCount":0,"managerViewCount":0,"textLength":0,"textExcerpt":"","location":{"hasLocation":false,"cfi":"","percentage":null,"href":"","index":-1,"displayedPage":null,"displayedTotal":null},"spine":null}
-WebContent[13680] 0x10d04c100 - [sessionID=1] WebProcess::updateFreezerStatus: isFreezable=1, error=-1
-WebContent[13681] 0x11104c100 - [sessionID=1] WebProcess::updateFreezerStatus: isFreezable=1, error=-1
-JS diagnostic [info]: locations generation complete | {"loadToken":1,"totalLocations":447}
-JS diagnostic [info]: manual currentLocation resolved | {"phase":"afterLocationsGenerated","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0.004484304932735426,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false}}
-JS diagnostic [info]: relocated payload | {"source":"afterLocationsGenerated","cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0.004484304932735426,"spineHref":"text/introduction.xhtml","spineIndex":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false}
-PageCurl currentSlotRelocated slot=1 source=afterLocationsGenerated spine=3:text/introduction.xhtml page=1/10
-Reader renderState slot=1 phase=afterLocationsGenerated textLength=12451 iframeCount=1 spine=3:text/introduction.xhtml
-JS renderState phase=afterLocationsGenerated token=1 readable=true textLength=12451 iframes=1 views=1 spine=3:text/introduction.xhtml cfi=epubcfi(/6/8!/4/2[introduction]/2/1:0)
-JS diagnostic [info]: render-state | {"loadToken":1,"phase":"afterLocationsGenerated","viewer":{"width":402,"height":874},"iframeCount":1,"managerViewCount":1,"textLength":12451,"textExcerpt":"Introduction The Publishers of the Standard Novels, in selecting Frankenstein for one of their series, expressed a wish ","location":{"hasLocation":true,"cfi":"epubcfi(/6/8!/4/2[introduction]/2/1:0)","percentage":0.004484304932735426,"href":"text/introduction.xhtml","index":3,"displayedPage":1,"displayedTotal":10,"atStart":false,"atEnd":false},"spine":{"index":3,"href":"text/introduction.xhtml","linear":true,"idref":"introduction.xhtml","properties":[]}}
-JS diagnostic [info]: wordCountSample sent | {"loadToken":1}
+Modifying state during view update, this will cause undefined behavior.
+Failed to resolve host network app id to config: bundleID: com.apple.WebKit.Networking instance ID: Optional([_EXExtensionInstanceIdentifier: 4D687266-3F4D-414B-B163-4E8422BC1FBB])
+WebContent[82540] Unable to hide query parameters from script (missing data)
+WebContent[82540] 0x10f04c100 - [sessionID=1] WebProcess::updateFreezerStatus: isFreezable=1, error=-1
+WebContent[82548] 0x10d04c100 - [sessionID=1] WebProcess::updateFreezerStatus: isFreezable=1, error=-1
+-[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  perform input operation requires a valid sessionID. inputModality = Keyboard, inputOperation = <null selector>, customInfoType = UIEmojiSearchOperations
+Unable to simultaneously satisfy constraints.
+	Probably at least one of the constraints in the following list is one you don't want. 
+	Try this: 
+		(1) look at each constraint and try to figure out which you don't expect; 
+		(2) find the code that added the unwanted constraint or constraints and fix it. 
+(
+    "<NSLayoutConstraint:0x6000021bf6b0 V:|-(7)-[TUIKeyboardContentView:0x105da4960]   (active, names: '|':TUIKeyplaneView:0x105972700 )>",
+    "<NSLayoutConstraint:0x6000021be080 V:[TUIKeyboardContentView:0x105da4960]-(12)-|   (active, names: '|':TUIKeyplaneView:0x105972700 )>",
+    "<NSLayoutConstraint:0x6000021cdb30 V:|-(0)-[TUIKeyplaneView:0x105972700]   (active, names: UIKeyboardLayoutStar Prev...:0x1080c7800, '|':UIKeyboardLayoutStar Prev...:0x1080c7800 )>",
+    "<NSLayoutConstraint:0x6000021cdcc0 V:[TUIKeyplaneView:0x105972700]-(0)-|   (active, names: UIKeyboardLayoutStar Prev...:0x1080c7800, '|':UIKeyboardLayoutStar Prev...:0x1080c7800 )>",
+    "<NSLayoutConstraint:0x6000021cdef0 V:|-(0)-[UIKeyboardLayoutStar Prev...]   (active, names: UIKeyboardLayoutStar Prev...:0x1080c7800, '|':UIKeyboardImpl:0x105c50670 )>",
+    "<NSLayoutConstraint:0x6000021ccf50 V:[UIKeyboardLayoutStar Prev...]-(0)-|   (active, names: UIKeyboardLayoutStar Prev...:0x1080c7800, '|':UIKeyboardImpl:0x105c50670 )>",
+    "<NSLayoutConstraint:0x60000222b2f0 '_UITemporaryLayoutHeight' UIKeyboardImpl:0x105c50670.height == 241   (active)>",
+    "<NSLayoutConstraint:0x6000021be940 'TUIKeyplane.height' TUIKeyboardContentView:0x105da4960.height == 224   (active)>"
+)
+
+Will attempt to recover by breaking constraint 
+<NSLayoutConstraint:0x6000021be940 'TUIKeyplane.height' TUIKeyboardContentView:0x105da4960.height == 224   (active)>
+
+Make a symbolic breakpoint at UIViewAlertForUnsatisfiableConstraints to catch this in the debugger.
+The methods in the UIConstraintBasedLayoutDebugging category on UIView listed in <UIKitCore/UIView.h> may also be helpful.
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = 5B173746-06C8-4B60-A1C2-B12A37150398
