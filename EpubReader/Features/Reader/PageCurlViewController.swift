@@ -345,7 +345,9 @@ struct PageCurlReaderView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> PageCurlViewController {
         let vc = PageCurlViewController()
         context.coordinator.wire(vc, to: viewModel)
-        onCreated(vc)
+        DispatchQueue.main.async {
+            onCreated(vc)
+        }
         return vc
     }
 
