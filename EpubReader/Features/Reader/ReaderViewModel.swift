@@ -26,7 +26,7 @@ public final class ReaderViewModel: ObservableObject {
     private var pendingRestoreCFI: String?
     private var needsLocationsSnapshotAfterReflow = false
 
-    public init(
+    init(
         importer: FileImporter = FileImporter(),
         initialBookFileURL: URL? = nil,
         initialBookID: UUID? = nil,
