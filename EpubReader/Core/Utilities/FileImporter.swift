@@ -227,7 +227,7 @@ public struct FileImporter {
             picker.delegate = coordinator
             objc_setAssociatedObject(
                 picker,
-                AssociatedKeys.coordinator,
+                &AssociatedKeys.coordinator,
                 coordinator,
                 .OBJC_ASSOCIATION_RETAIN_NONATOMIC
             )
@@ -279,7 +279,7 @@ private enum FileImporterError: Error {
 }
 
 private enum AssociatedKeys {
-    static let coordinator = UnsafeRawPointer(bitPattern: 0xC0FEBABE)!
+    static var coordinator: UInt8 = 0
 }
 
 private final class DocumentPickerCoordinator: NSObject, UIDocumentPickerDelegate {
