@@ -8,12 +8,16 @@ import SwiftUI
 /// independent ``WKWebView`` and ``EPUBBridge``.  All slots load the same
 /// EPUB so adjacent pages can be pre-rendered before the user reaches them.
 @MainActor
-final class EPUBPageContentViewController: UIViewController {
+final class EPUBPageContentViewController: UIViewController, WKNavigationDelegate {
 
     let bridge: EPUBBridge
     private(set) var webView: WKWebView!
+    let slotIndex: Int
+    private var hasMarkedReady = false
+    var onReaderHTMLReady: ((Int) -> Void)?
 
-    init() {
+    init(slotIndex: Int) {
+        self.slotIndex = slotIndex
         bridge = EPUBBridge()
         super.init(nibName: nil, bundle: nil)
     }
@@ -37,6 +41,7 @@ final class EPUBPageContentViewController: UIViewController {
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
+        webView.navigationDelegate = self
         bridge.webView = webView
         view.addSubview(webView)
 
@@ -45,6 +50,12 @@ final class EPUBPageContentViewController: UIViewController {
             return
         }
         webView.loadFileURL(htmlURL, allowingReadAccessTo: htmlURL.deletingLastPathComponent())
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard !hasMarkedReady, webView.url?.lastPathComponent == "reader.html" else { return }
+        hasMarkedReady = true
+        onReaderHTMLReady?(slotIndex)
     }
 }
 
@@ -62,6 +73,8 @@ final class PageCurlViewController: UIPageViewController {
     // pool[(poolCurrent+1)%3] = next
     private let pool: [EPUBPageContentViewController]
     private var poolCurrent = 1
+    private var slotReady = [Bool](repeating: false, count: 3)
+    private var pendingEscapedBase64BySlot = [String?](repeating: nil, count: 3)
 
     var currentSlot: EPUBPageContentViewController { pool[poolCurrent] }
     var prevSlot:    EPUBPageContentViewController { pool[(poolCurrent + 2) % 3] }
@@ -80,7 +93,7 @@ final class PageCurlViewController: UIPageViewController {
     // MARK: Init
 
     init() {
-        pool = (0..<3).map { _ in EPUBPageContentViewController() }
+        pool = (0..<3).map { EPUBPageContentViewController(slotIndex: $0) }
         super.init(transitionStyle: .pageCurl, navigationOrientation: .horizontal)
     }
 
@@ -93,6 +106,11 @@ final class PageCurlViewController: UIPageViewController {
         super.viewDidLoad()
         dataSource = self
         delegate = self
+        pool.forEach { slot in
+            slot.onReaderHTMLReady = { [weak self] index in
+                self?.markSlotReady(index)
+            }
+        }
         setViewControllers([currentSlot], direction: .forward, animated: false)
         wireCurrentSlotCallbacks()
         wireBridgeFailureCallbacks()
@@ -105,7 +123,9 @@ final class PageCurlViewController: UIPageViewController {
     func loadBook(escapedBase64: String) {
         pool.forEach { $0.bridge.onBookReady = nil }
         currentSlot.bridge.onBookReady = { [weak self] in self?.onBookReady?() }
-        pool.forEach { $0.bridge.callJS("loadBook('\(escapedBase64)')") }
+        for slotIndex in pool.indices {
+            queueLoadIfNeeded(slotIndex: slotIndex, escapedBase64: escapedBase64)
+        }
     }
 
     func displayCFI(_ cfi: String) {
@@ -164,6 +184,25 @@ final class PageCurlViewController: UIPageViewController {
     }
 
     // MARK: Pool rotation
+
+    private func markSlotReady(_ slotIndex: Int) {
+        slotReady[slotIndex] = true
+        Log.shared.debug("PageCurl slot \(slotIndex) ready=\(slotReady[slotIndex])")
+        flushPendingLoad(for: slotIndex)
+    }
+
+    private func queueLoadIfNeeded(slotIndex: Int, escapedBase64: String) {
+        pendingEscapedBase64BySlot[slotIndex] = escapedBase64
+        Log.shared.debug("PageCurl slot \(slotIndex) ready=\(slotReady[slotIndex])")
+        flushPendingLoad(for: slotIndex)
+    }
+
+    private func flushPendingLoad(for slotIndex: Int) {
+        guard slotReady[slotIndex], let escapedBase64 = pendingEscapedBase64BySlot[slotIndex] else { return }
+        pendingEscapedBase64BySlot[slotIndex] = nil
+        Log.shared.debug("PageCurl slot \(slotIndex) ready=\(slotReady[slotIndex]) load dispatched")
+        pool[slotIndex].bridge.callJS("loadBook('\(escapedBase64)')")
+    }
 
     private func rotateForward() {
         clearCurrentSlotCallbacks()
