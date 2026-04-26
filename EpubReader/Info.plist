@@ -28,12 +28,12 @@
 	</array>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Fonts/Literata-Regular.ttf</string>
-		<string>Fonts/Literata-Italic.ttf</string>
-		<string>Fonts/EBGaramond-Regular.ttf</string>
-		<string>Fonts/EBGaramond-Italic.ttf</string>
-		<string>Fonts/iAWriterQuattroS-Regular.ttf</string>
-		<string>Fonts/iAWriterQuattroS-Italic.ttf</string>
+		<string>Literata-Regular.ttf</string>
+		<string>Literata-Italic.ttf</string>
+		<string>EBGaramond-Regular.ttf</string>
+		<string>EBGaramond-Italic.ttf</string>
+		<string>iAWriterQuattroS-Regular.ttf</string>
+		<string>iAWriterQuattroS-Italic.ttf</string>
 	</array>
 </dict>
 </plist>
