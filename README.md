@@ -105,12 +105,12 @@ After launching the app:
 
 The project follows a staged execution plan tracked in `refrence_files/master-plan.md`.
 
-### Current Stage (as of April 25, 2026)
+### Current Stage (as of April 26, 2026)
 
-- **Last completed task:** `1.9`
-- **Next task:** `2a.1`
-- **Completed tasks:** `19 / 93` (**~20.4% complete**)
-- **Current phase:** Transition from foundational Phase 1 work into the `2a.*` implementation track.
+- **Last completed task:** `2b.2`
+- **Next task:** `2b.3`
+- **Completed tasks:** `28 / 93` (**~30.1% complete**)
+- **Current phase:** Phase 2b — Appearance (font, theme, margin configuration).
 - **Gate progress:** No release gates passed yet (`GATES_PASSED = []`).
 
 ### Planned Release Gates

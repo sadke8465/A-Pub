@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2b.1
-NEXT_TASK       = 2b.2
+LAST_COMPLETED  = 2b.2
+NEXT_TASK       = 2b.3
 GATES_PASSED    = []
-TASKS_DONE      = 27
+TASKS_DONE      = 28
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -392,7 +392,7 @@ Goal: font, theme, margins, line spacing all configurable and live-updating.
   TARGET   Features/Reader/ReaderSettings.swift
   IMPL     @Observable class ReaderAppearance (or ObservableObject). All properties backed by @AppStorage: fontFamily(String=“Literata”), fontSize(Double=18), theme(String=“light”), lineSpacing(Double=1.5), marginStyle(String=“normal”), textAlignment(String=“justify”), hyphenation(Bool=true). Expose computed cssVariables: [String:String] dict mapping each setting to its CSS value. Expose func applyAll(via bridge: EPUBBridge) calling all inject methods.
   VERIFY   Change fontSize via code → @AppStorage persists across app restarts.
-- [ ] 2b.2  Bundle reader fonts
+- [x] 2b.2  Bundle reader fonts
   TARGET   Resources/Fonts/ (Literata-Regular.ttf, Literata-Italic.ttf, EBGaramond-Regular.ttf, EBGaramond-Italic.ttf, iAWriterQuattroS-Regular.ttf, iAWriterQuattroS-Italic.ttf)
   IMPL     Download OFL-licensed fonts: Literata from Google Fonts, EB Garamond from Google Fonts, iA Writer Quattro S from github.com/iaolo/iA-Fonts. Add to Xcode target and Info.plist UIAppFonts array. Note: Charter is a system font, no file needed.
   VERIFY   UIFont(name:“Literata-Regular”,size:18) returns non-nil.
