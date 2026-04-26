@@ -101,7 +101,48 @@ public struct EPUBWebView: UIViewRepresentable {
         }
 
         public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            Log.shared.error("WKWebView web content process terminated unexpectedly")
             bridge.handleWebContentProcessTermination(webView)
+        }
+
+        public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            Log.shared.debug("WKWebView didStartProvisionalNavigation: \(webView.url?.absoluteString ?? "nil")")
+        }
+
+        public func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+            Log.shared.debug("WKWebView didCommit navigation: \(webView.url?.absoluteString ?? "nil")")
+        }
+
+        public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            Log.shared.info("WKWebView didFinish navigation: \(webView.url?.absoluteString ?? "nil")")
+        }
+
+        public func webView(
+            _ webView: WKWebView,
+            didFail navigation: WKNavigation!,
+            withError error: Error
+        ) {
+            let nsError = error as NSError
+            Log.shared.error(
+                """
+                WKWebView didFail navigation [domain=\(nsError.domain) code=\(nsError.code)]: \
+                \(nsError.localizedDescription) | url=\(webView.url?.absoluteString ?? "nil")
+                """
+            )
+        }
+
+        public func webView(
+            _ webView: WKWebView,
+            didFailProvisionalNavigation navigation: WKNavigation!,
+            withError error: Error
+        ) {
+            let nsError = error as NSError
+            Log.shared.error(
+                """
+                WKWebView didFailProvisionalNavigation [domain=\(nsError.domain) code=\(nsError.code)]: \
+                \(nsError.localizedDescription) | url=\(webView.url?.absoluteString ?? "nil")
+                """
+            )
         }
     }
 }

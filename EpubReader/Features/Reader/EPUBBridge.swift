@@ -32,6 +32,12 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         public let reason: String
     }
 
+    public struct JSDiagnosticEvent: Sendable {
+        public let level: String
+        public let message: String
+        public let details: String?
+    }
+
     public static let messageName = "bridge"
 
     public weak var webView: WKWebView?
@@ -50,6 +56,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     public var onChapterWordCount: ((Int, Int) -> Void)?
     public var onJavaScriptExecutionFailed: ((JavaScriptExecutionFailure) -> Void)?
     public var onJSGuardBlocked: ((JSGuardBlockedEvent) -> Void)?
+    public var onJSDiagnostic: ((JSDiagnosticEvent) -> Void)?
 
     public override init() {
         super.init()
@@ -197,6 +204,31 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
             let command = body["command"] as? String ?? "unknown"
             let reason = body["reason"] as? String ?? "unknown"
             onJSGuardBlocked?(JSGuardBlockedEvent(command: command, reason: reason))
+        case "jsDiagnostic":
+            let level = body["level"] as? String ?? "info"
+            let message = body["message"] as? String ?? "(no message)"
+            let details = body["details"] as? String
+            let event = JSDiagnosticEvent(level: level, message: message, details: details)
+            onJSDiagnostic?(event)
+            if let details, !details.isEmpty {
+                switch level {
+                case "error":
+                    Log.shared.error("JS diagnostic [\(level)]: \(message) | \(details)")
+                case "warn":
+                    Log.shared.info("JS diagnostic [\(level)]: \(message) | \(details)")
+                default:
+                    Log.shared.debug("JS diagnostic [\(level)]: \(message) | \(details)")
+                }
+            } else {
+                switch level {
+                case "error":
+                    Log.shared.error("JS diagnostic [\(level)]: \(message)")
+                case "warn":
+                    Log.shared.info("JS diagnostic [\(level)]: \(message)")
+                default:
+                    Log.shared.debug("JS diagnostic [\(level)]: \(message)")
+                }
+            }
         default:
             Log.shared.debug("EPUBBridge received unknown message type: \(type)")
         }
