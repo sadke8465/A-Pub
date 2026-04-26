@@ -29,6 +29,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     public var onRequestHighlights: ((String) -> Void)?
     public var onChapterLoaded: (() -> Void)?
     public var onAtChapterEnd: (() -> Void)?
+    public var onLocationsSnapshot: ((Int, String?) -> Void)?
 
     public override init() {
         super.init()
@@ -82,6 +83,10 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         callJS("setHyphenation(\(on))")
     }
 
+    public func requestLocationsSnapshot() {
+        callJS("snapshotLocations()")
+    }
+
     public func userContentController(
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
@@ -120,6 +125,10 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
             onChapterLoaded?()
         case "atChapterEnd":
             onAtChapterEnd?()
+        case "locationsSnapshot":
+            let totalLocations = body["totalLocations"] as? Int ?? 0
+            let serialized = body["serializedLocations"] as? String
+            onLocationsSnapshot?(totalLocations, serialized)
         default:
             Log.shared.debug("EPUBBridge received unknown message type: \(type)")
         }

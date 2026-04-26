@@ -4,6 +4,10 @@ struct AppearanceSettings: View {
 
     @Bindable var appearance: ReaderAppearance
     let bridge: EPUBBridge
+    var onAppearanceChanged: (() -> Void)? = nil
+    var onSaveAsDefaultForBook: (() -> Void)? = nil
+
+    @State private var showSaveForBookConfirmation = false
 
     private struct FontOption {
         let family: String
@@ -75,6 +79,20 @@ struct AppearanceSettings: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .presentationDetents([.medium, .large])
+        .confirmationDialog(
+            "Save this appearance only for the current book?",
+            isPresented: $showSaveForBookConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Save as default for this book") {
+                onSaveAsDefaultForBook?()
+            }
+
+            Button("Cancel", role: .cancel) {}
+        }
+        .onLongPressGesture(minimumDuration: 0.8) {
+            showSaveForBookConfirmation = true
+        }
     }
 
     // MARK: - Font Size
@@ -90,6 +108,7 @@ struct AppearanceSettings: View {
                     .labelsHidden()
                     .onChange(of: appearance.fontSize) { _, newValue in
                         bridge.applyFontSize(Int(newValue))
+                        onAppearanceChanged?()
                     }
             }
         }
@@ -117,6 +136,7 @@ struct AppearanceSettings: View {
         return Button {
             appearance.fontFamily = option.family
             bridge.applyFontFamily(option.family)
+            onAppearanceChanged?()
         } label: {
             VStack(spacing: 4) {
                 Text("Aa")
@@ -161,6 +181,7 @@ struct AppearanceSettings: View {
         return Button {
             appearance.theme = option.name
             bridge.applyTheme(option.name)
+            onAppearanceChanged?()
         } label: {
             VStack(spacing: 6) {
                 Circle()
@@ -200,6 +221,7 @@ struct AppearanceSettings: View {
             .pickerStyle(.segmented)
             .onChange(of: appearance.marginStyle) { _, newValue in
                 bridge.applyMargin(marginPixels(for: newValue))
+                onAppearanceChanged?()
             }
         }
     }
@@ -218,6 +240,7 @@ struct AppearanceSettings: View {
             Slider(value: $appearance.lineSpacing, in: 1.2...2.0, step: 0.1)
                 .onChange(of: appearance.lineSpacing) { _, newValue in
                     bridge.applyLineSpacing(newValue)
+                    onAppearanceChanged?()
                 }
         }
     }
@@ -232,6 +255,7 @@ struct AppearanceSettings: View {
             Toggle("Hyphenation", isOn: $appearance.hyphenation)
                 .onChange(of: appearance.hyphenation) { _, newValue in
                     bridge.applyHyphenation(newValue)
+                    onAppearanceChanged?()
                 }
                 .padding(.vertical, 8)
         }
@@ -245,6 +269,7 @@ struct AppearanceSettings: View {
             set: { newValue in
                 appearance.textAlignment = newValue ? "justify" : "left"
                 bridge.applyJustify(newValue)
+                onAppearanceChanged?()
             }
         )
     }

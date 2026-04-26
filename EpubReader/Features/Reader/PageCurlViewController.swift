@@ -115,6 +115,10 @@ final class PageCurlViewController: UIPageViewController {
         currentSlot.bridge.callJS(js)
     }
 
+    func applyAppearance(_ appearance: ReaderAppearance) {
+        pool.forEach { appearance.applyAll(via: $0.bridge) }
+    }
+
     /// Tear down all pool bridges (call from `dismantleUIViewController`).
     func invalidatePool() {
         pool.forEach { $0.bridge.invalidate() }

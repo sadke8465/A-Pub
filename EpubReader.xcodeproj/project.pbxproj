@@ -47,6 +47,7 @@
 		0A0000000000000000000C26 /* iAWriterQuattroS-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B26 /* iAWriterQuattroS-Regular.ttf */; };
 		0A0000000000000000000C27 /* iAWriterQuattroS-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B27 /* iAWriterQuattroS-Italic.ttf */; };
 		0A0000000000000000000C28 /* AppearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B28 /* AppearanceSettings.swift */; };
+		0A0000000000000000000C29 /* Book.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B29 /* Book.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -90,6 +91,7 @@
 		0A0000000000000000000B26 /* iAWriterQuattroS-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iAWriterQuattroS-Regular.ttf"; sourceTree = "<group>"; };
 		0A0000000000000000000B27 /* iAWriterQuattroS-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iAWriterQuattroS-Italic.ttf"; sourceTree = "<group>"; };
 		0A0000000000000000000B28 /* AppearanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettings.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B29 /* Book.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Book.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -212,6 +214,7 @@
 			children = (
 				0A00000000000000000000AA /* EPUB */,
 				0A00000000000000000000AD /* Persistence */,
+				0A00000000000000000000B2 /* Models */,
 				0A00000000000000000000A8 /* Utilities */,
 			);
 			path = Core;
@@ -234,6 +237,14 @@
 				0A0000000000000000000B0D /* EPUBParser.swift */,
 			);
 			path = EPUB;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000B2 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B29 /* Book.swift */,
+			);
+			path = Models;
 			sourceTree = "<group>";
 		};
 		0A00000000000000000000A8 /* Utilities */ = {

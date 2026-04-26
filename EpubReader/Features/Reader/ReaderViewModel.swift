@@ -1,4 +1,5 @@
 import Combine
+import CoreData
 import Foundation
 
 @MainActor
@@ -16,21 +17,25 @@ public final class ReaderViewModel: ObservableObject {
     @Published public var currentSpineIndex = 0
 
     let pageController = PageController()
+    let appearance: ReaderAppearance
 
     private let importer: FileImporter
     private let initialBookFileURL: URL?
     private let initialBookID: UUID?
     private var didAttemptInitialLoad = false
     private var pendingRestoreCFI: String?
+    private var needsLocationsSnapshotAfterReflow = false
 
     public init(
         importer: FileImporter = FileImporter(),
         initialBookFileURL: URL? = nil,
-        initialBookID: UUID? = nil
+        initialBookID: UUID? = nil,
+        appearance: ReaderAppearance = ReaderAppearance()
     ) {
         self.importer = importer
         self.initialBookFileURL = initialBookFileURL
         self.initialBookID = initialBookID
+        self.appearance = appearance
         configureBridgeCallbacks()
     }
 
@@ -66,12 +71,15 @@ public final class ReaderViewModel: ObservableObject {
             if let initialBookID {
                 pageController.currentBookID = initialBookID
                 pendingRestoreCFI = await pageController.restoreCFI(for: initialBookID)
+                await loadAppearanceOverride(for: initialBookID)
             }
             await loadFromLibrary(fileURL: initialBookFileURL)
         }
     }
 
     func handleBookReady(in pageCurlVC: PageCurlViewController?) {
+        pageCurlVC?.applyAppearance(appearance)
+
         guard let pendingRestoreCFI else {
             return
         }
@@ -99,6 +107,46 @@ public final class ReaderViewModel: ObservableObject {
             contextSnippet: contextSnippet,
             atEnd: atEnd
         )
+
+        if needsLocationsSnapshotAfterReflow {
+            needsLocationsSnapshotAfterReflow = false
+            bridge.requestLocationsSnapshot()
+        }
+    }
+
+
+    func handleAppearanceChange() {
+        pageController.invalidatePaginationMetricsForReflow()
+        needsLocationsSnapshotAfterReflow = true
+    }
+
+    func saveCurrentAppearanceOverrideForCurrentBook() {
+        guard let bookID = initialBookID else {
+            Log.shared.debug("Skipping per-book appearance override save: no active library book id")
+            return
+        }
+
+        let context = PersistenceController.shared.backgroundContext()
+        let appearance = self.appearance
+
+        Task {
+            await context.perform {
+                let request = NSFetchRequest<Book>(entityName: "Book")
+                request.predicate = NSPredicate(format: "id == %@", bookID as CVarArg)
+                request.fetchLimit = 1
+
+                do {
+                    guard let storedBook = try context.fetch(request).first else {
+                        Log.shared.error("Unable to save appearance override: Book not found")
+                        return
+                    }
+                    storedBook.saveAppearanceOverride(appearance)
+                    try context.save()
+                } catch {
+                    Log.shared.error("Failed saving appearance override: \(error.localizedDescription)")
+                }
+            }
+        }
     }
 
     public func toggleOverlay() {
@@ -157,6 +205,64 @@ public final class ReaderViewModel: ObservableObject {
 
         bridge.onBookError = { message in
             Log.shared.error("EPUB book load failed: \(message)")
+        }
+
+        bridge.onLocationsSnapshot = { [weak self] totalLocations, serializedLocations in
+            guard let self else { return }
+            self.pageController.updateTotalLocationCount(totalLocations)
+            self.persistLocationsCache(serializedLocations)
+        }
+    }
+
+    private func loadAppearanceOverride(for bookID: UUID) async {
+        let context = PersistenceController.shared.backgroundContext()
+        if let overrideAppearance = await context.perform({ () -> ReaderAppearance? in
+            let request = NSFetchRequest<Book>(entityName: "Book")
+            request.predicate = NSPredicate(format: "id == %@", bookID as CVarArg)
+            request.fetchLimit = 1
+
+            do {
+                return try context.fetch(request).first?.appearanceSettings()
+            } catch {
+                Log.shared.error("Failed loading appearance override: \(error.localizedDescription)")
+                return nil
+            }
+        }) {
+            appearance.fontFamily = overrideAppearance.fontFamily
+            appearance.fontSize = overrideAppearance.fontSize
+            appearance.theme = overrideAppearance.theme
+            appearance.lineSpacing = overrideAppearance.lineSpacing
+            appearance.marginStyle = overrideAppearance.marginStyle
+            appearance.textAlignment = overrideAppearance.textAlignment
+            appearance.hyphenation = overrideAppearance.hyphenation
+        }
+    }
+
+    private func persistLocationsCache(_ serializedLocations: String?) {
+        guard let bookID = initialBookID,
+              let serializedLocations,
+              !serializedLocations.isEmpty
+        else {
+            return
+        }
+
+        let context = PersistenceController.shared.backgroundContext()
+        Task {
+            await context.perform {
+                let request = NSFetchRequest<Book>(entityName: "Book")
+                request.predicate = NSPredicate(format: "id == %@", bookID as CVarArg)
+                request.fetchLimit = 1
+
+                do {
+                    guard let persistedBook = try context.fetch(request).first else {
+                        return
+                    }
+                    persistedBook.locationsCache = serializedLocations
+                    try context.save()
+                } catch {
+                    Log.shared.error("Failed saving locations cache: \(error.localizedDescription)")
+                }
+            }
         }
     }
 

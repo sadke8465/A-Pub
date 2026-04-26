@@ -213,6 +213,37 @@
                     window.rendition.resize(w, h);
                 }
             };
+
+
+            window.snapshotLocations = function () {
+                if (!window.book || !window.book.locations) {
+                    window.bridge.send('locationsSnapshot', {
+                        totalLocations: 0,
+                        serializedLocations: null
+                    });
+                    return;
+                }
+
+                var totalLocations = 0;
+                if (Array.isArray(window.book.locations._locations)) {
+                    totalLocations = window.book.locations._locations.length;
+                } else if (typeof window.book.locations.length === 'number') {
+                    totalLocations = window.book.locations.length;
+                }
+
+                var serializedLocations = null;
+                try {
+                    serializedLocations = window.book.locations.save();
+                } catch (_) {
+                    serializedLocations = null;
+                }
+
+                window.bridge.send('locationsSnapshot', {
+                    totalLocations: totalLocations,
+                    serializedLocations: serializedLocations
+                });
+            };
+
         })();
     </script>
 </body>
