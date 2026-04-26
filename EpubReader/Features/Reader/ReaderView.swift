@@ -5,6 +5,7 @@ public struct ReaderView: View {
     @StateObject private var viewModel: ReaderViewModel
     @State private var pageCurlVC: PageCurlViewController?
     @State private var showingAppearanceSettings = false
+    @Environment(\.dismiss) private var dismiss
 
     init(viewModel: ReaderViewModel = ReaderViewModel()) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -36,7 +37,7 @@ public struct ReaderView: View {
                     } else if location.x > width * 0.75 {
                         pageCurlVC?.callJS("nextPage()")
                     } else {
-                        viewModel.toggleOverlay()
+                        viewModel.isOverlayVisible.toggle()
                     }
                 }
                 .onChange(of: viewModel.book?.identifier) { _, _ in
@@ -50,10 +51,17 @@ public struct ReaderView: View {
                     }
                 }
 
-                if viewModel.isOverlayVisible {
-                    overlay
-                        .transition(.opacity)
-                }
+                ReaderOverlay(
+                    isVisible: $viewModel.isOverlayVisible,
+                    chapterTitle: currentChapterTitle,
+                    progressPercentage: viewModel.percentage,
+                    minutesLeft: 8,
+                    onBack: { dismiss() },
+                    onSearch: {},
+                    onTableOfContents: {},
+                    onSettings: { showingAppearanceSettings = true },
+                    onTextToSpeech: {}
+                )
 
                 if viewModel.isLoading {
                     ProgressView("Importing…")
@@ -100,55 +108,6 @@ public struct ReaderView: View {
                 .accessibilityLabel("Open EPUB")
             }
         }
-    }
-
-    private var overlay: some View {
-        VStack {
-            HStack(spacing: 12) {
-                Image(systemName: "chevron.backward")
-                    .font(.headline)
-
-                Text(currentChapterTitle)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-
-                Spacer()
-
-                Button {
-                    showingAppearanceSettings = true
-                } label: {
-                    Image(systemName: "textformat.size")
-                        .font(.headline)
-                }
-                .buttonStyle(.plain)
-
-                Text("\(Int(viewModel.percentage * 100))%")
-                    .font(.subheadline.monospacedDigit())
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(.ultraThinMaterial)
-
-            Spacer()
-
-            HStack(spacing: 20) {
-                Button {
-                    pageCurlVC?.callJS("prevPage()")
-                } label: {
-                    Image(systemName: "chevron.left.circle.fill")
-                        .font(.system(size: 36))
-                }
-
-                Button {
-                    pageCurlVC?.callJS("nextPage()")
-                } label: {
-                    Image(systemName: "chevron.right.circle.fill")
-                        .font(.system(size: 36))
-                }
-            }
-            .padding(.bottom, 24)
-        }
-        .foregroundStyle(.white)
     }
 
     private var currentChapterTitle: String {
