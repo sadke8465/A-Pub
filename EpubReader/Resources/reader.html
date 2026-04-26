@@ -51,6 +51,42 @@
                 custom: { bg: '#FFFFF8', fg: '#1C1C1E' }
             };
 
+            function applyContentTheme(name) {
+                if (!window.rendition) { return; }
+
+                var selectedTheme = normalizedThemeName(name);
+                var t = themeMap[selectedTheme];
+
+                window.rendition.getContents().forEach(function (content) {
+                    try {
+                        var doc = content && content.document;
+                        if (!doc) { return; }
+
+                        var styleId = 'apub-theme-override';
+                        var style = doc.getElementById(styleId);
+                        if (!style) {
+                            style = doc.createElement('style');
+                            style.id = styleId;
+                            doc.head.appendChild(style);
+                        }
+
+                        style.textContent = [
+                            'html, body {',
+                            '  background: ' + t.bg + ' !important;',
+                            '  color: ' + t.fg + ' !important;',
+                            '  -webkit-text-fill-color: ' + t.fg + ' !important;',
+                            '}',
+                            'p, div, span, li, blockquote, dd, dt {',
+                            '  color: ' + t.fg + ' !important;',
+                            '  -webkit-text-fill-color: ' + t.fg + ' !important;',
+                            '}'
+                        ].join('\n');
+                    } catch (_) {
+                        // Ignore per-spine theming errors to avoid breaking pagination.
+                    }
+                });
+            }
+
             function normalizedThemeName(name) {
                 if (typeof name !== 'string' || !themeMap[name]) {
                     return 'light';
@@ -65,6 +101,7 @@
                 window.rendition.themes.select(selectedTheme);
                 document.documentElement.style.background = t.bg;
                 document.body.style.background = t.bg;
+                applyContentTheme(selectedTheme);
             };
 
             window.setFontSize = function (px) {
@@ -155,6 +192,9 @@
                         });
                     });
                     window.rendition.themes.select('light');
+                    window.rendition.on('rendered', function () {
+                        applyContentTheme('light');
+                    });
 
                     window.rendition.on('relocated', function (location) {
                         var cfi = (location && location.start && location.start.cfi) ? location.start.cfi : '';
