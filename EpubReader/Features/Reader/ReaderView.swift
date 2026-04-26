@@ -6,6 +6,12 @@ public struct ReaderView: View {
     @State private var pageCurlVC: PageCurlViewController?
     @State private var showingAppearanceSettings = false
     @State private var showingTOCPanel = false
+    @State private var showingGoToLocationSheet = false
+    @State private var goToLocationPercentage = 0.0
+    @State private var goToLocationText = "0"
+    @State private var showingFootnoteSheet = false
+    @State private var footnoteTitle = "Footnote"
+    @State private var footnoteText = ""
     @State private var scrubberDragPercentage: Double?
     @Environment(\.dismiss) private var dismiss
 
@@ -18,6 +24,13 @@ public struct ReaderView: View {
             ZStack {
                 PageCurlReaderView(viewModel: viewModel) { vc in
                     pageCurlVC = vc
+                    vc.onFootnoteRequest = { _, text, title in
+                        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !trimmed.isEmpty else { return }
+                        footnoteTitle = title.isEmpty ? "Footnote" : title
+                        footnoteText = trimmed
+                        showingFootnoteSheet = true
+                    }
                 }
                 .ignoresSafeArea()
                 // Swipe left → next page; swipe right → prev page.
@@ -86,6 +99,10 @@ public struct ReaderView: View {
                 }
 
                 scrubberView
+
+                if viewModel.isOverlayVisible {
+                    goToLocationButton
+                }
             }
         }
         .onAppear {
@@ -112,6 +129,14 @@ public struct ReaderView: View {
                 }
             )
             .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingGoToLocationSheet) {
+            goToLocationSheet
+                .presentationDetents([.fraction(0.35)])
+        }
+        .sheet(isPresented: $showingFootnoteSheet) {
+            footnoteSheet
+                .presentationDetents([.fraction(0.3), .medium])
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -207,6 +232,94 @@ public struct ReaderView: View {
             .allowsHitTesting(true)
         }
         .ignoresSafeArea(edges: .bottom)
+    }
+
+    private var goToLocationButton: some View {
+        VStack {
+            Spacer()
+            HStack {
+                Spacer()
+                Button {
+                    syncGoToInputsWithCurrentProgress()
+                    showingGoToLocationSheet = true
+                } label: {
+                    Image(systemName: "target")
+                        .font(.headline)
+                        .padding(12)
+                        .background(.ultraThinMaterial, in: Circle())
+                }
+                .padding(.trailing, 20)
+                .padding(.bottom, 46)
+            }
+        }
+        .transition(.opacity)
+    }
+
+    private var goToLocationSheet: some View {
+        NavigationStack {
+            VStack(spacing: 18) {
+                Slider(
+                    value: Binding(
+                        get: { goToLocationPercentage },
+                        set: { newValue in
+                            let clamped = newValue.clamped(to: 0...100)
+                            goToLocationPercentage = clamped
+                            goToLocationText = String(Int(clamped.rounded()))
+                        }
+                    ),
+                    in: 0...100
+                )
+
+                HStack(spacing: 10) {
+                    TextField(
+                        "Percent",
+                        text: Binding(
+                            get: { goToLocationText },
+                            set: { newValue in
+                                goToLocationText = newValue
+                                let filtered = newValue.filter(\.isNumber)
+                                if let parsed = Double(filtered) {
+                                    goToLocationPercentage = parsed.clamped(to: 0...100)
+                                }
+                            }
+                        )
+                    )
+                    .keyboardType(.numberPad)
+                    .textFieldStyle(.roundedBorder)
+                    Text("%")
+                        .font(.headline)
+                }
+
+                Button("Go") {
+                    let normalized = (goToLocationPercentage.clamped(to: 0...100)) / 100
+                    pageCurlVC?.callJS("displayCFI(\(normalized))")
+                    showingGoToLocationSheet = false
+                }
+                .buttonStyle(.borderedProminent)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .padding()
+            .navigationTitle("Go to location")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private var footnoteSheet: some View {
+        NavigationStack {
+            ScrollView {
+                Text(footnoteText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+            }
+            .navigationTitle(footnoteTitle)
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func syncGoToInputsWithCurrentProgress() {
+        let pct = (viewModel.percentage * 100).clamped(to: 0...100)
+        goToLocationPercentage = pct
+        goToLocationText = String(Int(pct.rounded()))
     }
 
     private func percentageFrom(

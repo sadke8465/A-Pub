@@ -134,6 +134,7 @@ final class PageCurlViewController: UIPageViewController {
     var onMarkClicked:       ((String) -> Void)?
     var onRequestHighlights: ((String) -> Void)?
     var onAtChapterEnd:      (() -> Void)?
+    var onFootnoteRequest:   ((String, String, String) -> Void)?
     var onJavaScriptExecutionFailed: ((EPUBBridge.JavaScriptExecutionFailure) -> Void)?
     var onJSGuardBlocked: ((Int, EPUBBridge.JSGuardBlockedEvent) -> Void)?
 
@@ -222,6 +223,9 @@ final class PageCurlViewController: UIPageViewController {
         slot.bridge.onSelected          = { [weak self] r, t in self?.onSelected?(r, t) }
         slot.bridge.onMarkClicked       = { [weak self] id   in self?.onMarkClicked?(id) }
         slot.bridge.onRequestHighlights = { [weak self] href in self?.onRequestHighlights?(href) }
+        slot.bridge.onFootnoteRequest   = { [weak self] href, text, title in
+            self?.onFootnoteRequest?(href, text, title)
+        }
         slot.bridge.onAtChapterEnd      = { [weak self] in
             self?.onAtChapterEnd?()
             // Pre-warm the next slot so its rendition is one chapter ahead.
@@ -259,6 +263,7 @@ final class PageCurlViewController: UIPageViewController {
         slot.bridge.onSelected          = nil
         slot.bridge.onMarkClicked       = nil
         slot.bridge.onRequestHighlights = nil
+        slot.bridge.onFootnoteRequest   = nil
         slot.bridge.onAtChapterEnd      = nil
     }
 

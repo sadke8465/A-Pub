@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2c.4
-NEXT_TASK       = 2c.5
+LAST_COMPLETED  = 2c.5
+NEXT_TASK       = 3a.1
 GATES_PASSED    = []
-TASKS_DONE      = 37
+TASKS_DONE      = 38
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -453,7 +453,7 @@ Goal: TOC, scrubber, time estimate, chapter navigation.
   TARGET   Features/Reader/ReaderViewModel.swift (update)
   IMPL     On bookReady: extract text from first 2 spine items via JS (book.spine.get(0).load().then(s=>s.document.body.innerText)) → estimate average words per chapter. Assume 238 WPM reading speed. Compute minutesRemainingInChapter = (wordsInCurrentChapter - wordsRead) / 238. Update on every onRelocated. Store estimated WPM per book in UserDefaults keyed by book sha256 for personalization in future.
   VERIFY   Overlay shows “~8m left” or similar for a normal-length chapter.
-- [ ] 2c.5  Go-to-location and footnote intercept
+- [x] 2c.5  Go-to-location and footnote intercept
   TARGET   Features/Reader/ReaderView.swift (update), Resources/reader.html (update)
   IMPL     Go-to-location: button in overlay → sheet with Slider 0–100 and TextField for percentage, “Go” button → bridge.callJS(“displayCFI((pct/100))”). Footnote intercept: in reader.html hooks.content, find all <a epub:type="noteref"> links, add click listener that instead of navigating calls bridge.send(‘footnoteRequest’,{href:href,text:title}); Swift shows the footnote text in a small popover sheet rather than navigating away.
   VERIFY   Tap a footnote → small sheet appears with footnote text. Dismiss → stays on current page.

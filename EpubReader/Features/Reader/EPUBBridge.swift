@@ -47,6 +47,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     public var onLocationsSnapshot: ((Int, String?) -> Void)?
     public var onWordCountSample: (([Int]) -> Void)?
     public var onChapterWordCount: ((Int, Int) -> Void)?
+    public var onFootnoteRequest: ((String, String, String) -> Void)?
     public var onJavaScriptExecutionFailed: ((JavaScriptExecutionFailure) -> Void)?
     public var onJSGuardBlocked: ((JSGuardBlockedEvent) -> Void)?
 
@@ -188,6 +189,11 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
             let index = body["index"] as? Int ?? 0
             let count = body["count"] as? Int ?? 0
             onChapterWordCount?(index, count)
+        case "footnoteRequest":
+            let href = body["href"] as? String ?? ""
+            let text = body["text"] as? String ?? ""
+            let title = body["title"] as? String ?? ""
+            onFootnoteRequest?(href, text, title)
         case "jsGuardBlocked":
             let command = body["command"] as? String ?? "unknown"
             let reason = body["reason"] as? String ?? "unknown"
