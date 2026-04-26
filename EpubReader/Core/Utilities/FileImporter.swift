@@ -79,7 +79,7 @@ public struct FileImporter {
         }
     }
 
-    public func importSingleEPUBForReader() async throws -> (EPUBBook, String, String) {
+    public func importSingleEPUBForReader() async throws -> (EPUBBook, URL, String?) {
         let pickedURL = try await pickEPUBURLs(allowsMultipleSelection: false).firstUnwrapped()
         let gotSecurityScope = pickedURL.startAccessingSecurityScopedResource()
         defer {
@@ -90,27 +90,22 @@ public struct FileImporter {
 
         let extractor = EPUBExtractor()
         let parser = EPUBParser()
-        let extractedRoot = try await extractor.extract(pickedURL)
+        let epubData = try await Self.readData(from: pickedURL)
+        let sha256 = Self.sha256Hex(for: epubData)
+        let persistedURL = try await Self.persistEPUB(
+            data: epubData,
+            suggestedFilename: pickedURL.lastPathComponent,
+            sha256: sha256
+        )
+
+        let extractedRoot = try await extractor.extract(persistedURL)
         let book = try await parser.parse(extractedRoot: extractedRoot)
-        let base64String = try await Self.encodeBase64(from: pickedURL)
-        let escapedBase64String = await Self.escapeForSingleQuotedJavaScript(base64String)
-        return (book, base64String, escapedBase64String)
+        return (book, persistedURL, nil)
     }
 
     nonisolated private static func readData(from url: URL) async throws -> Data {
         try await Task.detached(priority: .userInitiated) {
             try Data(contentsOf: url)
-        }.value
-    }
-
-    nonisolated private static func encodeBase64(from url: URL) async throws -> String {
-        let data = try await readData(from: url)
-        return data.base64EncodedString()
-    }
-
-    nonisolated private static func escapeForSingleQuotedJavaScript(_ value: String) async -> String {
-        await Task.detached(priority: .userInitiated) {
-            value.replacingOccurrences(of: "'", with: "\\'")
         }.value
     }
 

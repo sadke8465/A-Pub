@@ -40,8 +40,13 @@ public struct ReaderView: View {
                     }
                 }
                 .onChange(of: viewModel.book?.identifier) { _, _ in
-                    if !viewModel.escapedBase64Book.isEmpty {
-                        pageCurlVC?.loadBook(escapedBase64: viewModel.escapedBase64Book)
+                    if let bookFileURL = viewModel.bookFileURL {
+                        pageCurlVC?.loadBook(
+                            fileURL: bookFileURL,
+                            fallbackEscapedBase64: viewModel.legacyEscapedBase64Book.isEmpty
+                                ? nil
+                                : viewModel.legacyEscapedBase64Book
+                        )
                     }
                 }
 

@@ -28,6 +28,7 @@ final class EPUBPageContentViewController: UIViewController, WKNavigationDelegat
     override func viewDidLoad() {
         super.viewDidLoad()
         let config = bridge.setup()
+        config.setURLSchemeHandler(EPUBFileSchemeHandler.shared, forURLScheme: EPUBFileSchemeHandler.scheme)
         let viewportSource = "var m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no';document.head.appendChild(m);"
         config.userContentController.addUserScript(
             WKUserScript(source: viewportSource, injectionTime: .atDocumentStart, forMainFrameOnly: false)
@@ -74,7 +75,11 @@ final class PageCurlViewController: UIPageViewController {
     private let pool: [EPUBPageContentViewController]
     private var poolCurrent = 1
     private var slotReady = [Bool](repeating: false, count: 3)
-    private var pendingEscapedBase64BySlot = [String?](repeating: nil, count: 3)
+    private struct PendingLoad {
+        let bookURLString: String
+        let fallbackEscapedBase64: String?
+    }
+    private var pendingLoadBySlot = [PendingLoad?](repeating: nil, count: 3)
 
     var currentSlot: EPUBPageContentViewController { pool[poolCurrent] }
     var prevSlot:    EPUBPageContentViewController { pool[(poolCurrent + 2) % 3] }
@@ -120,11 +125,16 @@ final class PageCurlViewController: UIPageViewController {
 
     /// Load the same EPUB into every pool slot.  Only the current slot fires
     /// `onBookReady` to avoid triple-triggering the callback.
-    func loadBook(escapedBase64: String) {
+    func loadBook(fileURL: URL, fallbackEscapedBase64: String? = nil) {
+        let bridgedURLString = EPUBFileSchemeHandler.shared.register(fileURL: fileURL).absoluteString
         pool.forEach { $0.bridge.onBookReady = nil }
         currentSlot.bridge.onBookReady = { [weak self] in self?.onBookReady?() }
         for slotIndex in pool.indices {
-            queueLoadIfNeeded(slotIndex: slotIndex, escapedBase64: escapedBase64)
+            queueLoadIfNeeded(
+                slotIndex: slotIndex,
+                bookURLString: bridgedURLString,
+                fallbackEscapedBase64: fallbackEscapedBase64
+            )
         }
     }
 
@@ -191,17 +201,21 @@ final class PageCurlViewController: UIPageViewController {
         flushPendingLoad(for: slotIndex)
     }
 
-    private func queueLoadIfNeeded(slotIndex: Int, escapedBase64: String) {
-        pendingEscapedBase64BySlot[slotIndex] = escapedBase64
+    private func queueLoadIfNeeded(slotIndex: Int, bookURLString: String, fallbackEscapedBase64: String?) {
+        pendingLoadBySlot[slotIndex] = PendingLoad(
+            bookURLString: bookURLString,
+            fallbackEscapedBase64: fallbackEscapedBase64
+        )
         Log.shared.debug("PageCurl slot \(slotIndex) ready=\(slotReady[slotIndex])")
         flushPendingLoad(for: slotIndex)
     }
 
     private func flushPendingLoad(for slotIndex: Int) {
-        guard slotReady[slotIndex], let escapedBase64 = pendingEscapedBase64BySlot[slotIndex] else { return }
-        pendingEscapedBase64BySlot[slotIndex] = nil
+        guard slotReady[slotIndex], let pendingLoad = pendingLoadBySlot[slotIndex] else { return }
+        pendingLoadBySlot[slotIndex] = nil
         Log.shared.debug("PageCurl slot \(slotIndex) ready=\(slotReady[slotIndex]) load dispatched")
-        pool[slotIndex].bridge.callJS("loadBook('\(escapedBase64)')")
+        let js = "loadBook('\(pendingLoad.bookURLString)', \(pendingLoad.fallbackEscapedBase64.map { "'\($0)'" } ?? "null"))"
+        pool[slotIndex].bridge.callJS(js)
     }
 
     private func rotateForward() {
@@ -218,6 +232,66 @@ final class PageCurlViewController: UIPageViewController {
         wireCurrentSlotCallbacks()
         // Retreat the recycled slot so it tracks one page ahead of the new current.
         nextSlot.bridge.callJS("nextPage()")
+    }
+}
+
+private final class EPUBFileSchemeHandler: NSObject, WKURLSchemeHandler {
+    static let shared = EPUBFileSchemeHandler()
+    static let scheme = "epubreader-book"
+
+    private var fileURLByToken: [String: URL] = [:]
+    private let lock = NSLock()
+
+    func register(fileURL: URL) -> URL {
+        let token = UUID().uuidString
+        lock.lock()
+        fileURLByToken[token] = fileURL
+        lock.unlock()
+        return URL(string: "\(Self.scheme)://book/\(token).epub")!
+    }
+
+    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
+        guard let requestURL = urlSchemeTask.request.url,
+              let token = requestURL.pathComponents.last?.replacingOccurrences(of: ".epub", with: "")
+        else {
+            fail(urlSchemeTask, code: 400, reason: "Malformed EPUB URL")
+            return
+        }
+
+        lock.lock()
+        let fileURL = fileURLByToken[token]
+        lock.unlock()
+
+        guard let fileURL else {
+            fail(urlSchemeTask, code: 404, reason: "Unknown EPUB token")
+            return
+        }
+
+        do {
+            let data = try Data(contentsOf: fileURL)
+            let response = URLResponse(
+                url: requestURL,
+                mimeType: "application/epub+zip",
+                expectedContentLength: data.count,
+                textEncodingName: nil
+            )
+            urlSchemeTask.didReceive(response)
+            urlSchemeTask.didReceive(data)
+            urlSchemeTask.didFinish()
+        } catch {
+            fail(urlSchemeTask, code: 500, reason: "Unable to read EPUB data")
+        }
+    }
+
+    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {}
+
+    private func fail(_ task: WKURLSchemeTask, code: Int, reason: String) {
+        let error = NSError(
+            domain: "EPUBFileSchemeHandler",
+            code: code,
+            userInfo: [NSLocalizedDescriptionKey: reason]
+        )
+        task.didFailWithError(error)
     }
 }
 

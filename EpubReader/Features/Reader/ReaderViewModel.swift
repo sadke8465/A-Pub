@@ -11,8 +11,8 @@ public final class ReaderViewModel: ObservableObject {
     @Published public var percentage: Double = 0
     @Published public var isOverlayVisible = true
 
-    @Published public var base64Book: String = ""
-    @Published public var escapedBase64Book: String = ""
+    @Published public var bookFileURL: URL?
+    @Published public var legacyEscapedBase64Book: String = ""
     @Published public var bridge = EPUBBridge()
     @Published public var currentSpineIndex = 0
     @Published public var lastJavaScriptExecutionError: String?
@@ -26,6 +26,7 @@ public final class ReaderViewModel: ObservableObject {
     private var didAttemptInitialLoad = false
     private var pendingRestoreCFI: String?
     private var needsLocationsSnapshotAfterReflow = false
+    private let allowLegacyBase64Fallback = false
 
     init(
         importer: FileImporter = FileImporter(),
@@ -48,8 +49,8 @@ public final class ReaderViewModel: ObservableObject {
             do {
                 let result = try await importer.importSingleEPUBForReader()
                 book = result.0
-                base64Book = result.1
-                escapedBase64Book = result.2
+                bookFileURL = result.1
+                legacyEscapedBase64Book = result.2 ?? ""
             } catch is CancellationError {
                 Log.shared.info("User cancelled EPUB import")
             } catch {
@@ -185,22 +186,22 @@ public final class ReaderViewModel: ObservableObject {
             let parser = EPUBParser()
             let extractedRoot = try await extractor.extract(fileURL)
             let parsedBook = try await parser.parse(extractedRoot: extractedRoot)
-            let (encoded, escaped) = try await Self.loadAndEncode(fileURL: fileURL)
 
             book = parsedBook
-            base64Book = encoded
-            escapedBase64Book = escaped
+            bookFileURL = fileURL
+            legacyEscapedBase64Book = allowLegacyBase64Fallback
+                ? (try await Self.loadAndEscapeBase64(fileURL: fileURL))
+                : ""
         } catch {
             Log.shared.error("Failed to open library EPUB: \(error.localizedDescription)")
         }
     }
 
-    nonisolated private static func loadAndEncode(fileURL: URL) async throws -> (String, String) {
+    nonisolated private static func loadAndEscapeBase64(fileURL: URL) async throws -> String {
         try await Task.detached(priority: .userInitiated) {
             let data = try Data(contentsOf: fileURL)
             let encoded = data.base64EncodedString()
-            let escaped = encoded.replacingOccurrences(of: "'", with: "\\'")
-            return (encoded, escaped)
+            return encoded.replacingOccurrences(of: "'", with: "\\'")
         }.value
     }
 
