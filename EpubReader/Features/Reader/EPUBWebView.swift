@@ -14,14 +14,21 @@ import WebKit
 public struct EPUBWebView: UIViewRepresentable {
 
     public let bridge: EPUBBridge
+    public let onWebViewReady: (() -> Void)?
 
-    public init(bridge: EPUBBridge) {
+    public init(bridge: EPUBBridge, onWebViewReady: (() -> Void)? = nil) {
         self.bridge = bridge
+        self.onWebViewReady = onWebViewReady
+    }
+
+    public func makeCoordinator() -> Coordinator {
+        Coordinator(onWebViewReady: onWebViewReady)
     }
 
     public func makeUIView(context: Context) -> WKWebView {
         let configuration = bridge.setup()
         let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = context.coordinator
 
         webView.scrollView.isScrollEnabled = false
         webView.scrollView.bounces = false
@@ -43,6 +50,21 @@ public struct EPUBWebView: UIViewRepresentable {
     }
 
     public func updateUIView(_ uiView: WKWebView, context: Context) {
+    }
+
+    public final class Coordinator: NSObject, WKNavigationDelegate {
+        private let onWebViewReady: (() -> Void)?
+
+        init(onWebViewReady: (() -> Void)?) {
+            self.onWebViewReady = onWebViewReady
+        }
+
+        public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation?) {
+            guard webView.url?.lastPathComponent == "reader.html" else {
+                return
+            }
+            onWebViewReady?()
+        }
     }
 }
 
