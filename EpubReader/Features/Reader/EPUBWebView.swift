@@ -27,7 +27,11 @@ public struct EPUBWebView: UIViewRepresentable {
 
     public func makeUIView(context: Context) -> WKWebView {
         let configuration = bridge.setup()
-        let webView = WKWebView(frame: .zero, configuration: configuration)
+        let webView = ResizingWKWebView(frame: .zero, configuration: configuration)
+        webView.onBoundsChange = { [weak webView] size in
+            guard let webView else { return }
+            context.coordinator.resizeRenditionIfNeeded(on: webView, size: size)
+        }
         webView.navigationDelegate = context.coordinator
 
         webView.scrollView.isScrollEnabled = false
@@ -50,10 +54,12 @@ public struct EPUBWebView: UIViewRepresentable {
     }
 
     public func updateUIView(_ uiView: WKWebView, context: Context) {
+        context.coordinator.resizeRenditionIfNeeded(on: uiView, size: uiView.bounds.size)
     }
 
     public final class Coordinator: NSObject, WKNavigationDelegate {
         private let onWebViewReady: (() -> Void)?
+        private var lastSize: CGSize = .zero
 
         init(onWebViewReady: (() -> Void)?) {
             self.onWebViewReady = onWebViewReady
@@ -63,8 +69,30 @@ public struct EPUBWebView: UIViewRepresentable {
             guard webView.url?.lastPathComponent == "reader.html" else {
                 return
             }
+            resizeRenditionIfNeeded(on: webView, size: webView.bounds.size)
             onWebViewReady?()
         }
+
+        func resizeRenditionIfNeeded(on webView: WKWebView, size: CGSize) {
+            guard size.width > 0, size.height > 0 else {
+                return
+            }
+            guard size != lastSize else {
+                return
+            }
+            lastSize = size
+            let js = "window.resizeRendition(\(size.width),\(size.height));"
+            webView.evaluateJavaScript(js, completionHandler: nil)
+        }
+    }
+}
+
+private final class ResizingWKWebView: WKWebView {
+    var onBoundsChange: ((CGSize) -> Void)?
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        onBoundsChange?(bounds.size)
     }
 }
 
