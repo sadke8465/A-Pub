@@ -216,14 +216,16 @@ public struct LibraryView: View {
     }
 
     private func launchReader(for book: Book) {
-        guard let filePath = book.filePath else {
-            Log.shared.error("Unable to open reader: missing file path")
+        guard let filePath = book.filePath,
+              let fileURL = FileImporter.resolvedEPUBURL(for: filePath)
+        else {
+            Log.shared.error("Unable to open reader: missing or unresolvable file path")
             return
         }
 
         selectedDetailBook = nil
         readerLaunchRequest = ReaderLaunchRequest(
-            fileURL: URL(fileURLWithPath: filePath),
+            fileURL: fileURL,
             bookID: book.id,
             title: book.title ?? "Reader"
         )

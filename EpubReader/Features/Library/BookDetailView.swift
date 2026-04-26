@@ -222,12 +222,14 @@ public struct BookDetailView: View {
     }
 
     private var fileSizeText: String? {
-        guard let filePath = book.filePath else {
+        guard let filePath = book.filePath,
+              let fileURL = FileImporter.resolvedEPUBURL(for: filePath)
+        else {
             return nil
         }
 
         do {
-            let attributes = try FileManager.default.attributesOfItem(atPath: filePath)
+            let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
             if let fileSize = attributes[.size] as? NSNumber {
                 return ByteCountFormatter.string(fromByteCount: fileSize.int64Value, countStyle: .file)
             }

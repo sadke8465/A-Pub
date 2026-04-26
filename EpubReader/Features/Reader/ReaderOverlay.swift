@@ -103,7 +103,7 @@ struct ReaderOverlay: View {
 
     private var bottomBar: some View {
         HStack(spacing: 16) {
-            Image(systemName: "text.book")
+            Image(systemName: "book")
 
             Spacer(minLength: 0)
 
