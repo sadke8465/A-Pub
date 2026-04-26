@@ -309,8 +309,8 @@ public final class LibraryViewModel: NSObject, ObservableObject {
 
     private func performBackgroundWrite(
         logMessage: String,
-        completion: (@MainActor () -> Void)? = nil,
-        operation: @escaping (NSManagedObjectContext) throws -> Void
+        completion: (@MainActor @Sendable () -> Void)? = nil,
+        operation: @escaping @Sendable (NSManagedObjectContext) throws -> Void
     ) {
         let backgroundContext = persistenceController.backgroundContext()
         backgroundContext.perform {
@@ -332,9 +332,10 @@ public final class LibraryViewModel: NSObject, ObservableObject {
     }
 }
 
-@MainActor
-extension LibraryViewModel: NSFetchedResultsControllerDelegate {
-    public func controllerDidChangeContent(_ controller: NSFetchedResultsController<any NSFetchRequestResult>) {
-        books = fetchedResultsController.fetchedObjects ?? []
+extension LibraryViewModel: @preconcurrency NSFetchedResultsControllerDelegate {
+    nonisolated public func controllerDidChangeContent(_ controller: NSFetchedResultsController<any NSFetchRequestResult>) {
+        Task { @MainActor [weak self] in
+            self?.books = self?.fetchedResultsController.fetchedObjects ?? []
+        }
     }
 }
