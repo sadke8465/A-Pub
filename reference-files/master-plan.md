@@ -42,10 +42,10 @@ NEVER:
   Update this block after every completed task.
 ============================================================ -->
 
-LAST_COMPLETED  = 2c.5
-NEXT_TASK       = 3a.1
+LAST_COMPLETED  = 3a.1
+NEXT_TASK       = 3a.2
 GATES_PASSED    = []
-TASKS_DONE      = 38
+TASKS_DONE      = 39
 TASKS_TOTAL     = 93
 
 GATE_1_TESTFLIGHT_ALPHA  = requires 3b.6 done   (reading + full annotations)
@@ -464,7 +464,7 @@ PHASE_2c_MILESTONE: Tap screen → overlay. TOC slides in. Drag scrubber. Time e
 
 Goal: select text, highlight in 5 colors, persists across sessions.
 
-- [ ] 3a.1  Add Highlight entity and HighlightManager
+- [x] 3a.1  Add Highlight entity and HighlightManager
   TARGET   EpubReader.xcdatamodeld (update), Features/Annotations/HighlightManager.swift
   IMPL     Highlight entity already in model from 1.1. HighlightManager: @MainActor final class. func create(cfiRange: String, cfiStart: String, spineHref: String, color: HighlightColor, text: String, bookID: UUID) async. func fetchForChapter(spineHref: String, bookID: UUID) async -> [Highlight]. func delete(id: UUID) async. func updateColor(id: UUID, color: HighlightColor) async. All writes on backgroundContext. HighlightColor: enum yellow/green/blue/pink/orange with cssClass: String computed property matching reader.css classes.
   VERIFY   Create a highlight in Core Data, fetch by spineHref → returns it. Delete → no longer returned.

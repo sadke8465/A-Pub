@@ -4,9 +4,7 @@ import SwiftUI
 public struct BookListCell: View {
 
     private enum Constants {
-        static let thumbnailWidth: CGFloat = 50
-        static let thumbnailHeight: CGFloat = 70
-        static let cornerRadius: CGFloat = 6
+        static let thumbnailWidth: CGFloat = AppCover.listWidth
     }
 
     private let book: Book
@@ -17,9 +15,8 @@ public struct BookListCell: View {
 
     public var body: some View {
         HStack(spacing: 12) {
-            coverThumbnail
-                .frame(width: Constants.thumbnailWidth, height: Constants.thumbnailHeight)
-                .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous))
+            BookCoverView(book: book)
+                .frame(width: Constants.thumbnailWidth, height: Constants.thumbnailWidth / AppCover.aspectRatio)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(book.title ?? "Untitled")
@@ -31,9 +28,8 @@ public struct BookListCell: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
 
-                Text("\(Int(readingPercentage * 100))% read")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                BookProgressIndicator(percentage: readingPercentage)
+                    .frame(maxWidth: 180)
             }
 
             Spacer(minLength: 12)
@@ -43,32 +39,6 @@ public struct BookListCell: View {
                 .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 4)
-    }
-
-    private var coverThumbnail: some View {
-        Group {
-            if let coverPath = book.coverImagePath,
-               let image = UIImage(contentsOfFile: coverPath) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous)
-                    .fill(placeholderColor)
-                    .overlay {
-                        Image(systemName: "book.closed")
-                            .font(.headline)
-                            .foregroundStyle(.white.opacity(0.9))
-                    }
-            }
-        }
-    }
-
-    private var placeholderColor: Color {
-        let author = book.author ?? "Unknown"
-        let hash = abs(author.hashValue)
-        let hue = Double(hash % 360) / 360
-        return Color(hue: hue, saturation: 0.38, brightness: 0.76)
     }
 
     private var readingPercentage: Double {

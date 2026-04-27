@@ -45,7 +45,7 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     public var onRelocated: ((String, Double, String, Int64, String) -> Void)?
     public var onBookReady: (() -> Void)?
     public var onBookError: ((String) -> Void)?
-    public var onSelected: ((String, String) -> Void)?
+    var onSelected: ((ReaderTextSelection) -> Void)?
     public var onMarkClicked: ((String) -> Void)?
     public var onRequestHighlights: ((String) -> Void)?
     public var onFootnoteRequest: ((String, String) -> Void)?
@@ -171,10 +171,9 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         case "bookError":
             let message = body["message"] as? String ?? "Unknown book load error"
             onBookError?(message)
-        case "selected":
-            let cfiRange = body["cfiRange"] as? String ?? ""
-            let text = body["text"] as? String ?? ""
-            onSelected?(cfiRange, text)
+        case "selected", "textSelected":
+            let selection = Self.textSelection(from: body)
+            onSelected?(selection)
         case "markClicked":
             let id = body["id"] as? String ?? ""
             onMarkClicked?(id)
@@ -250,6 +249,28 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
 }
 
 private extension EPUBBridge {
+    static func textSelection(from body: [String: Any]) -> ReaderTextSelection {
+        let cfiRange = body["cfiRange"] as? String ?? ""
+        let text = body["text"] as? String ?? ""
+        let rect = CGRect(
+            x: numericValue(body["x"]),
+            y: numericValue(body["y"]),
+            width: numericValue(body["width"]),
+            height: numericValue(body["height"])
+        )
+        return ReaderTextSelection(cfiRange: cfiRange, text: text, rect: rect)
+    }
+
+    static func numericValue(_ value: Any?) -> CGFloat {
+        if let double = value as? Double {
+            return CGFloat(double)
+        }
+        if let number = value as? NSNumber {
+            return CGFloat(truncating: number)
+        }
+        return 0
+    }
+
     static func truncatedCommandPrefix(for js: String, limit: Int = 120) -> String {
         let singleLine = js.replacingOccurrences(of: "\n", with: " ")
         guard singleLine.count > limit else {

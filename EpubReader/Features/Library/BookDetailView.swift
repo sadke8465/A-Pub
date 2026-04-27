@@ -159,24 +159,8 @@ public struct BookDetailView: View {
     }
 
     private var coverImage: some View {
-        Group {
-            if let coverPath = book.coverImagePath,
-               let image = UIImage(contentsOfFile: coverPath) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.gray.opacity(0.2))
-                    .overlay(
-                        Image(systemName: "book")
-                            .font(.system(size: 28))
-                            .foregroundStyle(.secondary)
-                    )
-            }
-        }
+        BookCoverView(book: book)
         .frame(width: 120, height: 180)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private var startReadingButton: some View {

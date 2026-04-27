@@ -14,9 +14,9 @@
             height: 100%;
             overflow: hidden;
             background: #FFFFF8;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
+            -webkit-touch-callout: default;
+            -webkit-user-select: text;
+            user-select: text;
         }
         #viewer {
             position: absolute;
@@ -222,6 +222,9 @@
                             '  background: ' + t.bg + ' !important;',
                             '  color: ' + t.fg + ' !important;',
                             '  -webkit-text-fill-color: ' + t.fg + ' !important;',
+                            '  -webkit-touch-callout: default !important;',
+                            '  -webkit-user-select: text !important;',
+                            '  user-select: text !important;',
                             '}',
                             'p, div, span, li, blockquote, dd, dt {',
                             '  color: ' + t.fg + ' !important;',
@@ -414,6 +417,24 @@
                 window.bridge.send('wordCountSample', { counts: counts });
             }
 
+            function spineHrefForContents(contents) {
+                if (contents && contents.section && contents.section.href) {
+                    return contents.section.href;
+                }
+                if (contents && contents.cfiBase) {
+                    return contents.cfiBase;
+                }
+                return '';
+            }
+
+            function requestHighlightsForContents(contents) {
+                var spineHref = spineHrefForContents(contents);
+                if (!spineHref) {
+                    return;
+                }
+                window.bridge.send('requestHighlights', { spineHref: spineHref });
+            }
+
             window.requestChapterWordCount = function (index) {
                 (async function () {
                     var count = await loadSectionWordCount(index);
@@ -422,6 +443,67 @@
                         count: count
                     });
                 })();
+            };
+
+            window.addHighlight = function (cfiRange, colorClass, id) {
+                safeRun('addHighlight', function () {
+                    if (typeof cfiRange !== 'string' || cfiRange.length === 0) {
+                        return;
+                    }
+                    var appliedColorClass = (typeof colorClass === 'string' && colorClass.length > 0)
+                        ? colorClass
+                        : 'hl-yellow';
+                    var highlightID = (typeof id === 'string' && id.length > 0) ? id : cfiRange;
+                    try {
+                        window.rendition.annotations.remove(cfiRange, 'highlight');
+                    } catch (_) {
+                    }
+                    window.rendition.annotations.highlight(
+                        cfiRange,
+                        { id: highlightID, cfiRange: cfiRange },
+                        function (event) {
+                            var target = event && event.target ? event.target : null;
+                            var id = target && target.dataset && target.dataset.id
+                                ? target.dataset.id
+                                : highlightID;
+                            window.bridge.send('markClicked', { id: id, cfiRange: cfiRange });
+                        },
+                        appliedColorClass,
+                        {}
+                    );
+                });
+            };
+
+            window.removeHighlight = function (cfiRange) {
+                safeRun('removeHighlight', function () {
+                    if (typeof cfiRange !== 'string' || cfiRange.length === 0) {
+                        return;
+                    }
+                    window.rendition.annotations.remove(cfiRange, 'highlight');
+                });
+            };
+
+            window.applyHighlights = function (json) {
+                safeRun('applyHighlights', function () {
+                    var highlights = [];
+                    try {
+                        highlights = (typeof json === 'string') ? JSON.parse(json) : json;
+                    } catch (error) {
+                        logWarn('applyHighlights JSON parse failed', { message: String(error) });
+                        return;
+                    }
+
+                    if (!Array.isArray(highlights)) {
+                        return;
+                    }
+
+                    highlights.forEach(function (highlight) {
+                        if (!highlight || !highlight.cfiRange) {
+                            return;
+                        }
+                        window.addHighlight(highlight.cfiRange, highlight.colorClass, highlight.id);
+                    });
+                });
             };
 
             window.loadBook = function (bookURL, fallbackBase64) {
@@ -439,10 +521,10 @@
                         var loadedBook = null;
                         if (typeof fallbackBase64 === 'string' && fallbackBase64.length > 0) {
                             logInfo('loading book via base64 fallback');
-                            loadedBook = ePub(fallbackBase64, { encoding: 'base64' });
+                            loadedBook = ePub(fallbackBase64, { encoding: 'base64', replacements: 'base64' });
                         } else if (typeof bookURL === 'string' && bookURL.length > 0) {
                             logInfo('loading book via URL', { bookURL: bookURL });
-                            loadedBook = ePub(bookURL);
+                            loadedBook = ePub(bookURL, { replacements: 'base64' });
                         } else {
                             throw new Error('No valid EPUB input provided');
                         }
@@ -500,24 +582,48 @@
 
                         window.rendition.on('selected', function (cfiRange, contents) {
                             var text = '';
+                            var rect = { x: 0, y: 0, width: 0, height: 0 };
                             try {
-                                text = contents.window.getSelection().toString();
+                                var selection = contents.window.getSelection();
+                                text = selection.toString().trim();
+                                if (text.length < 2 || selection.rangeCount === 0) {
+                                    return;
+                                }
+
+                                var rangeRect = selection.getRangeAt(0).getBoundingClientRect();
+                                var frameRect = { x: 0, y: 0 };
+                                if (contents.document && contents.document.defaultView && contents.document.defaultView.frameElement) {
+                                    frameRect = contents.document.defaultView.frameElement.getBoundingClientRect();
+                                }
+
+                                rect = {
+                                    x: frameRect.x + rangeRect.x,
+                                    y: frameRect.y + rangeRect.y,
+                                    width: rangeRect.width,
+                                    height: rangeRect.height
+                                };
                             } catch (_) {
-                                text = '';
+                                return;
                             }
-                            window.bridge.send('selected', {
+
+                            window.bridge.send('textSelected', {
                                 cfiRange: cfiRange,
-                                text: text
+                                text: text,
+                                x: rect.x,
+                                y: rect.y,
+                                width: rect.width,
+                                height: rect.height
                             });
                         });
 
                         window.rendition.on('markClicked', function (cfiRange, data) {
                             var id = (data && data.id) ? data.id : cfiRange;
-                            window.bridge.send('markClicked', { id: id });
+                            window.bridge.send('markClicked', { id: id, cfiRange: cfiRange });
                         });
 
                         window.rendition.hooks.content.register(function (contents) {
                             installFootnoteInterceptors(contents);
+                            requestHighlightsForContents(contents);
                         });
 
                         await withTimeout(window.rendition.display(), 15000, 'rendition.display');
@@ -554,6 +660,27 @@
                 if (window.rendition && cfi) {
                     window.rendition.display(cfi);
                 }
+            };
+
+            window.displayAdjacent = function (cfi, delta) {
+                safeRun('displayAdjacent', function () {
+                    var displayPromise = (typeof cfi === 'string' && cfi.length > 0)
+                        ? window.rendition.display(cfi)
+                        : Promise.resolve();
+
+                    Promise.resolve(displayPromise).then(function () {
+                        if (delta > 0) {
+                            return window.rendition.next();
+                        }
+                        if (delta < 0) {
+                            return window.rendition.prev();
+                        }
+                        return null;
+                    }).catch(function (error) {
+                        var message = (error && error.message) ? error.message : String(error);
+                        logWarn('displayAdjacent failed', { message: message, delta: delta });
+                    });
+                });
             };
 
             window.resizeRendition = function (w, h) {

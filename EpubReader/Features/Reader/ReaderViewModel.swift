@@ -9,7 +9,7 @@ public final class ReaderViewModel: ObservableObject {
     @Published public var isLoading = false
     @Published public var currentCFI: String = ""
     @Published public var percentage: Double = 0
-    @Published public var isOverlayVisible = true
+    @Published public var isOverlayVisible = false
 
     @Published public var bookFileURL: URL?
     @Published public var legacyEscapedBase64Book: String = ""
@@ -23,12 +23,13 @@ public final class ReaderViewModel: ObservableObject {
     let appearance: ReaderAppearance
 
     private let importer: FileImporter
+    private let highlightManager: HighlightManager
     private let initialBookFileURL: URL?
     private let initialBookID: UUID?
     private var didAttemptInitialLoad = false
     private var pendingRestoreCFI: String?
     private var needsLocationsSnapshotAfterReflow = false
-    private let allowLegacyBase64Fallback = false
+    private let allowLegacyBase64Fallback = true
     private var jsGuardBlockedCount = 0
     private var wordCountsBySpineIndex: [Int: Int] = [:]
     private var averageWordsPerChapter: Int = 0
@@ -36,11 +37,13 @@ public final class ReaderViewModel: ObservableObject {
 
     init(
         importer: FileImporter = FileImporter(),
+        highlightManager: HighlightManager = HighlightManager(),
         initialBookFileURL: URL? = nil,
         initialBookID: UUID? = nil,
         appearance: ReaderAppearance = ReaderAppearance()
     ) {
         self.importer = importer
+        self.highlightManager = highlightManager
         self.initialBookFileURL = initialBookFileURL
         self.initialBookID = initialBookID
         self.appearance = appearance
@@ -54,9 +57,9 @@ public final class ReaderViewModel: ObservableObject {
 
             do {
                 let result = try await importer.importSingleEPUBForReader()
-                book = result.0
-                bookFileURL = result.1
                 legacyEscapedBase64Book = result.2 ?? ""
+                bookFileURL = result.1
+                book = result.0
             } catch is CancellationError {
                 Log.shared.info("User cancelled EPUB import")
             } catch {
@@ -188,6 +191,86 @@ public final class ReaderViewModel: ObservableObject {
         }
     }
 
+    func createHighlight(
+        from selection: ReaderTextSelection,
+        color: HighlightColor,
+        spineHref: String
+    ) async -> HighlightSnapshot? {
+        guard let bookID = activeBookID else {
+            Log.shared.error("Unable to create highlight: no active library book id")
+            return nil
+        }
+
+        let cfiRange = selection.cfiRange.trimmingCharacters(in: .whitespacesAndNewlines)
+        let selectedText = selection.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cfiRange.isEmpty, selectedText.count >= 2 else {
+            Log.shared.error("Unable to create highlight: invalid selection")
+            return nil
+        }
+
+        let resolvedSpineHref = spineHref.isEmpty ? pageController.currentSpineHref : spineHref
+        guard !resolvedSpineHref.isEmpty else {
+            Log.shared.error("Unable to create highlight: missing spine href")
+            return nil
+        }
+
+        let cfiStart = currentCFI.isEmpty ? cfiRange : currentCFI
+        return await highlightManager.create(
+            cfiRange: cfiRange,
+            cfiStart: cfiStart,
+            spineHref: resolvedSpineHref,
+            color: color,
+            text: selectedText,
+            bookID: bookID
+        )
+    }
+
+    func highlightsJSON(for spineHref: String) async -> String? {
+        guard let bookID = activeBookID else {
+            Log.shared.error("Unable to restore highlights: no active library book id")
+            return nil
+        }
+
+        let normalizedSpineHref = normalizeSpineHref(spineHref)
+        guard !normalizedSpineHref.isEmpty else {
+            return nil
+        }
+
+        let snapshots = await highlightManager.snapshotsForChapter(
+            spineHref: normalizedSpineHref,
+            bookID: bookID
+        )
+        let payloads = snapshots.map(\.renderPayload)
+
+        do {
+            let data = try JSONEncoder().encode(payloads)
+            return String(decoding: data, as: UTF8.self)
+        } catch {
+            Log.shared.error("Unable to encode highlight payloads: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    func highlightSnapshot(idString: String) async -> HighlightSnapshot? {
+        guard let id = UUID(uuidString: idString) else {
+            Log.shared.error("Unable to fetch highlight: invalid id \(idString)")
+            return nil
+        }
+        return await highlightManager.snapshot(id: id)
+    }
+
+    func deleteHighlight(_ highlight: HighlightSnapshot) async -> Bool {
+        await highlightManager.delete(id: highlight.id)
+        return await highlightManager.snapshot(id: highlight.id) == nil
+    }
+
+    func updateHighlightColor(
+        _ highlight: HighlightSnapshot,
+        color: HighlightColor
+    ) async -> HighlightSnapshot? {
+        await highlightManager.updateColor(id: highlight.id, color: color)
+    }
+
     public func toggleOverlay() {
         isOverlayVisible.toggle()
     }
@@ -206,12 +289,13 @@ public final class ReaderViewModel: ObservableObject {
             let parser = EPUBParser()
             let extractedRoot = try await extractor.extract(fileURL)
             let parsedBook = try await parser.parse(extractedRoot: extractedRoot)
-
-            book = parsedBook
-            bookFileURL = fileURL
-            legacyEscapedBase64Book = allowLegacyBase64Fallback
+            let escapedBase64Book = allowLegacyBase64Fallback
                 ? (try await Self.loadAndEscapeBase64(fileURL: fileURL))
                 : ""
+
+            legacyEscapedBase64Book = escapedBase64Book
+            bookFileURL = fileURL
+            book = parsedBook
         } catch {
             Log.shared.error("Failed to open library EPUB: \(error.localizedDescription)")
         }
@@ -392,6 +476,17 @@ public final class ReaderViewModel: ObservableObject {
             return "reader.wpm.book.\(identifier)"
         }
         return "reader.wpm.book.unknown"
+    }
+
+    private var activeBookID: UUID? {
+        initialBookID ?? pageController.currentBookID
+    }
+
+    private func normalizeSpineHref(_ spineHref: String) -> String {
+        if !spineHref.isEmpty {
+            return spineHref
+        }
+        return pageController.currentSpineHref
     }
 }
 

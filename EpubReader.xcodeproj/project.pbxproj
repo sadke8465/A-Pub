@@ -48,7 +48,25 @@
 		0A0000000000000000000C27 /* iAWriterQuattroS-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B27 /* iAWriterQuattroS-Italic.ttf */; };
 		0A0000000000000000000C28 /* AppearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B28 /* AppearanceSettings.swift */; };
 		0A0000000000000000000C29 /* Book.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B29 /* Book.swift */; };
-		0A0000000000000000000C2A /* ReaderOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B2A /* ReaderOverlay.swift */; };
+		0A0000000000000000000C2B /* AppDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B2B /* AppDesign.swift */; };
+		0A0000000000000000000C2C /* ReaderChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B2C /* ReaderChrome.swift */; };
+		0A0000000000000000000C2D /* ReaderScrubber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B2D /* ReaderScrubber.swift */; };
+		0A0000000000000000000C2E /* GoToLocationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B2E /* GoToLocationSheet.swift */; };
+		0A0000000000000000000C2F /* FootnoteSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B2F /* FootnoteSheet.swift */; };
+		0A0000000000000000000C30 /* ReaderTOCPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B30 /* ReaderTOCPanel.swift */; };
+		0A0000000000000000000C31 /* BookCoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B31 /* BookCoverView.swift */; };
+		0A0000000000000000000C32 /* BookProgressIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B32 /* BookProgressIndicator.swift */; };
+		0A0000000000000000000C33 /* LibraryEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B33 /* LibraryEmptyState.swift */; };
+		0A0000000000000000000C34 /* LibraryToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B34 /* LibraryToolbar.swift */; };
+		0A0000000000000000000C35 /* LibraryContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B35 /* LibraryContentView.swift */; };
+		0A0000000000000000000C36 /* HighlightColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B36 /* HighlightColor.swift */; };
+		0A0000000000000000000C37 /* HighlightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B37 /* HighlightManager.swift */; };
+		0A0000000000000000000C38 /* ReaderTextSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B38 /* ReaderTextSelection.swift */; };
+		0A0000000000000000000C39 /* ReaderSelectionMenuAnchorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B39 /* ReaderSelectionMenuAnchorView.swift */; };
+		0A0000000000000000000C3A /* ReaderSelectionMenuCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B3A /* ReaderSelectionMenuCoordinator.swift */; };
+		0A0000000000000000000C3B /* ReaderSelectionMenuPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B3B /* ReaderSelectionMenuPresenter.swift */; };
+		0A0000000000000000000C3C /* HighlightSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B3C /* HighlightSnapshot.swift */; };
+		0A0000000000000000000C3D /* HighlightRenderPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000000000000000000B3D /* HighlightRenderPayload.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,7 +111,25 @@
 		0A0000000000000000000B27 /* iAWriterQuattroS-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iAWriterQuattroS-Italic.ttf"; sourceTree = "<group>"; };
 		0A0000000000000000000B28 /* AppearanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettings.swift; sourceTree = "<group>"; };
 		0A0000000000000000000B29 /* Book.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Book.swift; sourceTree = "<group>"; };
-		0A0000000000000000000B2A /* ReaderOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderOverlay.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B2B /* AppDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDesign.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B2C /* ReaderChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderChrome.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B2D /* ReaderScrubber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderScrubber.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B2E /* GoToLocationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoToLocationSheet.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B2F /* FootnoteSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FootnoteSheet.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B30 /* ReaderTOCPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderTOCPanel.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B31 /* BookCoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookCoverView.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B32 /* BookProgressIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookProgressIndicator.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B33 /* LibraryEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryEmptyState.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B34 /* LibraryToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryToolbar.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B35 /* LibraryContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryContentView.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B36 /* HighlightColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightColor.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B37 /* HighlightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightManager.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B38 /* ReaderTextSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderTextSelection.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B39 /* ReaderSelectionMenuAnchorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSelectionMenuAnchorView.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B3A /* ReaderSelectionMenuCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSelectionMenuCoordinator.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B3B /* ReaderSelectionMenuPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSelectionMenuPresenter.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B3C /* HighlightSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightSnapshot.swift; sourceTree = "<group>"; };
+		0A0000000000000000000B3D /* HighlightRenderPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightRenderPayload.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -183,6 +219,7 @@
 				0A0000000000000000000B11 /* FileImporter.swift */,
 				0A0000000000000000000B16 /* MetadataExtractor.swift */,
 				0A0000000000000000000B17 /* CoverImageExtractor.swift */,
+				0A0000000000000000000B2B /* AppDesign.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -213,6 +250,7 @@
 		0A00000000000000000000AB /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				0A00000000000000000000B3 /* Annotations */,
 				0A00000000000000000000AE /* Library */,
 				0A00000000000000000000AC /* Reader */,
 				0A00000000000000000000B1 /* Settings */,
@@ -230,7 +268,15 @@
 				0A0000000000000000000B20 /* ReaderSettings.swift */,
 				0A0000000000000000000B12 /* ReaderView.swift */,
 				0A0000000000000000000B13 /* ReaderViewModel.swift */,
-				0A0000000000000000000B2A /* ReaderOverlay.swift */,
+				0A0000000000000000000B2C /* ReaderChrome.swift */,
+				0A0000000000000000000B2D /* ReaderScrubber.swift */,
+				0A0000000000000000000B2E /* GoToLocationSheet.swift */,
+				0A0000000000000000000B2F /* FootnoteSheet.swift */,
+				0A0000000000000000000B30 /* ReaderTOCPanel.swift */,
+				0A0000000000000000000B38 /* ReaderTextSelection.swift */,
+				0A0000000000000000000B39 /* ReaderSelectionMenuAnchorView.swift */,
+				0A0000000000000000000B3A /* ReaderSelectionMenuCoordinator.swift */,
+				0A0000000000000000000B3B /* ReaderSelectionMenuPresenter.swift */,
 			);
 			path = Reader;
 			sourceTree = "<group>";
@@ -252,6 +298,11 @@
 				0A0000000000000000000B1B /* BookListCell.swift */,
 				0A0000000000000000000B1C /* BookDetailView.swift */,
 				0A0000000000000000000B1D /* ShelfView.swift */,
+				0A0000000000000000000B31 /* BookCoverView.swift */,
+				0A0000000000000000000B32 /* BookProgressIndicator.swift */,
+				0A0000000000000000000B33 /* LibraryEmptyState.swift */,
+				0A0000000000000000000B34 /* LibraryToolbar.swift */,
+				0A0000000000000000000B35 /* LibraryContentView.swift */,
 			);
 			path = Library;
 			sourceTree = "<group>";
@@ -283,6 +334,17 @@
 				0A0000000000000000000B29 /* Book.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		0A00000000000000000000B3 /* Annotations */ = {
+			isa = PBXGroup;
+			children = (
+				0A0000000000000000000B36 /* HighlightColor.swift */,
+				0A0000000000000000000B37 /* HighlightManager.swift */,
+				0A0000000000000000000B3C /* HighlightSnapshot.swift */,
+				0A0000000000000000000B3D /* HighlightRenderPayload.swift */,
+			);
+			path = Annotations;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -317,7 +379,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					0A0000000000000000000E01 = {
 						CreatedOnToolsVersion = 16.0;
@@ -399,7 +461,25 @@
 				0A0000000000000000000C21 /* ReaderSettings.swift in Sources */,
 				0A0000000000000000000C28 /* AppearanceSettings.swift in Sources */,
 				0A0000000000000000000C29 /* Book.swift in Sources */,
-				0A0000000000000000000C2A /* ReaderOverlay.swift in Sources */,
+				0A0000000000000000000C2B /* AppDesign.swift in Sources */,
+				0A0000000000000000000C2C /* ReaderChrome.swift in Sources */,
+				0A0000000000000000000C2D /* ReaderScrubber.swift in Sources */,
+				0A0000000000000000000C2E /* GoToLocationSheet.swift in Sources */,
+				0A0000000000000000000C2F /* FootnoteSheet.swift in Sources */,
+				0A0000000000000000000C30 /* ReaderTOCPanel.swift in Sources */,
+				0A0000000000000000000C31 /* BookCoverView.swift in Sources */,
+				0A0000000000000000000C32 /* BookProgressIndicator.swift in Sources */,
+				0A0000000000000000000C33 /* LibraryEmptyState.swift in Sources */,
+				0A0000000000000000000C34 /* LibraryToolbar.swift in Sources */,
+				0A0000000000000000000C35 /* LibraryContentView.swift in Sources */,
+				0A0000000000000000000C36 /* HighlightColor.swift in Sources */,
+				0A0000000000000000000C37 /* HighlightManager.swift in Sources */,
+				0A0000000000000000000C38 /* ReaderTextSelection.swift in Sources */,
+				0A0000000000000000000C39 /* ReaderSelectionMenuAnchorView.swift in Sources */,
+				0A0000000000000000000C3A /* ReaderSelectionMenuCoordinator.swift in Sources */,
+				0A0000000000000000000C3B /* ReaderSelectionMenuPresenter.swift in Sources */,
+				0A0000000000000000000C3C /* HighlightSnapshot.swift in Sources */,
+				0A0000000000000000000C3D /* HighlightRenderPayload.swift in Sources */,
 				0A0000000000000000000C15 /* EpubReader.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -442,6 +522,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = B3X5JXT7NJ;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -465,6 +546,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -505,6 +587,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = B3X5JXT7NJ;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -521,6 +604,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -534,7 +618,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"EpubReader/Preview Content\"";
-				DEVELOPMENT_TEAM = B3X5JXT7NJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = EpubReader/Info.plist;
@@ -564,7 +647,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"EpubReader/Preview Content\"";
-				DEVELOPMENT_TEAM = B3X5JXT7NJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = EpubReader/Info.plist;

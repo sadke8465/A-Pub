@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 public struct ReaderView: View {
 
@@ -8,9 +9,10 @@ public struct ReaderView: View {
     @State private var showingTOCPanel = false
     @State private var showingGoToLocationSheet = false
     @State private var scrubberDragPercentage: Double?
-    @State private var goToPercentage: Double = 0
-    @State private var goToPercentageText: String = "0"
     @State private var footnotePayload: FootnotePayload?
+    @State private var textSelection: ReaderTextSelection?
+    @State private var activeHighlight: HighlightSnapshot?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dismiss) private var dismiss
 
     init(viewModel: ReaderViewModel = ReaderViewModel()) {
@@ -25,19 +27,24 @@ public struct ReaderView: View {
                     vc.onFootnoteRequest = { href, text in
                         footnotePayload = FootnotePayload(href: href, text: text)
                     }
+                    vc.onRequestHighlights = { spineHref, slotIndex in
+                        Task {
+                            guard let json = await viewModel.highlightsJSON(for: spineHref) else {
+                                return
+                            }
+                            vc.applyHighlights(json, to: slotIndex)
+                        }
+                    }
+                    vc.onMarkClicked = { id in
+                        Task {
+                            activeHighlight = await viewModel.highlightSnapshot(idString: id)
+                        }
+                    }
+                    vc.onSelected = { selection in
+                        textSelection = selection
+                    }
                 }
                 .ignoresSafeArea()
-                // Swipe left → next page; swipe right → prev page.
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 30)
-                        .onEnded { value in
-                            if value.translation.width < -50 {
-                                pageCurlVC?.callJS("nextPage()")
-                            } else if value.translation.width > 50 {
-                                pageCurlVC?.callJS("prevPage()")
-                            }
-                        }
-                )
                 // Zone-based tap: left 25% → prev, right 25% → next, centre → overlay.
                 .onTapGesture(coordinateSpace: .local) { location in
                     let width = geometry.size.width
@@ -46,7 +53,9 @@ public struct ReaderView: View {
                     } else if location.x > width * 0.75 {
                         pageCurlVC?.callJS("nextPage()")
                     } else {
-                        viewModel.isOverlayVisible.toggle()
+                        withAnimation(reduceMotion ? .easeInOut(duration: 0.12) : AppMotion.readerChrome) {
+                            viewModel.isOverlayVisible.toggle()
+                        }
                     }
                 }
                 .onChange(of: viewModel.book?.identifier) { _, _ in
@@ -60,21 +69,18 @@ public struct ReaderView: View {
                     }
                 }
 
-                ReaderOverlay(
+                ReaderChrome(
                     isVisible: $viewModel.isOverlayVisible,
                     chapterTitle: currentChapterTitle,
                     progressPercentage: viewModel.percentage,
                     minutesLeft: viewModel.minutesRemainingInChapter,
                     onBack: { dismiss() },
-                    onSearch: {},
+                    onOpenBook: { viewModel.loadFromFile() },
                     onTableOfContents: { showingTOCPanel = true },
                     onGoToLocation: {
-                        goToPercentage = (viewModel.percentage * 100).clamped(to: 0...100)
-                        goToPercentageText = String(Int(goToPercentage.rounded()))
                         showingGoToLocationSheet = true
                     },
-                    onSettings: { showingAppearanceSettings = true },
-                    onTextToSpeech: {}
+                    onSettings: { showingAppearanceSettings = true }
                 )
 
                 if viewModel.isLoading {
@@ -97,7 +103,25 @@ public struct ReaderView: View {
                     }
                 }
 
-                scrubberView
+                ReaderScrubber(
+                    isChromeVisible: viewModel.isOverlayVisible,
+                    progressPercentage: viewModel.percentage,
+                    dragPercentage: $scrubberDragPercentage,
+                    chapterTitleForPercentage: chapterTitle(for:),
+                    onScrubEnded: { percentage in
+                        pageCurlVC?.callJS("displayCFI(\(percentage))")
+                    }
+                )
+
+                ReaderSelectionMenuPresenter(
+                    selection: textSelection,
+                    onHighlightColor: selectHighlightColor(_:for:),
+                    onCopy: copySelectedText(_:),
+                    onLookUp: lookUpSelectedText(_:),
+                    onTranslate: translateSelectedText(_:)
+                )
+                .ignoresSafeArea()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .onAppear {
@@ -132,79 +156,42 @@ public struct ReaderView: View {
             .presentationDetents([.medium, .large])
         }
         .sheet(isPresented: $showingGoToLocationSheet) {
-            NavigationStack {
-                Form {
-                    Section("Location") {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Slider(
-                                value: Binding(
-                                    get: { goToPercentage },
-                                    set: { newValue in
-                                        goToPercentage = newValue
-                                        goToPercentageText = String(Int(newValue.rounded()))
-                                    }
-                                ),
-                                in: 0...100,
-                                step: 1
-                            )
-                            Text("\(Int(goToPercentage.rounded()))%")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        TextField("Percent", text: $goToPercentageText)
-                            .keyboardType(.numberPad)
-                            .onChange(of: goToPercentageText) { _, text in
-                                let filtered = text.filter(\.isNumber)
-                                if filtered != text {
-                                    goToPercentageText = filtered
-                                }
-                                if let value = Double(filtered) {
-                                    goToPercentage = value.clamped(to: 0...100)
-                                }
-                            }
-
-                        Button("Go") {
-                            let clamped = goToPercentage.clamped(to: 0...100)
-                            pageCurlVC?.callJS("displayCFI(\(clamped / 100.0))")
-                            showingGoToLocationSheet = false
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                }
-                .navigationTitle("Go to Location")
-                .navigationBarTitleDisplayMode(.inline)
+            GoToLocationSheet(currentPercentage: viewModel.percentage) { percentage in
+                pageCurlVC?.callJS("displayCFI(\(percentage))")
             }
-            .presentationDetents([.fraction(0.3), .medium])
         }
         .sheet(item: $footnotePayload) { footnote in
-            NavigationStack {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        if !footnote.href.isEmpty {
-                            Text(footnote.href)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Text(footnote.text.isEmpty ? "No footnote content available." : footnote.text)
-                            .font(.body)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding()
-                }
-                .navigationTitle("Footnote")
-                .navigationBarTitleDisplayMode(.inline)
-            }
-            .presentationDetents([.fraction(0.25), .medium])
+            FootnoteSheet(footnote: footnote)
         }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    viewModel.loadFromFile()
-                } label: {
-                    Image(systemName: "folder")
+        .confirmationDialog(
+            "Highlight",
+            isPresented: Binding(
+                get: { activeHighlight != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        activeHighlight = nil
+                    }
                 }
-                .accessibilityLabel("Open EPUB")
+            ),
+            titleVisibility: .visible,
+            presenting: activeHighlight
+        ) { highlight in
+            Button("Edit Note") {
+                Log.shared.info("Note editor is not available until task 3b.1")
+            }
+            Button("Copy Text") {
+                copyHighlightedText(highlight)
+            }
+            ForEach(HighlightColor.allCases) { color in
+                Button("Change to \(color.rawValue.capitalized)") {
+                    changeHighlightColor(highlight, to: color)
+                }
+            }
+            Button("Delete", role: .destructive) {
+                deleteHighlight(highlight)
+            }
+            Button("Cancel", role: .cancel) {
+                activeHighlight = nil
             }
         }
     }
@@ -227,83 +214,6 @@ public struct ReaderView: View {
         return book.spineItems[viewModel.currentSpineIndex].label
     }
 
-    private var activeScrubberPercentage: Double {
-        scrubberDragPercentage ?? viewModel.percentage
-    }
-
-    private var scrubberView: some View {
-        GeometryReader { geometry in
-            let horizontalPadding: CGFloat = 20
-            let trackWidth = max(geometry.size.width - (horizontalPadding * 2), 1)
-            let activePercentage = activeScrubberPercentage.clamped(to: 0...1)
-            let thumbX = horizontalPadding + (trackWidth * activePercentage)
-
-            VStack(spacing: 8) {
-                if let dragPercentage = scrubberDragPercentage {
-                    Text(chapterTitle(for: dragPercentage))
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Capsule())
-                        .position(x: thumbX, y: 14)
-                } else {
-                    Spacer()
-                        .frame(height: 28)
-                }
-
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color.white.opacity(0.2))
-                        .frame(height: 4)
-
-                    Capsule()
-                        .fill(Color.accentColor)
-                        .frame(width: max(4, trackWidth * activePercentage), height: 4)
-                }
-                .frame(width: trackWidth, height: 24)
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            let percentage = percentageFrom(
-                                globalX: value.location.x,
-                                frame: geometry.frame(in: .global),
-                                horizontalPadding: horizontalPadding,
-                                trackWidth: trackWidth
-                            )
-                            scrubberDragPercentage = percentage
-                        }
-                        .onEnded { value in
-                            let percentage = percentageFrom(
-                                globalX: value.location.x,
-                                frame: geometry.frame(in: .global),
-                                horizontalPadding: horizontalPadding,
-                                trackWidth: trackWidth
-                            )
-                            scrubberDragPercentage = nil
-                            pageCurlVC?.callJS("displayCFI(\(percentage))")
-                        }
-                )
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            .padding(.bottom, 6)
-            .allowsHitTesting(true)
-        }
-        .ignoresSafeArea(edges: .bottom)
-    }
-
-    private func percentageFrom(
-        globalX: CGFloat,
-        frame: CGRect,
-        horizontalPadding: CGFloat,
-        trackWidth: CGFloat
-    ) -> Double {
-        let originX = frame.minX + horizontalPadding
-        let localX = (globalX - originX).clamped(to: 0...trackWidth)
-        return Double(localX / trackWidth)
-    }
-
     private func chapterTitle(for percentage: Double) -> String {
         guard let book = viewModel.book, !book.spineItems.isEmpty else {
             return "No Chapter"
@@ -313,91 +223,102 @@ public struct ReaderView: View {
         let index = min(max(rawIndex, 0), book.spineItems.count - 1)
         return book.spineItems[index].label
     }
-}
 
-private struct ReaderTOCPanel: View {
-
-    let chapters: [EPUBChapter]
-    let currentSpineHref: String
-    let onSelectChapter: (EPUBChapter) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            List {
-                ForEach(chapters) { chapter in
-                    chapterRow(chapter)
-                }
+    private func selectHighlightColor(_ color: HighlightColor, for selection: ReaderTextSelection) {
+        Task {
+            guard let highlight = await viewModel.createHighlight(
+                from: selection,
+                color: color,
+                spineHref: currentChapterHref
+            ) else {
+                return
             }
-            .navigationTitle("Contents")
-            .navigationBarTitleDisplayMode(.inline)
+
+            let escapedCFIRange = javaScriptStringLiteral(highlight.cfiRange)
+            let escapedColorClass = javaScriptStringLiteral(color.cssClass)
+            let escapedID = javaScriptStringLiteral(highlight.id.uuidString)
+            pageCurlVC?.callJS("addHighlight('\(escapedCFIRange)', '\(escapedColorClass)', '\(escapedID)')")
+            textSelection = nil
         }
     }
 
-    private func chapterRow(_ chapter: EPUBChapter) -> AnyView {
-        if chapter.subChapters.isEmpty {
-            return AnyView(Button {
-                onSelectChapter(chapter)
-                dismiss()
-            } label: {
-                chapterLabel(for: chapter)
+    private func copyHighlightedText(_ highlight: HighlightSnapshot) {
+        UIPasteboard.general.string = highlight.selectedText
+        activeHighlight = nil
+    }
+
+    private func deleteHighlight(_ highlight: HighlightSnapshot) {
+        Task {
+            let deleted = await viewModel.deleteHighlight(highlight)
+            guard deleted else {
+                return
             }
-            .buttonStyle(.plain)
-            .listRowBackground(isCurrentChapter(chapter) ? Color.accentColor.opacity(0.2) : Color.clear))
-        } else {
-            return AnyView(DisclosureGroup {
-                ForEach(chapter.subChapters) { subChapter in
-                    chapterRow(subChapter)
-                }
-            } label: {
-                chapterLabel(for: chapter)
+            let escapedCFIRange = javaScriptStringLiteral(highlight.cfiRange)
+            pageCurlVC?.callJS("removeHighlight('\(escapedCFIRange)')")
+            activeHighlight = nil
+        }
+    }
+
+    private func changeHighlightColor(_ highlight: HighlightSnapshot, to color: HighlightColor) {
+        Task {
+            guard let updated = await viewModel.updateHighlightColor(highlight, color: color) else {
+                return
             }
-            .listRowBackground(isCurrentChapter(chapter) ? Color.accentColor.opacity(0.2) : Color.clear))
+            let escapedCFIRange = javaScriptStringLiteral(updated.cfiRange)
+            let escapedColorClass = javaScriptStringLiteral(updated.color.cssClass)
+            let escapedID = javaScriptStringLiteral(updated.id.uuidString)
+            pageCurlVC?.callJS("removeHighlight('\(escapedCFIRange)')")
+            pageCurlVC?.callJS("addHighlight('\(escapedCFIRange)', '\(escapedColorClass)', '\(escapedID)')")
+            activeHighlight = nil
         }
     }
 
-    private func chapterLabel(for chapter: EPUBChapter) -> some View {
-        Text(chapter.label)
-            .font(.body)
-            .lineLimit(2)
-            .multilineTextAlignment(.leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 4)
+    private func copySelectedText(_ selection: ReaderTextSelection) {
+        UIPasteboard.general.string = selection.text
     }
 
-    private func isCurrentChapter(_ chapter: EPUBChapter) -> Bool {
-        normalizedPath(from: currentSpineHref) == normalizedPath(from: chapter.href.relativeString)
+    private func lookUpSelectedText(_ selection: ReaderTextSelection) {
+        let term = selection.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: term),
+              let presenter = activePresenter()
+        else {
+            return
+        }
+        presenter.present(UIReferenceLibraryViewController(term: term), animated: true)
     }
 
-    private func normalizedPath(from rawValue: String) -> String {
-        let fragmentDropped = rawValue.split(separator: "#", maxSplits: 1).first.map(String.init) ?? rawValue
+    private func translateSelectedText(_ selection: ReaderTextSelection) {
+        let term = selection.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let encoded = term.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "https://translate.google.com/?sl=auto&tl=en&text=\(encoded)&op=translate")
+        else {
+            return
+        }
+        UIApplication.shared.open(url)
+    }
 
-        if let url = URL(string: fragmentDropped),
-           let host = url.host,
-           host == "book" {
-            return url.path
+    private func activePresenter() -> UIViewController? {
+        let scene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+        guard var presenter = scene?.windows.first(where: \.isKeyWindow)?.rootViewController else {
+            return nil
         }
 
-        if let url = URL(string: fragmentDropped), !url.path.isEmpty {
-            return url.path
+        while let presented = presenter.presentedViewController {
+            presenter = presented
         }
-
-        return fragmentDropped
-            .replacingOccurrences(of: "./", with: "")
-            .replacingOccurrences(of: "%20", with: " ")
+        return presenter
     }
-}
 
-private struct FootnotePayload: Identifiable {
-    let id = UUID()
-    let href: String
-    let text: String
-}
-
-private extension Comparable {
-    func clamped(to range: ClosedRange<Self>) -> Self {
-        min(max(self, range.lowerBound), range.upperBound)
+    private func javaScriptStringLiteral(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "'", with: "\\'")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\u{2028}", with: "\\u2028")
+            .replacingOccurrences(of: "\u{2029}", with: "\\u2029")
     }
 }
 

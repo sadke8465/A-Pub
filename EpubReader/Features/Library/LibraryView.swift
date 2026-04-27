@@ -2,7 +2,6 @@ import SwiftUI
 
 public struct LibraryView: View {
 
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @StateObject private var viewModel: LibraryViewModel
 
     @State private var pendingDeleteBook: Book?
@@ -30,20 +29,32 @@ public struct LibraryView: View {
 
                 Group {
                     if viewModel.books.isEmpty {
-                        emptyState
+                        LibraryEmptyState {
+                            viewModel.importBooks()
+                        }
                     } else {
-                        content
+                        LibraryContentView(
+                            books: viewModel.filteredBooks,
+                            displayMode: viewModel.displayMode,
+                            onSelectBook: { book in
+                                selectedDetailBook = book
+                            },
+                            contextActions: { book in
+                                bookContextActions(for: book)
+                            }
+                        )
                     }
                 }
             }
             .navigationTitle("Library")
             .searchable(text: $viewModel.searchQuery, prompt: "Search by title or author")
             .toolbar {
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    sortMenu
-                    displayToggle
-                    importButton
-                }
+                LibraryToolbar(
+                    sortOrder: $viewModel.sortOrder,
+                    displayMode: $viewModel.displayMode,
+                    isImporting: viewModel.isImporting,
+                    onImport: viewModel.importBooks
+                )
             }
             .overlay {
                 if viewModel.isImporting {
@@ -96,65 +107,6 @@ public struct LibraryView: View {
         }
     }
 
-    private var emptyState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "books.vertical")
-                .font(.system(size: 54, weight: .light))
-                .foregroundStyle(.secondary)
-
-            Text("Import your first book")
-                .font(.headline)
-
-            Button {
-                viewModel.importBooks()
-            } label: {
-                Label("Import EPUB", systemImage: "square.and.arrow.down")
-            }
-            .buttonStyle(.borderedProminent)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        switch viewModel.displayMode {
-        case .grid:
-            ScrollView {
-                LazyVGrid(columns: gridColumns, spacing: 16) {
-                    ForEach(viewModel.filteredBooks, id: \.objectID) { book in
-                        BookGridCell(book: book)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                selectedDetailBook = book
-                            }
-                            .contextMenu {
-                                bookContextActions(for: book)
-                            }
-                    }
-                }
-                .padding()
-            }
-        case .list:
-            List(viewModel.filteredBooks, id: \.objectID) { book in
-                BookListCell(book: book)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedDetailBook = book
-                    }
-                    .contextMenu {
-                        bookContextActions(for: book)
-                    }
-            }
-            .listStyle(.plain)
-        }
-    }
-
-    private var gridColumns: [GridItem] {
-        let count = horizontalSizeClass == .regular ? 4 : 2
-        return Array(repeating: GridItem(.flexible(), spacing: 12), count: count)
-    }
-
     @ViewBuilder
     private func bookContextActions(for book: Book) -> some View {
         Menu("Add to Shelf") {
@@ -180,39 +132,6 @@ public struct LibraryView: View {
         Button("Delete from Library", systemImage: "trash", role: .destructive) {
             pendingDeleteBook = book
         }
-    }
-
-    private var sortMenu: some View {
-        Menu {
-            Picker("Sort by", selection: $viewModel.sortOrder) {
-                Text("Title").tag(LibraryViewModel.SortOrder.title)
-                Text("Author").tag(LibraryViewModel.SortOrder.author)
-                Text("Last Read").tag(LibraryViewModel.SortOrder.lastRead)
-                Text("Date Added").tag(LibraryViewModel.SortOrder.dateAdded)
-            }
-        } label: {
-            Image(systemName: "arrow.up.arrow.down.circle")
-        }
-        .accessibilityLabel("Sort")
-    }
-
-    private var displayToggle: some View {
-        Button {
-            viewModel.displayMode = viewModel.displayMode == .grid ? .list : .grid
-        } label: {
-            Image(systemName: viewModel.displayMode == .grid ? "list.bullet" : "square.grid.2x2")
-        }
-        .accessibilityLabel("Toggle display mode")
-    }
-
-    private var importButton: some View {
-        Button {
-            viewModel.importBooks()
-        } label: {
-            Image(systemName: "plus")
-        }
-        .accessibilityLabel("Import EPUB")
-        .disabled(viewModel.isImporting)
     }
 
     private func launchReader(for book: Book) {

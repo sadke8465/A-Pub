@@ -118,6 +118,10 @@ final class PageCurlViewController: UIPageViewController {
     private var isHTMLReadyBySlot = [Bool](repeating: false, count: 3)
     private var loadTokenBySlot = [Int](repeating: 0, count: 3)
     private var queuedCommandsBySlot = [[PendingCommand]](repeating: [], count: 3)
+    private var cfiBySlot = [String?](repeating: nil, count: 3)
+    private var syncKeyBySlot = [String?](repeating: nil, count: 3)
+    private var canonicalCFI = ""
+    private var isPageTransitionInProgress = false
     private struct PendingLoad {
         let bookURLString: String
         let fallbackEscapedBase64: String?
@@ -132,9 +136,9 @@ final class PageCurlViewController: UIPageViewController {
     var onRelocated:         ((String, Double, String, Int64, String) -> Void)?
     var onBookReady:         (() -> Void)?
     var onBookError:         ((String) -> Void)?
-    var onSelected:          ((String, String) -> Void)?
+    var onSelected:          ((ReaderTextSelection) -> Void)?
     var onMarkClicked:       ((String) -> Void)?
-    var onRequestHighlights: ((String) -> Void)?
+    var onRequestHighlights: ((String, Int) -> Void)?
     var onFootnoteRequest: ((String, String) -> Void)?
     var onAtChapterEnd:      (() -> Void)?
     var onJavaScriptExecutionFailed: ((EPUBBridge.JavaScriptExecutionFailure) -> Void)?
@@ -188,6 +192,15 @@ final class PageCurlViewController: UIPageViewController {
     /// Forward a JavaScript call to the current slot's rendition.
     func callJS(_ js: String) {
         enqueueOrDispatch(slotIndex: poolCurrent, js: js, family: commandFamily(for: js))
+    }
+
+    func applyHighlights(_ json: String, to slotIndex: Int) {
+        let escapedJSON = Self.javaScriptStringLiteral(json)
+        enqueueOrDispatch(
+            slotIndex: slotIndex,
+            js: "applyHighlights('\(escapedJSON)')",
+            family: .display
+        )
     }
 
     func applyAppearance(_ appearance: ReaderAppearance) {
@@ -254,25 +267,34 @@ final class PageCurlViewController: UIPageViewController {
     private func wireCurrentSlotCallbacks() {
         let slot = currentSlot
         slot.bridge.onRelocated = { [weak self] cfi, pct, href, offset, snippet in
-            self?.onRelocated?(cfi, pct, href, offset, snippet)
+            guard let self else { return }
+            self.recordRelocation(cfi: cfi, slotIndex: slot.slotIndex, isCurrent: true)
+            self.onRelocated?(cfi, pct, href, offset, snippet)
         }
         slot.bridge.onBookError         = { [weak self] msg  in self?.onBookError?(msg) }
-        slot.bridge.onSelected          = { [weak self] r, t in self?.onSelected?(r, t) }
+        slot.bridge.onSelected          = { [weak self, weak slot] selection in
+            guard let self, let slot else { return }
+            let convertedRect = slot.webView.convert(selection.rect, to: self.view)
+            self.onSelected?(selection.moving(to: convertedRect))
+        }
         slot.bridge.onMarkClicked       = { [weak self] id   in self?.onMarkClicked?(id) }
-        slot.bridge.onRequestHighlights = { [weak self] href in self?.onRequestHighlights?(href) }
+        slot.bridge.onRequestHighlights = { [weak self, weak slot] href in
+            guard let self, let slot else { return }
+            self.onRequestHighlights?(href, slot.slotIndex)
+        }
         slot.bridge.onFootnoteRequest = { [weak self] href, text in
             self?.onFootnoteRequest?(href, text)
         }
         slot.bridge.onAtChapterEnd      = { [weak self] in
             self?.onAtChapterEnd?()
-            // Pre-warm the next slot so its rendition is one chapter ahead.
-            guard let self else { return }
-            self.enqueueOrDispatch(slotIndex: self.nextSlot.slotIndex, js: "nextPage()", family: .navigation)
         }
     }
 
     private func wireBridgeFailureCallbacks() {
         pool.forEach { slot in
+            if slot !== currentSlot {
+                installBackgroundCallbacks(for: slot)
+            }
             slot.bridge.onBookReady = { [weak self] in
                 self?.handleBookReady(for: slot.slotIndex)
             }
@@ -285,12 +307,18 @@ final class PageCurlViewController: UIPageViewController {
             slot.bridge.onJavaScriptExecutionFailed = { [weak self] failure in
                 self?.onJavaScriptExecutionFailed?(failure)
             }
+            slot.bridge.onRequestHighlights = { [weak self] href in
+                self?.onRequestHighlights?(href, slot.slotIndex)
+            }
         }
     }
 
     private func clearCurrentSlotCallbacks() {
         let slot = currentSlot
-        slot.bridge.onRelocated         = nil
+        slot.bridge.onRelocated         = { [weak self, weak slot] cfi, _, _, _, _ in
+            guard let self, let slot else { return }
+            self.recordRelocation(cfi: cfi, slotIndex: slot.slotIndex, isCurrent: false)
+        }
         slot.bridge.onBookReady         = { [weak self] in
             self?.handleBookReady(for: slot.slotIndex)
         }
@@ -299,9 +327,57 @@ final class PageCurlViewController: UIPageViewController {
         }
         slot.bridge.onSelected          = nil
         slot.bridge.onMarkClicked       = nil
-        slot.bridge.onRequestHighlights = nil
+        slot.bridge.onRequestHighlights = { [weak self] href in
+            self?.onRequestHighlights?(href, slot.slotIndex)
+        }
         slot.bridge.onFootnoteRequest   = nil
         slot.bridge.onAtChapterEnd      = nil
+    }
+
+    private func installBackgroundCallbacks(for slot: EPUBPageContentViewController) {
+        slot.bridge.onRelocated = { [weak self, weak slot] cfi, _, _, _, _ in
+            guard let self, let slot else { return }
+            self.recordRelocation(cfi: cfi, slotIndex: slot.slotIndex, isCurrent: false)
+        }
+    }
+
+    private func recordRelocation(cfi: String, slotIndex: Int, isCurrent: Bool) {
+        guard !cfi.isEmpty, cfiBySlot.indices.contains(slotIndex) else {
+            return
+        }
+        cfiBySlot[slotIndex] = cfi
+        if isCurrent {
+            guard cfi != canonicalCFI else {
+                return
+            }
+            canonicalCFI = cfi
+            if !isPageTransitionInProgress {
+                syncAdjacentSlots(from: cfi)
+            }
+        }
+    }
+
+    private func syncAdjacentSlots(from cfi: String) {
+        guard !cfi.isEmpty else { return }
+        sync(slotIndex: prevSlot.slotIndex, to: cfi, delta: -1)
+        sync(slotIndex: nextSlot.slotIndex, to: cfi, delta: 1)
+    }
+
+    private func sync(slotIndex: Int, to cfi: String, delta: Int) {
+        guard syncKeyBySlot.indices.contains(slotIndex) else {
+            return
+        }
+        let syncKey = "\(cfi)|\(delta)"
+        guard syncKeyBySlot[slotIndex] != syncKey else {
+            return
+        }
+        syncKeyBySlot[slotIndex] = syncKey
+        let escapedCFI = Self.javaScriptStringLiteral(cfi)
+        enqueueOrDispatch(
+            slotIndex: slotIndex,
+            js: "displayAdjacent('\(escapedCFI)', \(delta))",
+            family: .display
+        )
     }
 
     // MARK: Pool rotation
@@ -325,6 +401,11 @@ final class PageCurlViewController: UIPageViewController {
         loadTokenBySlot[slotIndex] += 1
         let token = loadTokenBySlot[slotIndex]
         queuedCommandsBySlot[slotIndex].removeAll()
+        cfiBySlot[slotIndex] = nil
+        syncKeyBySlot[slotIndex] = nil
+        if slotIndex == poolCurrent {
+            canonicalCFI = ""
+        }
         slotState[slotIndex] = .bookLoading(token: token)
         pendingLoadBySlot[slotIndex] = PendingLoad(
             bookURLString: bookURLString,
@@ -361,6 +442,10 @@ final class PageCurlViewController: UIPageViewController {
         slotState[slotIndex] = .bookReady(token: token)
         Log.shared.debug("PageCurl slot \(slotIndex) state=bookReady token=\(token)")
         flushQueuedCommands(for: slotIndex)
+        if slotIndex != poolCurrent, !canonicalCFI.isEmpty {
+            let delta = slotIndex == prevSlot.slotIndex ? -1 : 1
+            sync(slotIndex: slotIndex, to: canonicalCFI, delta: delta)
+        }
         if slotIndex == poolCurrent {
             onBookReady?()
         }
@@ -416,6 +501,16 @@ final class PageCurlViewController: UIPageViewController {
         return "\(singleLine.prefix(limit))…"
     }
 
+    private static func javaScriptStringLiteral(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "'", with: "\\'")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\u{2028}", with: "\\u2028")
+            .replacingOccurrences(of: "\u{2029}", with: "\\u2029")
+    }
+
     private func commandFamily(for js: String) -> CommandFamily {
         if js.hasPrefix("nextPage") || js.hasPrefix("prevPage") {
             return .navigation
@@ -433,16 +528,22 @@ final class PageCurlViewController: UIPageViewController {
         clearCurrentSlotCallbacks()
         poolCurrent = (poolCurrent + 1) % 3
         wireCurrentSlotCallbacks()
-        // Advance the recycled slot so it tracks one page behind the new current.
-        enqueueOrDispatch(slotIndex: prevSlot.slotIndex, js: "prevPage()", family: .navigation)
+        refreshCanonicalCFIFromCurrentSlot()
     }
 
     private func rotateBackward() {
         clearCurrentSlotCallbacks()
         poolCurrent = (poolCurrent + 2) % 3
         wireCurrentSlotCallbacks()
-        // Retreat the recycled slot so it tracks one page ahead of the new current.
-        enqueueOrDispatch(slotIndex: nextSlot.slotIndex, js: "nextPage()", family: .navigation)
+        refreshCanonicalCFIFromCurrentSlot()
+    }
+
+    private func refreshCanonicalCFIFromCurrentSlot() {
+        guard let cfi = cfiBySlot[poolCurrent], !cfi.isEmpty else {
+            return
+        }
+        canonicalCFI = cfi
+        syncAdjacentSlots(from: cfi)
     }
 }
 
@@ -531,10 +632,18 @@ extension PageCurlViewController: UIPageViewControllerDelegate {
 
     func pageViewController(
         _ pageViewController: UIPageViewController,
+        willTransitionTo pendingViewControllers: [UIViewController]
+    ) {
+        isPageTransitionInProgress = true
+    }
+
+    func pageViewController(
+        _ pageViewController: UIPageViewController,
         didFinishAnimating finished: Bool,
         previousViewControllers: [UIViewController],
         transitionCompleted completed: Bool
     ) {
+        defer { isPageTransitionInProgress = false }
         guard completed, let appearing = pageViewController.viewControllers?.first else { return }
         if appearing === nextSlot {
             rotateForward()
