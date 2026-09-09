@@ -4,7 +4,6 @@ import UIKit
 public struct ReaderView: View {
 
     @StateObject private var viewModel: ReaderViewModel
-    @State private var pageCurlVC: PageCurlViewController?
     @State private var showingAppearanceSettings = false
     @State private var showingTOCPanel = false
     @State private var showingGoToLocationSheet = false
@@ -20,10 +19,10 @@ public struct ReaderView: View {
     }
 
     public var body: some View {
-        GeometryReader { geometry in
+        GeometryReader { _ in
             ZStack {
                 PageCurlReaderView(viewModel: viewModel) { vc in
-                    pageCurlVC = vc
+                    viewModel.attachPageCurlController(vc)
                     vc.onFootnoteRequest = { href, text in
                         footnotePayload = FootnotePayload(href: href, text: text)
                     }
@@ -43,28 +42,30 @@ public struct ReaderView: View {
                     vc.onSelected = { selection in
                         textSelection = selection
                     }
-                }
-                .ignoresSafeArea()
-                // Zone-based tap: left 25% → prev, right 25% → next, centre → overlay.
-                .onTapGesture(coordinateSpace: .local) { location in
-                    let width = geometry.size.width
-                    if location.x < width * 0.25 {
-                        pageCurlVC?.callJS("prevPage()")
-                    } else if location.x > width * 0.75 {
-                        pageCurlVC?.callJS("nextPage()")
-                    } else {
+                    vc.onCenterTap = {
                         withAnimation(reduceMotion ? .easeInOut(duration: 0.12) : AppMotion.readerChrome) {
                             viewModel.isOverlayVisible.toggle()
                         }
                     }
-                }
-                .onChange(of: viewModel.book?.identifier) { _, _ in
                     if let bookFileURL = viewModel.bookFileURL {
-                        pageCurlVC?.loadBook(
+                        vc.loadBook(
                             fileURL: bookFileURL,
                             fallbackEscapedBase64: viewModel.legacyEscapedBase64Book.isEmpty
                                 ? nil
-                                : viewModel.legacyEscapedBase64Book
+                                : viewModel.legacyEscapedBase64Book,
+                            locationsCache: viewModel.locationsCache
+                        )
+                    }
+                }
+                .ignoresSafeArea()
+                .onChange(of: viewModel.book?.identifier) { _, _ in
+                    if let bookFileURL = viewModel.bookFileURL {
+                        viewModel.pageCurlController?.loadBook(
+                            fileURL: bookFileURL,
+                            fallbackEscapedBase64: viewModel.legacyEscapedBase64Book.isEmpty
+                                ? nil
+                                : viewModel.legacyEscapedBase64Book,
+                            locationsCache: viewModel.locationsCache
                         )
                     }
                 }
@@ -109,7 +110,7 @@ public struct ReaderView: View {
                     dragPercentage: $scrubberDragPercentage,
                     chapterTitleForPercentage: chapterTitle(for:),
                     onScrubEnded: { percentage in
-                        pageCurlVC?.callJS("displayCFI(\(percentage))")
+                        viewModel.pageCurlController?.callJS("displayCFI(\(percentage))")
                     }
                 )
 
@@ -133,13 +134,13 @@ public struct ReaderView: View {
         .sheet(isPresented: $showingAppearanceSettings) {
             AppearanceSettings(
                 appearance: viewModel.appearance,
-                applyFontSize: { px in pageCurlVC?.applyFontSize(px) },
-                applyFontFamily: { family in pageCurlVC?.applyFontFamily(family) },
-                applyTheme: { theme in pageCurlVC?.applyTheme(theme) },
-                applyMargin: { px in pageCurlVC?.applyMargin(px) },
-                applyLineSpacing: { value in pageCurlVC?.applyLineSpacing(value) },
-                applyJustify: { justify in pageCurlVC?.applyJustify(justify) },
-                applyHyphenation: { on in pageCurlVC?.applyHyphenation(on) },
+                applyFontSize: { px in viewModel.pageCurlController?.applyFontSize(px) },
+                applyFontFamily: { family in viewModel.pageCurlController?.applyFontFamily(family) },
+                applyTheme: { theme in viewModel.pageCurlController?.applyTheme(theme) },
+                applyMargin: { px in viewModel.pageCurlController?.applyMargin(px) },
+                applyLineSpacing: { value in viewModel.pageCurlController?.applyLineSpacing(value) },
+                applyJustify: { justify in viewModel.pageCurlController?.applyJustify(justify) },
+                applyHyphenation: { on in viewModel.pageCurlController?.applyHyphenation(on) },
                 onAppearanceChanged: { viewModel.handleAppearanceChange() },
                 onSaveAsDefaultForBook: { viewModel.saveCurrentAppearanceOverrideForCurrentBook() }
             )
@@ -150,14 +151,14 @@ public struct ReaderView: View {
                 currentSpineHref: currentChapterHref,
                 onSelectChapter: { chapter in
                     let href = chapter.href.relativeString.replacingOccurrences(of: "'", with: "\\'")
-                    pageCurlVC?.callJS("displayCFI('\(href)')")
+                    viewModel.pageCurlController?.callJS("displayCFI('\(href)')")
                 }
             )
             .presentationDetents([.medium, .large])
         }
         .sheet(isPresented: $showingGoToLocationSheet) {
             GoToLocationSheet(currentPercentage: viewModel.percentage) { percentage in
-                pageCurlVC?.callJS("displayCFI(\(percentage))")
+                viewModel.pageCurlController?.callJS("displayCFI(\(percentage))")
             }
         }
         .sheet(item: $footnotePayload) { footnote in
@@ -237,7 +238,7 @@ public struct ReaderView: View {
             let escapedCFIRange = javaScriptStringLiteral(highlight.cfiRange)
             let escapedColorClass = javaScriptStringLiteral(color.cssClass)
             let escapedID = javaScriptStringLiteral(highlight.id.uuidString)
-            pageCurlVC?.callJS("addHighlight('\(escapedCFIRange)', '\(escapedColorClass)', '\(escapedID)')")
+            viewModel.pageCurlController?.callJS("addHighlight('\(escapedCFIRange)', '\(escapedColorClass)', '\(escapedID)')")
             textSelection = nil
         }
     }
@@ -254,7 +255,7 @@ public struct ReaderView: View {
                 return
             }
             let escapedCFIRange = javaScriptStringLiteral(highlight.cfiRange)
-            pageCurlVC?.callJS("removeHighlight('\(escapedCFIRange)')")
+            viewModel.pageCurlController?.callJS("removeHighlight('\(escapedCFIRange)')")
             activeHighlight = nil
         }
     }
@@ -267,8 +268,8 @@ public struct ReaderView: View {
             let escapedCFIRange = javaScriptStringLiteral(updated.cfiRange)
             let escapedColorClass = javaScriptStringLiteral(updated.color.cssClass)
             let escapedID = javaScriptStringLiteral(updated.id.uuidString)
-            pageCurlVC?.callJS("removeHighlight('\(escapedCFIRange)')")
-            pageCurlVC?.callJS("addHighlight('\(escapedCFIRange)', '\(escapedColorClass)', '\(escapedID)')")
+            viewModel.pageCurlController?.callJS("removeHighlight('\(escapedCFIRange)')")
+            viewModel.pageCurlController?.callJS("addHighlight('\(escapedCFIRange)', '\(escapedColorClass)', '\(escapedID)')")
             activeHighlight = nil
         }
     }

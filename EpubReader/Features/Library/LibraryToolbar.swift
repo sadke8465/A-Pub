@@ -25,8 +25,7 @@ struct LibraryToolbar: ToolbarContent {
             Button {
                 displayMode = displayMode == .grid ? .list : .grid
             } label: {
-                Image(systemName: displayMode == .grid ? "list.bullet" : "square.grid.2x2")
-                    .frame(width: AppSize.toolbarControl, height: AppSize.toolbarControl)
+                DisplayModeToggleIcon(displayMode: displayMode)
             }
             .accessibilityLabel("Toggle display mode")
 
@@ -38,6 +37,25 @@ struct LibraryToolbar: ToolbarContent {
             }
             .accessibilityLabel("Import EPUB")
             .disabled(isImporting)
+        }
+    }
+}
+
+private struct DisplayModeToggleIcon: View {
+
+    let displayMode: LibraryViewModel.DisplayMode
+
+    var body: some View {
+        ZStack {
+            Image(systemName: "list.bullet")
+                .opacity(displayMode == .grid ? 1 : 0)
+
+            Image(systemName: "square.grid.2x2")
+                .opacity(displayMode == .grid ? 0 : 1)
+        }
+        .frame(width: AppSize.toolbarControl, height: AppSize.toolbarControl)
+        .transaction { transaction in
+            transaction.animation = nil
         }
     }
 }

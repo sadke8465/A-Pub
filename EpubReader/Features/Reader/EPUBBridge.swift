@@ -38,7 +38,38 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         public let details: String?
     }
 
+    public struct TurnCompletedEvent: Sendable {
+        public let direction: String
+        public let token: String
+        public let cfi: String
+        public let percentage: Double
+        public let spineHref: String
+        public let crossedChapterBoundary: Bool
+    }
+
+    public struct TurnFailedEvent: Sendable {
+        public let direction: String
+        public let token: String
+        public let message: String
+    }
+
+    public struct SyncCompleteEvent: Sendable {
+        public let syncId: String
+        public let error: String?
+        public let cfi: String
+        public let percentage: Double
+        public let spineHref: String
+    }
+
     public static let messageName = "bridge"
+    private static let sharedProcessPoolObject: NSObject? = {
+        let processPoolClass: AnyClass? = NSClassFromString("WKProcessPool")
+            ?? NSClassFromString("WebKit.WKProcessPool")
+        guard let type = processPoolClass as? NSObject.Type else {
+            return nil
+        }
+        return type.init()
+    }()
 
     public weak var webView: WKWebView?
 
@@ -54,9 +85,13 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     public var onLocationsSnapshot: ((Int, String?) -> Void)?
     public var onWordCountSample: (([Int]) -> Void)?
     public var onChapterWordCount: ((Int, Int) -> Void)?
+    public var onSyncComplete: ((SyncCompleteEvent) -> Void)?
     public var onJavaScriptExecutionFailed: ((JavaScriptExecutionFailure) -> Void)?
     public var onJSGuardBlocked: ((JSGuardBlockedEvent) -> Void)?
     public var onJSDiagnostic: ((JSDiagnosticEvent) -> Void)?
+    public var onTurnStarted: ((String, String) -> Void)?
+    public var onTurnCompleted: ((TurnCompletedEvent) -> Void)?
+    public var onTurnFailed: ((TurnFailedEvent) -> Void)?
 
     public override init() {
         super.init()
@@ -67,6 +102,9 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
     /// resource access enabled for the bundled reader assets.
     public func setup() -> WKWebViewConfiguration {
         let configuration = WKWebViewConfiguration()
+        if let sharedProcessPoolObject = Self.sharedProcessPoolObject {
+            configuration.setValue(sharedProcessPoolObject, forKey: "processPool")
+        }
         let contentController = WKUserContentController()
         let proxy = LeakAvoider(delegate: self)
         contentController.add(proxy, name: Self.messageName)
@@ -82,7 +120,14 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         loadToken: Int? = nil,
         commandFamily: String? = nil
     ) {
-        webView?.evaluateJavaScript(js) { [weak self] _, error in
+        let evaluatedJS = """
+        (function () {
+        \(js)
+        ;
+        return null;
+        })();
+        """
+        webView?.evaluateJavaScript(evaluatedJS) { [weak self] _, error in
             guard let self else { return }
             if let nsError = error as NSError? {
                 let commandPrefix = Self.truncatedCommandPrefix(for: js)
@@ -171,6 +216,27 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
         case "bookError":
             let message = body["message"] as? String ?? "Unknown book load error"
             onBookError?(message)
+        case "turnStarted":
+            let direction = body["direction"] as? String ?? ""
+            let token = body["token"] as? String ?? ""
+            onTurnStarted?(direction, token)
+        case "turnCompleted":
+            let event = TurnCompletedEvent(
+                direction: body["direction"] as? String ?? "",
+                token: body["token"] as? String ?? "",
+                cfi: body["cfi"] as? String ?? "",
+                percentage: (body["percentage"] as? Double) ?? 0,
+                spineHref: body["spineHref"] as? String ?? "",
+                crossedChapterBoundary: body["crossedChapterBoundary"] as? Bool ?? false
+            )
+            onTurnCompleted?(event)
+        case "turnFailed":
+            let event = TurnFailedEvent(
+                direction: body["direction"] as? String ?? "",
+                token: body["token"] as? String ?? "",
+                message: body["message"] as? String ?? ""
+            )
+            onTurnFailed?(event)
         case "selected", "textSelected":
             let selection = Self.textSelection(from: body)
             onSelected?(selection)
@@ -199,6 +265,15 @@ public final class EPUBBridge: NSObject, WKScriptMessageHandler {
             let index = body["index"] as? Int ?? 0
             let count = body["count"] as? Int ?? 0
             onChapterWordCount?(index, count)
+        case "syncComplete":
+            let event = SyncCompleteEvent(
+                syncId: body["syncId"] as? String ?? "",
+                error: body["error"] as? String,
+                cfi: body["cfi"] as? String ?? "",
+                percentage: (body["percentage"] as? Double) ?? 0,
+                spineHref: body["spineHref"] as? String ?? ""
+            )
+            onSyncComplete?(event)
         case "jsGuardBlocked":
             let command = body["command"] as? String ?? "unknown"
             let reason = body["reason"] as? String ?? "unknown"

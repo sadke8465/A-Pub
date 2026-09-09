@@ -21,6 +21,7 @@ public final class ReaderViewModel: ObservableObject {
 
     let pageController = PageController()
     let appearance: ReaderAppearance
+    weak var pageCurlController: PageCurlViewController?
 
     private let importer: FileImporter
     private let highlightManager: HighlightManager
@@ -28,6 +29,7 @@ public final class ReaderViewModel: ObservableObject {
     private let initialBookID: UUID?
     private var didAttemptInitialLoad = false
     private var pendingRestoreCFI: String?
+    private(set) var locationsCache: String?
     private var needsLocationsSnapshotAfterReflow = false
     private let allowLegacyBase64Fallback = true
     private var jsGuardBlockedCount = 0
@@ -82,16 +84,25 @@ public final class ReaderViewModel: ObservableObject {
             if let initialBookID {
                 pageController.currentBookID = initialBookID
                 pendingRestoreCFI = await pageController.restoreCFI(for: initialBookID)
+                locationsCache = await loadLocationsCache(for: initialBookID)
                 await loadAppearanceOverride(for: initialBookID)
             }
             await loadFromLibrary(fileURL: initialBookFileURL)
         }
     }
 
+    func attachPageCurlController(_ controller: PageCurlViewController) {
+        pageCurlController = controller
+    }
+
+    func detachPageCurlController() {
+        pageCurlController = nil
+    }
+
     func handleBookReady(in pageCurlVC: PageCurlViewController?) {
         pageCurlVC?.applyAppearance(appearance)
         loadPersonalizedReadingSpeed()
-        requestCurrentChapterWordCount()
+        requestCurrentChapterWordCount(in: pageCurlVC)
 
         guard let pendingRestoreCFI else {
             return
@@ -107,11 +118,12 @@ public final class ReaderViewModel: ObservableObject {
         spineHref: String,
         characterOffset: Int64,
         contextSnippet: String,
-        atEnd: Bool
+        atEnd: Bool,
+        pageCurlVC: PageCurlViewController? = nil
     ) {
         currentCFI = cfi
         percentage = pct
-        updateCurrentSpineIndex(using: spineHref)
+        updateCurrentSpineIndex(using: spineHref, pageCurlVC: pageCurlVC)
         pageController.onRelocated(
             cfi: cfi,
             pct: pct,
@@ -123,10 +135,32 @@ public final class ReaderViewModel: ObservableObject {
 
         if needsLocationsSnapshotAfterReflow {
             needsLocationsSnapshotAfterReflow = false
-            bridge.requestLocationsSnapshot()
+            pageCurlVC?.requestLocationsSnapshot()
         }
 
         updateMinutesRemaining(characterOffset: characterOffset)
+    }
+
+    func handleLocationsSnapshot(totalLocations: Int, serializedLocations: String?) {
+        pageController.updateTotalLocationCount(totalLocations)
+        persistLocationsCache(serializedLocations)
+    }
+
+    func handleWordCountSample(_ counts: [Int]) {
+        let validCounts = counts.filter { $0 > 0 }
+        guard !validCounts.isEmpty else {
+            return
+        }
+        let sum = validCounts.reduce(0, +)
+        averageWordsPerChapter = max(1, sum / validCounts.count)
+    }
+
+    func handleChapterWordCount(index: Int, count: Int) {
+        guard count > 0 else {
+            return
+        }
+        wordCountsBySpineIndex[index] = count
+        updateMinutesRemaining(characterOffset: pageController.currentCharacterOffset)
     }
 
 
@@ -331,28 +365,18 @@ public final class ReaderViewModel: ObservableObject {
         }
 
         bridge.onLocationsSnapshot = { [weak self] totalLocations, serializedLocations in
-            guard let self else { return }
-            self.pageController.updateTotalLocationCount(totalLocations)
-            self.persistLocationsCache(serializedLocations)
+            self?.handleLocationsSnapshot(
+                totalLocations: totalLocations,
+                serializedLocations: serializedLocations
+            )
         }
 
         bridge.onWordCountSample = { [weak self] counts in
-            guard let self else { return }
-            let validCounts = counts.filter { $0 > 0 }
-            guard !validCounts.isEmpty else {
-                return
-            }
-            let sum = validCounts.reduce(0, +)
-            self.averageWordsPerChapter = max(1, sum / validCounts.count)
+            self?.handleWordCountSample(counts)
         }
 
         bridge.onChapterWordCount = { [weak self] index, count in
-            guard let self else { return }
-            guard count > 0 else {
-                return
-            }
-            self.wordCountsBySpineIndex[index] = count
-            self.updateMinutesRemaining(characterOffset: self.pageController.currentCharacterOffset)
+            self?.handleChapterWordCount(index: index, count: count)
         }
 
         bridge.onJavaScriptExecutionFailed = { [weak self] failure in
@@ -384,6 +408,22 @@ public final class ReaderViewModel: ObservableObject {
         }
     }
 
+    private func loadLocationsCache(for bookID: UUID) async -> String? {
+        let context = PersistenceController.shared.backgroundContext()
+        return await context.perform {
+            let request = NSFetchRequest<Book>(entityName: "Book")
+            request.predicate = NSPredicate(format: "id == %@", bookID as CVarArg)
+            request.fetchLimit = 1
+
+            do {
+                return try context.fetch(request).first?.locationsCache
+            } catch {
+                Log.shared.error("Failed loading locations cache: \(error.localizedDescription)")
+                return nil
+            }
+        }
+    }
+
     private func persistLocationsCache(_ serializedLocations: String?) {
         guard let bookID = initialBookID,
               let serializedLocations,
@@ -412,7 +452,7 @@ public final class ReaderViewModel: ObservableObject {
         }
     }
 
-    private func updateCurrentSpineIndex(using spineHref: String) {
+    private func updateCurrentSpineIndex(using spineHref: String, pageCurlVC: PageCurlViewController?) {
         guard !spineHref.isEmpty,
               let book,
               let relocatedURL = URL(string: spineHref)?
@@ -427,18 +467,22 @@ public final class ReaderViewModel: ObservableObject {
         }) {
             if currentSpineIndex != matchedIndex {
                 currentSpineIndex = matchedIndex
-                requestCurrentChapterWordCount()
+                requestCurrentChapterWordCount(in: pageCurlVC)
             } else {
                 currentSpineIndex = matchedIndex
             }
         }
     }
 
-    private func requestCurrentChapterWordCount() {
+    private func requestCurrentChapterWordCount(in pageCurlVC: PageCurlViewController?) {
         guard currentSpineIndex >= 0 else {
             return
         }
-        bridge.callJS("requestChapterWordCount(\(currentSpineIndex))")
+        if let pageCurlVC {
+            pageCurlVC.requestChapterWordCount(index: currentSpineIndex)
+        } else {
+            bridge.callJS("requestChapterWordCount(\(currentSpineIndex))")
+        }
     }
 
     private func updateMinutesRemaining(characterOffset: Int64) {

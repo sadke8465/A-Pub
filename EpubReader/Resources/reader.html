@@ -121,6 +121,10 @@
             window.book = null;
             window.rendition = null;
             window.currentLoadToken = 0;
+            window.currentThemeName = 'light';
+            window.pendingAppearanceResize = null;
+            window.latestRelocation = null;
+            window.hasLoadedLocations = false;
 
             function withTimeout(promise, timeoutMs, label) {
                 return Promise.race([
@@ -155,6 +159,9 @@
 
                 window.rendition = null;
                 window.book = null;
+                window.pendingAppearanceResize = null;
+                window.latestRelocation = null;
+                window.hasLoadedLocations = false;
 
                 var viewer = document.getElementById('viewer');
                 if (viewer) {
@@ -296,6 +303,7 @@
                 if (!window.rendition) { return; }
                 var selectedTheme = normalizedThemeName(name);
                 var t = themeMap[selectedTheme];
+                window.currentThemeName = selectedTheme;
                 logInfo('setTheme', { requested: name, applied: selectedTheme, colors: t });
                 window.rendition.themes.select(selectedTheme);
                 document.documentElement.style.background = t.bg;
@@ -303,38 +311,60 @@
                 applyContentTheme(selectedTheme);
             };
 
+            function scheduleAppearanceResize() {
+                if (!window.rendition) { return; }
+                if (window.pendingAppearanceResize) {
+                    clearTimeout(window.pendingAppearanceResize);
+                }
+                window.pendingAppearanceResize = setTimeout(function () {
+                    window.pendingAppearanceResize = null;
+                    if (window.rendition) {
+                        var locationBeforeResize = currentLocationSnapshot();
+                        var cfi = locationBeforeResize && locationBeforeResize.start
+                            ? locationBeforeResize.start.cfi
+                            : null;
+                        window.rendition.resize(window.innerWidth, window.innerHeight);
+                        if (cfi) {
+                            Promise.resolve(window.rendition.display(cfi)).catch(function (error) {
+                                logWarn('appearance CFI restore failed', { message: String(error) });
+                            });
+                        }
+                    }
+                }, 0);
+            }
+
             window.setFontSize = function (px) {
                 safeRun('setFontSize', function () {
                     window.rendition.themes.fontSize(px + 'px');
-                    window.rendition.resize(window.innerWidth, window.innerHeight);
+                    scheduleAppearanceResize();
                 });
             };
 
             window.setFontFamily = function (name) {
                 safeRun('setFontFamily', function () {
                     window.rendition.themes.font(name);
-                    window.rendition.resize(window.innerWidth, window.innerHeight);
+                    scheduleAppearanceResize();
                 });
             };
 
             window.setLineSpacing = function (value) {
                 safeRun('setLineSpacing', function () {
                     window.rendition.themes.override('line-height', String(value));
-                    window.rendition.resize(window.innerWidth, window.innerHeight);
+                    scheduleAppearanceResize();
                 });
             };
 
             window.setMargin = function (px) {
                 safeRun('setMargin', function () {
                     window.rendition.themes.override('padding', '20px ' + px + 'px');
-                    window.rendition.resize(window.innerWidth, window.innerHeight);
+                    scheduleAppearanceResize();
                 });
             };
 
             window.setJustify = function (justify) {
                 safeRun('setJustify', function () {
                     window.rendition.themes.override('text-align', justify ? 'justify' : 'left');
-                    window.rendition.resize(window.innerWidth, window.innerHeight);
+                    scheduleAppearanceResize();
                 });
             };
 
@@ -342,7 +372,41 @@
                 safeRun('setHyphenation', function () {
                     window.rendition.themes.override('-webkit-hyphens', on ? 'auto' : 'manual');
                     window.rendition.themes.override('hyphens', on ? 'auto' : 'manual');
-                    window.rendition.resize(window.innerWidth, window.innerHeight);
+                    scheduleAppearanceResize();
+                });
+            };
+
+            window.applyAppearance = function (appearance) {
+                safeRun('applyAppearance', function () {
+                    var options = appearance || {};
+                    if (typeof options.theme === 'string') {
+                        window.currentThemeName = normalizedThemeName(options.theme);
+                        var t = themeMap[window.currentThemeName];
+                        window.rendition.themes.select(window.currentThemeName);
+                        document.documentElement.style.background = t.bg;
+                        document.body.style.background = t.bg;
+                        applyContentTheme(window.currentThemeName);
+                    }
+                    if (typeof options.fontFamily === 'string') {
+                        window.rendition.themes.font(options.fontFamily);
+                    }
+                    if (typeof options.fontSize === 'number') {
+                        window.rendition.themes.fontSize(options.fontSize + 'px');
+                    }
+                    if (typeof options.lineSpacing === 'number') {
+                        window.rendition.themes.override('line-height', String(options.lineSpacing));
+                    }
+                    if (typeof options.margin === 'number') {
+                        window.rendition.themes.override('padding', '20px ' + options.margin + 'px');
+                    }
+                    if (typeof options.justify === 'boolean') {
+                        window.rendition.themes.override('text-align', options.justify ? 'justify' : 'left');
+                    }
+                    if (typeof options.hyphenation === 'boolean') {
+                        window.rendition.themes.override('-webkit-hyphens', options.hyphenation ? 'auto' : 'manual');
+                        window.rendition.themes.override('hyphens', options.hyphenation ? 'auto' : 'manual');
+                    }
+                    scheduleAppearanceResize();
                 });
             };
 
@@ -370,6 +434,33 @@
                     return '';
                 }
                 return '';
+            }
+
+            function currentLocationSnapshot() {
+                try {
+                    if (!window.rendition || typeof window.rendition.currentLocation !== 'function') {
+                        return null;
+                    }
+                    return window.rendition.currentLocation();
+                } catch (_) {
+                    return null;
+                }
+            }
+
+            function relocationPayloadFromLocation(location) {
+                var cfi = (location && location.start && location.start.cfi) ? location.start.cfi : '';
+                var pct = (location && location.start && typeof location.start.percentage === 'number')
+                    ? location.start.percentage
+                    : 0;
+                var spineHref = (location && location.start && location.start.href) ? location.start.href : '';
+                return {
+                    cfi: cfi,
+                    percentage: pct,
+                    spineHref: spineHref,
+                    characterOffset: extractCharacterOffset(cfi),
+                    contextSnippet: extractContextSnippet(location),
+                    atEnd: location && location.atEnd === true
+                };
             }
 
             function countWordsFromText(text) {
@@ -415,6 +506,78 @@
                 counts.push(await loadSectionWordCount(0));
                 counts.push(await loadSectionWordCount(1));
                 window.bridge.send('wordCountSample', { counts: counts });
+            }
+
+            function locationsCount() {
+                if (!window.book || !window.book.locations) {
+                    return 0;
+                }
+                if (Array.isArray(window.book.locations._locations)) {
+                    return window.book.locations._locations.length;
+                }
+                if (typeof window.book.locations.length === 'number') {
+                    return window.book.locations.length;
+                }
+                return 0;
+            }
+
+            function sendLocationsSnapshot() {
+                var serializedLocations = null;
+                try {
+                    if (window.book && window.book.locations) {
+                        serializedLocations = window.book.locations.save();
+                    }
+                } catch (error) {
+                    logWarn('locations.save failed', { message: String(error) });
+                    serializedLocations = null;
+                }
+
+                window.bridge.send('locationsSnapshot', {
+                    totalLocations: locationsCount(),
+                    serializedLocations: serializedLocations
+                });
+            }
+
+            function loadLocationsCache(serializedLocations) {
+                if (!window.book || !window.book.locations) {
+                    return false;
+                }
+                if (typeof serializedLocations !== 'string' || serializedLocations.length === 0) {
+                    return false;
+                }
+                try {
+                    window.book.locations.load(serializedLocations);
+                    window.hasLoadedLocations = true;
+                    sendLocationsSnapshot();
+                    logInfo('locations cache loaded', { totalLocations: locationsCount() });
+                    return true;
+                } catch (error) {
+                    logWarn('locations cache load failed', { message: String(error) });
+                    return false;
+                }
+            }
+
+            function generateLocationsInBackground(loadToken) {
+                if (!window.book || !window.book.locations || window.hasLoadedLocations) {
+                    return;
+                }
+                setTimeout(function () {
+                    if (loadToken !== window.currentLoadToken || !window.book || !window.book.locations) {
+                        return;
+                    }
+                    Promise.resolve(window.book.locations.generate(1024))
+                        .then(function () {
+                            if (loadToken !== window.currentLoadToken) {
+                                return;
+                            }
+                            window.hasLoadedLocations = true;
+                            sendLocationsSnapshot();
+                            logInfo('locations generated', { totalLocations: locationsCount() });
+                        })
+                        .catch(function (error) {
+                            logWarn('locations.generate failed', { message: String(error) });
+                        });
+                }, 0);
             }
 
             function spineHrefForContents(contents) {
@@ -506,7 +669,7 @@
                 });
             };
 
-            window.loadBook = function (bookURL, fallbackBase64) {
+            window.loadBook = function (bookURL, fallbackBase64, viewWidth, viewHeight, locationsCache) {
                 (async function () {
                     try {
                         window.currentLoadToken += 1;
@@ -514,22 +677,43 @@
                         logInfo('loadBook start', {
                             loadToken: loadToken,
                             hasBookURL: typeof bookURL === 'string' && bookURL.length > 0,
-                            hasFallbackBase64: typeof fallbackBase64 === 'string' && fallbackBase64.length > 0
+                            hasFallbackBase64: typeof fallbackBase64 === 'string' && fallbackBase64.length > 0,
+                            hasLocationsCache: typeof locationsCache === 'string' && locationsCache.length > 0
                         });
                         teardownCurrentBook();
 
-                        var loadedBook = null;
-                        if (typeof fallbackBase64 === 'string' && fallbackBase64.length > 0) {
-                            logInfo('loading book via base64 fallback');
-                            loadedBook = ePub(fallbackBase64, { encoding: 'base64', replacements: 'base64' });
-                        } else if (typeof bookURL === 'string' && bookURL.length > 0) {
+                        async function openViaURL() {
                             logInfo('loading book via URL', { bookURL: bookURL });
-                            loadedBook = ePub(bookURL, { replacements: 'base64' });
+                            var urlBook = ePub(bookURL, { replacements: 'base64' });
+                            await withTimeout(urlBook.opened, hasFallbackBase64 ? 3500 : 15000, 'book.opened URL');
+                            return urlBook;
+                        }
+
+                        async function openViaFallback() {
+                            logInfo('loading book via base64 fallback');
+                            var fallbackBook = ePub(fallbackBase64, { encoding: 'base64', replacements: 'base64' });
+                            await withTimeout(fallbackBook.opened, 15000, 'book.opened fallback');
+                            return fallbackBook;
+                        }
+
+                        var hasBookURL = typeof bookURL === 'string' && bookURL.length > 0;
+                        var hasFallbackBase64 = typeof fallbackBase64 === 'string' && fallbackBase64.length > 0;
+                        var loadedBook = null;
+                        if (hasFallbackBase64) {
+                            try {
+                                loadedBook = await openViaFallback();
+                            } catch (fallbackError) {
+                                logWarn('base64 book load failed', { message: String(fallbackError), hasBookURL: hasBookURL });
+                                if (!hasBookURL) {
+                                    throw fallbackError;
+                                }
+                                loadedBook = await openViaURL();
+                            }
+                        } else if (hasBookURL) {
+                            loadedBook = await openViaURL();
                         } else {
                             throw new Error('No valid EPUB input provided');
                         }
-
-                        await withTimeout(loadedBook.opened, 15000, 'book.opened');
                         logInfo('book.opened resolved', { loadToken: loadToken });
 
                         if (loadToken !== window.currentLoadToken) {
@@ -538,14 +722,17 @@
                         }
 
                         window.book = loadedBook;
+                        loadLocationsCache(locationsCache);
+                        var renditionW = (typeof viewWidth === 'number' && viewWidth > 0) ? viewWidth : window.innerWidth;
+                        var renditionH = (typeof viewHeight === 'number' && viewHeight > 0) ? viewHeight : window.innerHeight;
                         window.rendition = window.book.renderTo('viewer', {
                             flow: 'paginated',
                             spread: 'none',
                             minSpreadWidth: 9999,
-                            width: window.innerWidth,
-                            height: window.innerHeight
+                            width: renditionW,
+                            height: renditionH
                         });
-                        logInfo('rendition created', { width: window.innerWidth, height: window.innerHeight });
+                        logInfo('rendition created', { width: renditionW, height: renditionH });
 
                         Object.keys(themeMap).forEach(function (name) {
                             var t = themeMap[name];
@@ -554,28 +741,24 @@
                             });
                         });
                         window.rendition.themes.select('light');
-                        window.rendition.on('rendered', function () {
-                            applyContentTheme('light');
+                        window.rendition.on('rendered', function (section) {
+                            logInfo('rendered', {
+                                href: section && section.href ? section.href : ''
+                            });
+                            applyContentTheme(window.currentThemeName);
                         });
 
                         window.rendition.on('relocated', function (location) {
-                            var cfi = (location && location.start && location.start.cfi) ? location.start.cfi : '';
-                            var pct = (location && location.start && typeof location.start.percentage === 'number')
-                                ? location.start.percentage
-                                : 0;
-                            var spineHref = (location && location.start && location.start.href) ? location.start.href : '';
-                            var characterOffset = extractCharacterOffset(cfi);
-                            var contextSnippet = extractContextSnippet(location);
-
-                            window.bridge.send('relocated', {
-                                cfi: cfi,
-                                percentage: pct,
-                                spineHref: spineHref,
-                                characterOffset: characterOffset,
-                                contextSnippet: contextSnippet,
-                                atEnd: location.atEnd === true
+                            var payload = relocationPayloadFromLocation(location);
+                            window.latestRelocation = payload;
+                            logInfo('relocated', {
+                                cfi: payload.cfi,
+                                percentage: payload.percentage,
+                                spineHref: payload.spineHref,
+                                atEnd: payload.atEnd
                             });
-                            if (location.atEnd === true) {
+                            window.bridge.send('relocated', payload);
+                            if (payload.atEnd === true) {
                                 window.bridge.send('atChapterEnd', {});
                             }
                         });
@@ -631,6 +814,7 @@
                         await withTimeout(window.book.ready, 15000, 'book.ready');
                         logInfo('book.ready resolved', { loadToken: loadToken });
                         if (loadToken === window.currentLoadToken) {
+                            generateLocationsInBackground(loadToken);
                             await sendWordCountSample();
                             logInfo('wordCountSample sent', { loadToken: loadToken });
                             window.bridge.send('bookReady', {});
@@ -644,43 +828,168 @@
                 })();
             };
 
-            window.nextPage = function () {
-                safeRun('nextPage', function () {
-                    window.rendition.next();
+            function sendTurnFailed(direction, token, message) {
+                window.bridge.send('turnFailed', {
+                    direction: direction,
+                    token: token || '',
+                    message: message || 'Page turn failed'
+                });
+            }
+
+            function performTurn(direction, token, action) {
+                if (!canUseRendition(direction === 'forward' ? 'nextPage' : 'prevPage')) {
+                    sendTurnFailed(direction, token, 'Rendition is not ready');
+                    return;
+                }
+
+                var before = currentLocationSnapshot();
+                var beforePayload = relocationPayloadFromLocation(before);
+                window.bridge.send('turnStarted', {
+                    direction: direction,
+                    token: token || ''
+                });
+                logInfo('turnStarted', {
+                    direction: direction,
+                    token: token || '',
+                    spineHref: beforePayload.spineHref
+                });
+
+                Promise.resolve()
+                    .then(action)
+                    .then(function () {
+                        var after = currentLocationSnapshot();
+                        var afterPayload = relocationPayloadFromLocation(after);
+                        var crossedChapterBoundary = beforePayload.spineHref.length > 0
+                            && afterPayload.spineHref.length > 0
+                            && beforePayload.spineHref !== afterPayload.spineHref;
+                        window.bridge.send('turnCompleted', {
+                            direction: direction,
+                            token: token || '',
+                            cfi: afterPayload.cfi,
+                            percentage: afterPayload.percentage,
+                            spineHref: afterPayload.spineHref,
+                            crossedChapterBoundary: crossedChapterBoundary
+                        });
+                        logInfo('turnCompleted', {
+                            direction: direction,
+                            token: token || '',
+                            cfi: afterPayload.cfi,
+                            percentage: afterPayload.percentage,
+                            spineHref: afterPayload.spineHref,
+                            crossedChapterBoundary: crossedChapterBoundary
+                        });
+                    })
+                    .catch(function (error) {
+                        var message = (error && error.message) ? error.message : String(error);
+                        logWarn('turnFailed', { direction: direction, token: token || '', message: message });
+                        sendTurnFailed(direction, token, message);
+                    });
+            }
+
+            window.nextPage = function (directionToken) {
+                performTurn('forward', directionToken, function () {
+                    return window.rendition.next();
                 });
             };
 
-            window.prevPage = function () {
-                safeRun('prevPage', function () {
-                    window.rendition.prev();
+            window.prevPage = function (directionToken) {
+                performTurn('backward', directionToken, function () {
+                    return window.rendition.prev();
                 });
+            };
+
+            window.displayLocation = function (target) {
+                if (!canUseRendition('displayLocation')) {
+                    return Promise.reject(new Error('Rendition is not ready'));
+                }
+
+                return Promise.resolve(window.rendition.display(target))
+                    .then(function () {
+                        var location = currentLocationSnapshot();
+                        var payload = relocationPayloadFromLocation(location);
+                        window.bridge.send('turnCompleted', {
+                            direction: 'display',
+                            token: '',
+                            cfi: payload.cfi,
+                            percentage: payload.percentage,
+                            spineHref: payload.spineHref,
+                            crossedChapterBoundary: false
+                        });
+                        return payload;
+                    })
+                    .catch(function (error) {
+                        var message = (error && error.message) ? error.message : String(error);
+                        logWarn('displayLocation failed', { message: message });
+                        window.bridge.send('turnFailed', {
+                            direction: 'display',
+                            token: '',
+                            message: message
+                        });
+                        throw error;
+                    });
             };
 
             window.displayCFI = function (cfi) {
-                if (window.rendition && cfi) {
-                    window.rendition.display(cfi);
-                }
+                return window.displayLocation(cfi);
             };
 
-            window.displayAdjacent = function (cfi, delta) {
-                safeRun('displayAdjacent', function () {
-                    var displayPromise = (typeof cfi === 'string' && cfi.length > 0)
-                        ? window.rendition.display(cfi)
-                        : Promise.resolve();
+            window.displayAdjacent = function (cfi, delta, syncId) {
+                var hasSyncId = (typeof syncId === 'string' && syncId.length > 0);
+                var sendComplete = function (errorMessage) {
+                    if (!hasSyncId) { return; }
+                    var payload = { syncId: syncId };
+                    if (errorMessage) {
+                        payload.error = errorMessage;
+                    } else {
+                        var location = currentLocationSnapshot();
+                        var relocation = relocationPayloadFromLocation(location);
+                        payload.cfi = relocation.cfi;
+                        payload.percentage = relocation.percentage;
+                        payload.spineHref = relocation.spineHref;
+                    }
+                    window.bridge.send('syncComplete', payload);
+                };
 
-                    Promise.resolve(displayPromise).then(function () {
-                        if (delta > 0) {
-                            return window.rendition.next();
-                        }
-                        if (delta < 0) {
-                            return window.rendition.prev();
-                        }
-                        return null;
-                    }).catch(function (error) {
+                if (!window.rendition || !window.rendition.manager) {
+                    window.bridge.send('jsGuardBlocked', { command: 'displayAdjacent', reason: 'missingRendition' });
+                    sendComplete('rendition unavailable');
+                    return;
+                }
+
+                logInfo('adjacentSyncStarted', { delta: delta, syncId: syncId || '' });
+
+                var navigate = function () {
+                    if (delta > 0) { return window.rendition.next(); }
+                    if (delta < 0) { return window.rendition.prev(); }
+                    return null;
+                };
+
+                var displayPromise;
+                try {
+                    var current = window.rendition.currentLocation();
+                    var currentCFI = (current && current.start && current.start.cfi) ? current.start.cfi : '';
+                    if (typeof cfi === 'string' && cfi.length > 0 && currentCFI !== cfi) {
+                        displayPromise = window.rendition.display(cfi);
+                    } else {
+                        displayPromise = Promise.resolve();
+                    }
+                } catch (_) {
+                    displayPromise = Promise.resolve();
+                }
+
+                withTimeout(Promise.resolve(displayPromise)
+                    .then(function () {
+                        return Promise.resolve(navigate());
+                    }), 15000, 'displayAdjacent')
+                    .then(function () {
+                        logInfo('adjacentSyncCompleted', { delta: delta, syncId: syncId || '' });
+                        sendComplete(null);
+                    })
+                    .catch(function (error) {
                         var message = (error && error.message) ? error.message : String(error);
-                        logWarn('displayAdjacent failed', { message: message, delta: delta });
+                        logWarn('adjacentSyncFailed', { message: message, delta: delta, syncId: syncId || '' });
+                        sendComplete(message);
                     });
-                });
             };
 
             window.resizeRendition = function (w, h) {
@@ -700,25 +1009,7 @@
                     return;
                 }
 
-                var totalLocations = 0;
-                if (Array.isArray(window.book.locations._locations)) {
-                    totalLocations = window.book.locations._locations.length;
-                } else if (typeof window.book.locations.length === 'number') {
-                    totalLocations = window.book.locations.length;
-                }
-
-                var serializedLocations = null;
-                try {
-                    serializedLocations = window.book.locations.save();
-                } catch (error) {
-                    logWarn('locations.save failed', { message: String(error) });
-                    serializedLocations = null;
-                }
-
-                window.bridge.send('locationsSnapshot', {
-                    totalLocations: totalLocations,
-                    serializedLocations: serializedLocations
-                });
+                sendLocationsSnapshot();
             };
 
             registerResourceWatchers();
